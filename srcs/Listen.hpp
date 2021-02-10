@@ -18,6 +18,9 @@ class Listen {
   void setup(std::string &str);
   bool valid();
 
+  std::string &getIp();
+  int getPort();
+
  private:
   std::string ip_;
   int port_;

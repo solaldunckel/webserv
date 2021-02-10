@@ -46,14 +46,21 @@ void Location::cgi(std::vector<std::string>::iterator &it) {
 }
 
 void Location::print() {
-  std::cout << "Location :" << std::endl;
-  std::cout << "  uri : " << uri_ << std::endl;
-  std::cout << "  index :" << std::endl;
-  for (std::vector<std::string>::iterator it = index_.begin(); it != index_.end(); it++)
-    std::cout << "    " << *it << std::endl;
-  std::cout << "  cgi : " << std::endl;
-  for (std::map<std::string, std::string>::iterator it = cgi_.begin(); it != cgi_.end(); it++)
-    std::cout << "    " << it->first << " -> " << it->second << std::endl;
-  std::cout << "  root : " << root_ << std::endl;
+  std::cout << "    - uri : " << uri_ << std::endl;
+
+  if (!index_.empty()) {
+    std::cout << "      index :" << std::endl;
+    for (std::vector<std::string>::iterator it = index_.begin(); it != index_.end(); it++)
+      std::cout << "        " << *it << std::endl;
+  }
+
+  if (!cgi_.empty()) {
+    std::cout << "      cgi : " << std::endl;
+    for (std::map<std::string, std::string>::iterator it = cgi_.begin(); it != cgi_.end(); it++)
+      std::cout << "        " << it->first << " -> " << it->second << std::endl;
+  }
+
+  if (!root_.empty())
+    std::cout << "      root : " << root_ << std::endl;
 }
 

@@ -30,7 +30,6 @@ void Config::server(std::vector<std::string>::iterator &it) {
 
         loc.setup(++it);
         locations_.push_back(loc);
-        loc.print();
       }
       else if (Config::dir[*it])
         (this->*(Config::dir[*it]))(++it);
@@ -72,6 +71,21 @@ void Config::client_max_body_size(std::vector<std::string>::iterator &it)
     if (it->find_first_not_of("0123456789") != std::string::npos)
         throw std::runtime_error("unexpected symbols in client_max_body_size");
     client_max_body_size_ = std::stoi(*it++);
+}
+
+void Config::print() {
+  std::cout << "Server :" << std::endl;
+  std::cout << "  listen : " << listen_.getIp() << ":" << listen_.getPort() << std::endl;
+  std::cout << "  server_name :" << std::endl;
+  for (std::vector<std::string>::iterator it = server_name_.begin();
+    it != server_name_.end(); it++) {
+      std::cout << "    " << *it << std::endl;
+    }
+  std::cout << "  client_max_body_size : " << client_max_body_size_ << std::endl;
+  std::cout << "  Locations :" << std::endl;
+  for (std::vector<Location>::iterator it = locations_.begin(); it != locations_.end(); it++) {
+    it->print();
+  }
 }
 
 

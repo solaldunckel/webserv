@@ -67,7 +67,6 @@ void Parser::Parse() {
   for (it = tokens_.begin(); it != tokens_.end(); ++it)
   {
     if (*it == "server") {
-      std::cout << "Parsing server!" << std::endl;
       Config serv;
 
       serv.server(++it);
@@ -76,7 +75,7 @@ void Parser::Parse() {
     else
       throw std::runtime_error("invalid directive '" + *it + "' in main block");
   }
-  // if (servers_.empty())
-  //     throw std::runtime_error("missing server block"); // servers_.push_back(base_);
+  if (servers_.empty())
+      throw std::runtime_error("missing server block"); // servers_.push_back(base_);
 
 }

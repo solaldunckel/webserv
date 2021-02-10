@@ -24,6 +24,13 @@ int main(int argc, char **argv) {
     Parser parse_(path, servers);
 
     parse_.Parse();
+
+    Server serv(servers);
+
+    serv.Setup();
+    for (std::vector<Config>::iterator it = servers.begin(); it != servers.end(); it++) {
+      it->print();
+    }
   }
   catch (std::exception &e) {
     std::cout << "error: " << e.what() << std::endl;

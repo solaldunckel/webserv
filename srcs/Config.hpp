@@ -25,6 +25,8 @@ class Config {
   void error_page(std::vector<std::string>::iterator &it);
   void client_max_body_size(std::vector<std::string>::iterator &it);
 
+  void print();
+
  private:
   Listen listen_;
   std::vector<std::string> server_name_;

@@ -4,7 +4,6 @@ bool isValidIp(std::string ip) {
   size_t pos = 0;
   int count = 1;
 
-  std::cout << ip << std::endl;
   std::string token;
   std::string delimiter = ".";
   while ((pos = ip.find(delimiter)) != std::string::npos) {
@@ -51,7 +50,14 @@ void Listen::setup(std::string &str) {
   }
   else
     port_ = std::stoi(str);
-  std::cout << "ip : " << ip_ << " / port : " << port_ << std::endl;
+}
+
+std::string &Listen::getIp() {
+  return ip_;
+}
+
+int Listen::getPort() {
+  return port_;
 }
 
 bool Listen::valid() {
