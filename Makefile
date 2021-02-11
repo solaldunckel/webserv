@@ -13,6 +13,7 @@ SRCS			= $(addprefix ${SRCS_DIR}/, main.cpp \
 							Location.cpp \
 							Listen.cpp \
 							Config.cpp \
+							Request.cpp \
 							Server.cpp)
 
 OBJS			= ${SRCS:.cpp=.o}

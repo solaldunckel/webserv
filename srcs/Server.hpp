@@ -11,9 +11,11 @@
 # include <fcntl.h>
 # include <sys/select.h>
 
+# include <csignal>
 # include <vector>
 
 # include "Config.hpp"
+# include "Request.hpp"
 
 # define MAX_CONNECTION 10
 
@@ -26,8 +28,15 @@ class Server {
   void Setup();
   void Run();
   void readData(int fd);
+  void newConnection();
+
+  static void interruptionHandler(int sig_num) {
+    (void)sig_num;
+    running_ = false;
+  };
 
  private:
+  static bool running_;
   std::vector<Config> &config_;
   struct sockaddr_in address_;
   int server_fd_;

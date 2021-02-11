@@ -28,9 +28,9 @@ int main(int argc, char **argv) {
     Server serv(servers);
 
     serv.Setup();
-    for (std::vector<Config>::iterator it = servers.begin(); it != servers.end(); it++) {
-      it->print();
-    }
+    // for (std::vector<Config>::iterator it = servers.begin(); it != servers.end(); it++) {
+    //   it->print();
+    // }
   }
   catch (std::exception &e) {
     std::cout << "error: " << e.what() << std::endl;
