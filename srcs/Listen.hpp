@@ -23,7 +23,7 @@ class Listen {
 
  private:
   std::string ip_;
-  int port_;
+  uint32_t port_;
 };
 
 #endif

@@ -37,14 +37,14 @@ void Server::Setup() {
   setsockopt(server_fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
   if (bind(server_fd_, (struct sockaddr *)&address_, sizeof(address_)) < 0) {
-      std::cout << "CANNOT BIND SOCKET" << std::endl;
-      std::cout << strerror(errno) << std::endl;
-      return ;
+    std::cout << "CANNOT BIND SOCKET" << std::endl;
+    std::cout << strerror(errno) << std::endl;
+    return ;
   }
 
   if (listen(server_fd_, MAX_CONNECTION) < 0) {
-      std::cout << "IN LISTEN" << std::endl;
-      exit(EXIT_FAILURE);
+    std::cout << "IN LISTEN" << std::endl;
+    exit(EXIT_FAILURE);
   }
 
   FD_SET(server_fd_, &master_fds_);
@@ -55,16 +55,22 @@ void Server::Setup() {
 
   running_ = true;
 
+  struct timeval tv;
+
+  tv.tv_sec = 10;
+
   while (running_) {
     read_fds_ = master_fds_; // copy it
-    if (select(max_fd_ + 1, &read_fds_, NULL, NULL, NULL) == -1) {
+    std::cout << "LOOPING" << std::endl;
+    if (select(max_fd_ + 1, &read_fds_, NULL, NULL, &tv) == -1) {
       strerror(errno);
       break ;
     }
-      
+
     // run through the existing connections looking for data to read
     for (int i = 0; i <= max_fd_; i++) {
       if (FD_ISSET(i, &read_fds_)) { // we got one!!
+        std::cout << "IS SET" << std::endl;
         if (i == server_fd_)
           newConnection();
         else
@@ -83,6 +89,7 @@ void Server::newConnection() {
   int clientFd = accept(server_fd_, nullptr, nullptr);
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
+  std::cout << "[Server] New connection." << std::endl;
   if (clientFd == -1)
     perror("accept");
   else {
@@ -94,9 +101,9 @@ void Server::newConnection() {
 }
 
 void Server::readData(int fd) {
-  std::string msg;
-  std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
   std::cout << "READ DATA" << std::endl;
+  std::string msg;
+  std::string response_msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
 
   int nbytes = 1;
   char buf[BUF_SIZE + 1];
@@ -114,19 +121,23 @@ void Server::readData(int fd) {
     }
 	}
 
-  std::cout << "Parse request" << std::endl;
-
   Request request(msg);
 
   request.parse();
 
+  Response response(request);
+
+  response_msg = response.getResponseBody();
+
+  // std::cout << "RESPONSE : " << response_msg << std::endl;
+
   // We should create Request Class
   // Then we should create Response Class
-  write(fd, response.c_str(), response.length());
+  write(fd, response_msg.c_str(), response_msg.length());
 
     // Finish Connection ?
-  // close(fd); // bye!
-  // FD_CLR(fd, &master_fds_); // remove from master set
+  close(fd); // bye!
+  FD_CLR(fd, &master_fds_); // remove from master set
 }
 
 void Server::Run() {

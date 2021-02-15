@@ -16,6 +16,7 @@
 
 # include "Config.hpp"
 # include "Request.hpp"
+# include "Response.hpp"
 
 # define MAX_CONNECTION 10
 
