@@ -4,8 +4,8 @@
 ** Constructors & Deconstructors
 */
 
-Server::Server(std::vector<Config> &config) : config_(config) {
-  (void)config_;
+Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
+  (void)servers_;
 }
 
 Server::~Server() {
@@ -55,14 +55,16 @@ void Server::Setup() {
 
   running_ = true;
 
-  struct timeval tv;
+  // struct timeval tv;
 
-  tv.tv_sec = 10;
+  // tv.tv_sec = 10;
+
+  std::cout << "[Server] Starting." << std::endl;
 
   while (running_) {
     read_fds_ = master_fds_; // copy it
-    std::cout << "LOOPING" << std::endl;
-    if (select(max_fd_ + 1, &read_fds_, NULL, NULL, &tv) == -1) {
+    // std::cout << "[Server] Waiting for connexion..." << std::endl;
+    if (select(max_fd_ + 1, &read_fds_, NULL, NULL, NULL) == -1) {
       strerror(errno);
       break ;
     }
@@ -70,7 +72,6 @@ void Server::Setup() {
     // run through the existing connections looking for data to read
     for (int i = 0; i <= max_fd_; i++) {
       if (FD_ISSET(i, &read_fds_)) { // we got one!!
-        std::cout << "IS SET" << std::endl;
         if (i == server_fd_)
           newConnection();
         else
@@ -89,7 +90,7 @@ void Server::newConnection() {
   int clientFd = accept(server_fd_, nullptr, nullptr);
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
-  std::cout << "[Server] New connection." << std::endl;
+  std::cout << "[Server] New connection from " << clientFd << std::endl;
   if (clientFd == -1)
     perror("accept");
   else {
@@ -101,7 +102,7 @@ void Server::newConnection() {
 }
 
 void Server::readData(int fd) {
-  std::cout << "READ DATA" << std::endl;
+  std::cout << "[Server] Received data from " << fd << std::endl;
   std::string msg;
   std::string response_msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
 
@@ -136,8 +137,8 @@ void Server::readData(int fd) {
   write(fd, response_msg.c_str(), response_msg.length());
 
     // Finish Connection ?
-  close(fd); // bye!
-  FD_CLR(fd, &master_fds_); // remove from master set
+  // close(fd); // bye!
+  // FD_CLR(fd, &master_fds_); // remove from master set
 }
 
 void Server::Run() {

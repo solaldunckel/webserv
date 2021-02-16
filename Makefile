@@ -9,10 +9,9 @@ FILES			= main.cpp \
 						Server.cpp
 
 SRCS			= $(addprefix ${SRCS_DIR}/, main.cpp \
-							Parser.cpp \
-							Location.cpp \
-							Listen.cpp \
 							Config.cpp \
+							ServerConfig.cpp \
+							LocationConfig.cpp \
 							Request.cpp \
 							Response.cpp \
 							Server.cpp)

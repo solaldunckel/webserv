@@ -23,7 +23,7 @@
 class Server {
  public:
   // Constructors & Deconstructors
-  Server(std::vector<Config> &config);
+  Server(std::vector<ServerConfig> &servers);
   ~Server();
 
   void Setup();
@@ -38,7 +38,7 @@ class Server {
 
  private:
   static bool running_;
-  std::vector<Config> &config_;
+  std::vector<ServerConfig> &servers_;
   struct sockaddr_in address_;
   int server_fd_;
   fd_set master_fds_;

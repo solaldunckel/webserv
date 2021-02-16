@@ -1,19 +1,17 @@
-#ifndef LOCATION_HPP
-# define LOCATION_HPP
+#ifndef LOCATIONCONFIG_HPP
+# define LOCATIONCONFIG_HPP
 
-# include <iostream>
-# include <vector>
-# include <map>
+# include "IConfig.hpp"
 
-class Location {
+class LocationConfig : public IConfig {
  public:
   // Constructors & Deconstructors
-  Location();
-  ~Location();
+  LocationConfig();
+  ~LocationConfig();
 
-  typedef void (Location::*type)(std::vector<std::string>::iterator &);
-  static std::map<std::string, type> dir;
-  static void initMap();
+  typedef void (LocationConfig::*type)(std::vector<std::string>::iterator &);
+  static std::map<std::string, type> directive;
+  static void initDirectiveMap();
 
   void setup(std::vector<std::string>::iterator &it);
   void index(std::vector<std::string>::iterator &it);
@@ -26,8 +24,6 @@ class Location {
   std::vector<std::string> limit_except_;
   std::vector<std::string> index_;
   std::map<std::string, std::string> cgi_;
-  // bool autoindex_;
-  std::string root_;
 };
 
 #endif

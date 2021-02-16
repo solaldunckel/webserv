@@ -1,5 +1,11 @@
 #include "Config.hpp"
 
+bool is_directive(std::string str) {
+    return (str == "listen" || str == "server_name" || str == "root" ||
+            str == "error_page" || str == "upload" || str == "autoIndex" ||
+            str == "index" || str == "cgi");
+}
+
 /*
 ** Constructors & Deconstructors
 */
@@ -7,83 +13,84 @@
 Config::Config() {
 }
 
-Config::~Config() {
-}
-
-std::map<std::string, Config::type> Config::dir;
-void Config::initMap()
-{
-    Config::dir["listen"] = &Config::listen;
-    Config::dir["server_name"] = &Config::server_name;
-    Config::dir["error_page"] = &Config::error_page;
-    Config::dir["client_max_body_size"] = &Config::client_max_body_size;
-}
-
-void Config::server(std::vector<std::string>::iterator &it) {
-  initMap();
-  if (*it != "{")
-      throw std::runtime_error("missing opening bracket in server block");
-  while (*(++it) != "}")
-  {
-      if (*it == "location") {
-        Location loc;
-
-        loc.setup(++it);
-        locations_.push_back(loc);
-      }
-      else if (Config::dir[*it])
-        (this->*(Config::dir[*it]))(++it);
-      else
-          throw std::runtime_error("invalid directive '" + *it + "' in 'server'");
+Config::Config(std::string &path) : file_(path) {
+  if (!file_.is_open() || !file_.good()) {
+    throw std::runtime_error("could not open config file");
   }
 }
 
-void Config::listen(std::vector<std::string>::iterator &it) {
-  listen_.setup(*it);
-  // if (!listen_.valid())
-  //   throw std::runtime_error("'listen' invalid");
-  if (*++it != ";")
-      throw std::runtime_error("double value in 'listen'");
+Config::~Config() {
+  file_.close();
 }
 
-void Config::server_name(std::vector<std::string>::iterator &it)
-{
-    while (*it != ";")
-      server_name_.push_back(*it++);
+void Config::init() {
+  tokenize();
+  parse();
 }
 
-void Config::error_page(std::vector<std::string>::iterator &it)
-{
-    std::vector<int> codes;
+void Config::tokenize() {
+  std::string line, tmp;
+  std::string::size_type first, last;
+  std::stack<bool> brackets;
 
-    while (it->find_first_not_of("0123456789") == std::string::npos) {
-      codes.push_back(std::stoi(*it++));
+  int line_idx = 1;
+
+  while (std::getline(file_, line))
+  {
+    last = 0;
+    while ((first = line.find_first_not_of(" \t", last)) != std::string::npos)
+    {
+      if (line[first] == '#')
+          break;
+      last = line.find_first_of(" \t", first);
+      tmp = line.substr(first, last - first);
+      if (tmp == "{")
+        brackets.push(true);
+      else if (tmp == "}")
+      {
+        if (brackets.empty())
+          throw std::runtime_error("extra closing '}' on line " + std::to_string(line_idx));
+        brackets.pop();
+      }
+      if (is_directive(tmp) && line[line.find_last_not_of(" \t", line.length())] != ';')
+        throw std::runtime_error("missing ';' on line " + std::to_string(line_idx));
+      if (tmp.find(';', tmp.length() - 1) != std::string::npos)
+      {
+        tmp.pop_back();
+        tokens_.push_back(tmp);
+        tokens_.push_back(";");
+      }
+      else
+        tokens_.push_back(tmp);
     }
-    for (std::vector<int>::iterator it2 = codes.begin(); it2 != codes.end(); it2++) {
-      error_codes_[*it2] = *it;
-    }
-    if (*++it != ";")
-      throw std::runtime_error("double value in 'listen'");
+    line_idx++;
+  }
 }
 
-void Config::client_max_body_size(std::vector<std::string>::iterator &it)
-{
-    if (it->find_first_not_of("0123456789") != std::string::npos)
-        throw std::runtime_error("unexpected symbols in client_max_body_size");
-    client_max_body_size_ = std::stoi(*it++);
+void Config::parse() {
+  std::vector<std::string>::iterator it;
+
+  for (it = tokens_.begin(); it != tokens_.end(); ++it)
+  {
+    if (*it == "server") {
+      ServerConfig serv;
+
+      serv.server(++it);
+      servers_.push_back(serv);
+    }
+    else
+      throw std::runtime_error("invalid directive '" + *it + "' in main block");
+  }
+  if (servers_.empty())
+      throw std::runtime_error("missing server block"); // servers_.push_back(base_);
+}
+
+std::vector<ServerConfig> &Config::getServers() {
+  return servers_;
 }
 
 void Config::print() {
-  std::cout << "Server :" << std::endl;
-  std::cout << "  listen : " << listen_.getIp() << ":" << listen_.getPort() << std::endl;
-  std::cout << "  server_name :" << std::endl;
-  for (std::vector<std::string>::iterator it = server_name_.begin();
-    it != server_name_.end(); it++) {
-      std::cout << "    " << *it << std::endl;
-    }
-  std::cout << "  client_max_body_size : " << client_max_body_size_ << std::endl;
-  std::cout << "  Locations :" << std::endl;
-  for (std::vector<Location>::iterator it = locations_.begin(); it != locations_.end(); it++) {
+  for (std::vector<ServerConfig>::iterator it = servers_.begin(); it != servers_.end(); it++) {
     it->print();
   }
 }

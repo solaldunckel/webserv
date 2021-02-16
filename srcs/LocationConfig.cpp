@@ -1,51 +1,52 @@
-#include "Location.hpp"
+#include "LocationConfig.hpp"
 
 /*
 ** Constructors & Deconstructors
 */
 
-Location::Location() {
+LocationConfig::LocationConfig() {
+  initDirectiveMap();
 }
 
-Location::~Location() {
+LocationConfig::~LocationConfig() {
 }
 
-std::map<std::string, Location::type> Location::dir;
-void Location::initMap()
+std::map<std::string, LocationConfig::type> LocationConfig::directive;
+void LocationConfig::initDirectiveMap()
 {
-    Location::dir["index"] = &Location::index;
-    Location::dir["cgi"] = &Location::cgi;
-    // Location::dir["error_page"] = &Location::error_page;
-    // Location::dir["client_max_body_size"] = &Location::client_max_body_size;
+    LocationConfig::directive["index"] = &LocationConfig::index;
+    LocationConfig::directive["cgi"] = &LocationConfig::cgi;
+    LocationConfig::directive["error_page"] = &LocationConfig::error_page;
+    LocationConfig::directive["root"] = &LocationConfig::root;
+    LocationConfig::directive["client_max_body_size"] = &LocationConfig::client_max_body_size;
 }
 
-void Location::setup(std::vector<std::string>::iterator &it) {
-  initMap();
+void LocationConfig::setup(std::vector<std::string>::iterator &it) {
   uri_ = *it++;
   if (*it != "{")
       throw std::runtime_error("missing opening bracket in server block");
   while (*(++it) != "}")
   {
-      if (Location::dir[*it])
-        (this->*(Location::dir[*it]))(++it);
+      if (LocationConfig::directive[*it])
+        (this->*(LocationConfig::directive[*it]))(++it);
       else
           throw std::runtime_error("invalid directive '" + *it + "' in 'location'");
   }
 }
 
-void Location::index(std::vector<std::string>::iterator &it) {
+void LocationConfig::index(std::vector<std::string>::iterator &it) {
   while (*it != ";") {
     index_.push_back(*it++);
   }
 }
 
-void Location::cgi(std::vector<std::string>::iterator &it) {
+void LocationConfig::cgi(std::vector<std::string>::iterator &it) {
   std::string ext = *it++;
 
   cgi_[ext] = *it++;
 }
 
-void Location::print() {
+void LocationConfig::print() {
   std::cout << "    - uri : " << uri_ << std::endl;
 
   if (!index_.empty()) {
@@ -63,4 +64,3 @@ void Location::print() {
   if (!root_.empty())
     std::cout << "      root : " << root_ << std::endl;
 }
-

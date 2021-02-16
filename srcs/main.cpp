@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "Parser.hpp"
 #include "Config.hpp"
 #include "Server.hpp"
 
@@ -18,35 +17,17 @@ int main(int argc, char **argv) {
     path = argv[1];
   }
 
-  std::vector<Config> servers;
-
   try {
-    Parser parse_(path, servers);
+    Config config(path);
 
-    parse_.Parse();
+    config.init();
+    // config.print();
 
-    Server serv(servers);
+    Server serv(config.getServers());
 
     serv.Setup();
-    // for (std::vector<Config>::iterator it = servers.begin(); it != servers.end(); it++) {
-    //   it->print();
-    // }
   }
   catch (std::exception &e) {
     std::cout << "error: " << e.what() << std::endl;
   }
-
-  // try {
-  //   Config config_(path);
-    
-  //   config_.Parse();
-
-  //   Server server_("localhost", 80);
-
-  //   server_.Setup();
-  //   server_.Run();
-  // }
-  // catch (std::exception &e) {
-  //   std::cout << "error: " << e.what() << std::endl;
-  // }
 }

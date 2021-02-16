@@ -48,7 +48,6 @@ void Request::parse() {
 
   // HEADERS
   while (std::getline(input, line)) {
-    // std::cout << "HEADER" << std::endl;
     if ((last = line.find(':', 0)) != std::string::npos) {
       header = line.substr(0, last);
       if (headers_.count(header))
@@ -60,10 +59,9 @@ void Request::parse() {
 
   // BODY
   while (std::getline(input, line)) {
-    // std::cout << "BODY" << std::endl;
     req_body_ += line;
   }
-  //print();
+  // print();
 }
 
 void Request::print() {
