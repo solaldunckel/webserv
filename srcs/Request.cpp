@@ -65,17 +65,18 @@ void Request::parse() {
 }
 
 void Request::print() {
+  std::cout << "\n###\n\n";
   std::cout << msg_ << std::endl;
 
-  std::cout << "method: " << method_ << std::endl;
-  std::cout << "target: [" << target_ << "]" << std::endl;
-  std::cout << "protocol: [" << protocol_ << "]" << std::endl;
+  // std::cout << "method: " << method_ << std::endl;
+  // std::cout << "target: [" << target_ << "]" << std::endl;
+  // std::cout << "protocol: [" << protocol_ << "]" << std::endl;
 
-  for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++)
-  {
-    if (!it->second.empty())
-      std::cout << it->first << ": " << it->second << std::endl;
-  }
+  // for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++)
+  // {
+  //   if (!it->second.empty())
+  //     std::cout << it->first << ": " << it->second << std::endl;
+  // }
 
-  std::cout << "req_body: [" << req_body_ << "]" << std::endl;
+  // std::cout << "req_body: [" << req_body_ << "]" << std::endl;
 }

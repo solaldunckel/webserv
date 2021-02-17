@@ -28,6 +28,8 @@ void Server::Setup() {
   if ((server_fd_ = socket(PF_INET, SOCK_STREAM, 0)) < 0)
       throw std::runtime_error("Cannot create listening socket");
 
+  fcntl(server_fd_, F_SETFL, O_NONBLOCK);
+
   memset(&address_, 0, sizeof(address_));
   address_.sin_family = AF_INET;
   address_.sin_addr.s_addr = inet_addr(addr.c_str());
@@ -85,12 +87,30 @@ void Server::Setup() {
 
 # define BUF_SIZE 500
 
+void *get_in_addr(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
 void Server::newConnection() {
+  struct sockaddr_storage their_addr;
+  socklen_t addr_size = sizeof(their_addr);
+
   // handle new connections
-  int clientFd = accept(server_fd_, nullptr, nullptr);
+  int clientFd = accept(server_fd_, (struct sockaddr *)&their_addr, &addr_size);
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
-  std::cout << "[Server] New connection from " << clientFd << std::endl;
+  char s[INET_ADDRSTRLEN];
+  inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof(s));
+
+  clients_[clientFd] = std::string(s);
+
+  std::cout << "[Server] New connection from " << clients_[clientFd] << " (socket " << server_fd_ << ")" << std::endl;
+
   if (clientFd == -1)
     perror("accept");
   else {
@@ -102,9 +122,9 @@ void Server::newConnection() {
 }
 
 void Server::readData(int fd) {
-  std::cout << "[Server] Received data from " << fd << std::endl;
+  std::cout << "[Server] Receiving data from " << clients_[fd] << std::endl;
   std::string msg;
-  std::string response_msg = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
+  std::string response_msg;
 
   int nbytes = 1;
   char buf[BUF_SIZE + 1];
@@ -126,17 +146,15 @@ void Server::readData(int fd) {
 
   request.parse();
 
+  request.print();
+
   Response response(request);
 
   response_msg = response.getResponseBody();
 
-  // std::cout << "RESPONSE : " << response_msg << std::endl;
-
-  // We should create Request Class
-  // Then we should create Response Class
   write(fd, response_msg.c_str(), response_msg.length());
 
-    // Finish Connection ?
+  // std::cout << "[Server] Closed socket " << fd << std::endl;
   // close(fd); // bye!
   // FD_CLR(fd, &master_fds_); // remove from master set
 }

@@ -33,12 +33,14 @@ class Server {
 
   static void interruptionHandler(int sig_num) {
     (void)sig_num;
+    std::cout << "\b\b  \b\b";
     running_ = false;
   };
 
  private:
   static bool running_;
   std::vector<ServerConfig> &servers_;
+  std::map<int, std::string> clients_;
   struct sockaddr_in address_;
   int server_fd_;
   fd_set master_fds_;
