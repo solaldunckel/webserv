@@ -92,6 +92,7 @@ std::vector<ServerConfig> &Config::getServers() {
 void Config::print() {
   for (std::vector<ServerConfig>::iterator it = servers_.begin(); it != servers_.end(); it++) {
     it->print();
+    std::cout << std::endl;
   }
 }
 

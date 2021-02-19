@@ -8,16 +8,8 @@
 
 # include "Request.hpp"
 # include "Config.hpp"
-
-struct FileHandler {
-  int           fd_;
-  std::ifstream stream_;
-  bool          is_dir_;
-  std::string   name_;
-  std::string   full_path_;
-  std::string   body_;
-  std::string   mime_;
-};
+# include "MimeTypes.hpp"
+# include "File.hpp"
 
 class Response {
  public:
@@ -31,17 +23,12 @@ class Response {
   static void initMimeTypes();
 
   std::string getResponseBody();
-  int openFile(FileHandler &file);
-  std::string getMimeType(FileHandler &file);
-  std::string getFileContent(FileHandler &file);
 
  private:
   Request &request_;
   int status_code_;
   std::string body_;
   static std::map<int, std::string> error_codes_;
-  static std::map<std::string, std::string> mime_types_;
-  //Config &config_;
 };
 
 #endif

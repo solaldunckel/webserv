@@ -21,11 +21,14 @@ int main(int argc, char **argv) {
     Config config(path);
 
     config.init();
-    // config.print();
+    std::cout << "### CONFIG :\n" << std::endl;
+    config.print();
+    std::cout << "###\n" << std::endl;
 
     Server serv(config.getServers());
 
     serv.Setup();
+    serv.Run();
   }
   catch (std::exception &e) {
     std::cout << "error: " << e.what() << std::endl;

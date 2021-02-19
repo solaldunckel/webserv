@@ -6,46 +6,13 @@
 # include <string>
 # include <map>
 # include <vector>
-
 # include <algorithm>
-# include <string.h>
 
-inline int ft_stricmp(const std::string &lhs, const std::string &rhs) {
-  char *s1 = new char[lhs.length() + 1];
-  char *s2 = new char[rhs.length() + 1];
-
-  int ret = -1;
-  strcpy(s1, lhs.c_str());
-  strcpy(s2, rhs.c_str());
-
-  int i = 0;
-  while (s1[i]) {
-    s1[i] = std::tolower(s1[i]);
-    i++;
-  }
-
-  i = 0;
-  while (s2[i]) {
-    s2[i] = std::tolower(s2[i]);
-    i++;
-  }
-
-  i = 0;
-  while (s1[i] && s2[i] && s1[i] == s2[i])
-		i++;
-
-	if (!s1[i] && !s2[i])
-		ret = 0;
-
-  delete [] s1;
-  delete [] s2;
-
-  return ret;
-};
+# include "Utils.hpp"
 
 struct comp {
   bool operator() (const std::string& lhs, const std::string& rhs) const {
-    return ft_stricmp(lhs.c_str(), rhs.c_str()) < 0;
+    return ft::to_lower(lhs) < ft::to_lower(rhs);
   };
 };
 

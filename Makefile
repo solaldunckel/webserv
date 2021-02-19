@@ -13,6 +13,9 @@ SRCS			= $(addprefix ${SRCS_DIR}/, main.cpp \
 							ServerConfig.cpp \
 							LocationConfig.cpp \
 							Request.cpp \
+							Utils.cpp \
+							File.cpp \
+							MimeTypes.cpp \
 							Response.cpp \
 							Server.cpp)
 

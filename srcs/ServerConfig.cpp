@@ -52,13 +52,13 @@ void ServerConfig::listen(std::vector<std::string>::iterator &it) {
   if (str.find(':') != std::string::npos) {
     ip = str.substr(0, str.find(':'));
 
-    std::string port = str.substr(str.find(':') + 1);
+    std::string port_str = str.substr(str.find(':') + 1);
 
-    if (port.find_first_not_of("0123456789") != std::string::npos) {
+    if (port_str.find_first_not_of("0123456789") != std::string::npos) {
       std::cout << "Invalid port" << std::endl;
     }
 
-    port = std::stoi(port);
+    port = std::stoi(port_str);
   }
   else if (str.find_first_not_of("0123456789") != std::string::npos) {
     ip = str;
@@ -66,28 +66,42 @@ void ServerConfig::listen(std::vector<std::string>::iterator &it) {
   else
     port = std::stoi(str);
 
-  host_ips_[ip] = port;
+  listens_.push_back(Listen(ip, port));
 
   if (*++it != ";")
       throw std::runtime_error("double value in 'listen'");
 }
 
+std::vector<Listen> &ServerConfig::getListens() {
+  return listens_;
+};
+
+std::vector<std::string> &ServerConfig::getServerNames() {
+  return server_name_;
+};
+
+std::vector<LocationConfig> &ServerConfig::getLocations() {
+  return locations_;
+};
+
 void ServerConfig::print() {
   std::cout << "Server :" << std::endl;
 
   std::cout << "  listen :" << std::endl;
-  for (std::map<std::string, uint32_t>::iterator it = host_ips_.begin();
-    it != host_ips_.end(); it++) {
-      std::cout << "    " << it->first << ":" << it->second << std::endl;
+  for (std::vector<Listen>::iterator it = listens_.begin();
+    it != listens_.end(); it++) {
+      std::cout << "    " << it->ip_ << ":" << it->port_ << std::endl;
   }
   std::cout << "  server_name :" << std::endl;
-  for (std::vector<std::string>::iterator it = server_name_.begin();
-    it != server_name_.end(); it++) {
+  for (std::vector<std::string>::iterator it = server_name_.begin(); it != server_name_.end(); it++) {
       std::cout << "    " << *it << std::endl;
   }
-  std::cout << "  client_max_body_size : " << client_max_body_size_ << std::endl;
-  std::cout << "  Locations :" << std::endl;
-  for (std::vector<LocationConfig>::iterator it = locations_.begin(); it != locations_.end(); it++) {
-    it->print();
+  if (client_max_body_size_ > 0)
+    std::cout << "  client_max_body_size : " << client_max_body_size_ << std::endl;
+  if (locations_.size() > 0) {
+    std::cout << "  Locations :" << std::endl;
+    for (std::vector<LocationConfig>::iterator it = locations_.begin(); it != locations_.end(); it++) {
+      it->print();
+    }
   }
 }

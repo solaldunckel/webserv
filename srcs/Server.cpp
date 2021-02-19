@@ -6,102 +6,68 @@
 
 Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
   (void)servers_;
+  FD_ZERO(&master_fds_);
+  FD_ZERO(&read_fds_);
 }
 
 Server::~Server() {
 }
 
-// void Server::interruptionHandler(int sig_num) {
-
-// }
-
 bool Server::running_ = 0;
 
 void Server::Setup() {
-  std::string addr = "127.0.0.1";
-  // char *addr = "192.168.2.13";
-  uint32_t port = 8000;
-
-  FD_ZERO(&master_fds_);    // clear the master and temp sets
-  FD_ZERO(&read_fds_);
-
-  if ((server_fd_ = socket(PF_INET, SOCK_STREAM, 0)) < 0)
-      throw std::runtime_error("Cannot create listening socket");
-
-  fcntl(server_fd_, F_SETFL, O_NONBLOCK);
-
-  memset(&address_, 0, sizeof(address_));
-  address_.sin_family = AF_INET;
-  address_.sin_addr.s_addr = inet_addr(addr.c_str());
-  address_.sin_port = htons(port);
-
   int yes = 1;
-  setsockopt(server_fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+  int server_fd;
 
-  if (bind(server_fd_, (struct sockaddr *)&address_, sizeof(address_)) < 0) {
-    std::cout << "CANNOT BIND SOCKET" << std::endl;
-    std::cout << strerror(errno) << std::endl;
-    return ;
-  }
+  for (std::vector<ServerConfig>::iterator it = servers_.begin(); it != servers_.end(); it++) {
+    for (std::vector<Listen>::iterator list = it->getListens().begin(); list != it->getListens().end(); list++) {
+      if ((server_fd = socket(PF_INET, SOCK_STREAM, 0)) < 0)
+        throw std::runtime_error("Cannot create listening socket");
 
-  if (listen(server_fd_, MAX_CONNECTION) < 0) {
-    std::cout << "IN LISTEN" << std::endl;
-    exit(EXIT_FAILURE);
-  }
+      fcntl(server_fd, F_SETFL, O_NONBLOCK);
 
-  FD_SET(server_fd_, &master_fds_);
+      ft::memset(&address_, 0, sizeof(address_));
+      address_.sin_family = AF_INET;
+      address_.sin_addr.s_addr = inet_addr(list->ip_.c_str());
+      address_.sin_port = htons(list->port_);
 
-  max_fd_ = server_fd_;
+      setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
-  std::signal(SIGINT, Server::interruptionHandler);
-
-  running_ = true;
-
-  // struct timeval tv;
-
-  // tv.tv_sec = 10;
-
-  std::cout << "[Server] Starting." << std::endl;
-
-  while (running_) {
-    read_fds_ = master_fds_; // copy it
-    // std::cout << "[Server] Waiting for connexion..." << std::endl;
-    if (select(max_fd_ + 1, &read_fds_, NULL, NULL, NULL) == -1) {
-      strerror(errno);
-      break ;
-    }
-
-    // run through the existing connections looking for data to read
-    for (int i = 0; i <= max_fd_; i++) {
-      if (FD_ISSET(i, &read_fds_)) { // we got one!!
-        if (i == server_fd_)
-          newConnection();
-        else
-          readData(i);
+      if (bind(server_fd, (struct sockaddr *)&address_, sizeof(address_)) < 0) {
+        // std::cout << "[Server] Cannot bind " << list->ip_ << ":" << list->port_ << std::endl;
+        // std::cout << strerror(errno) << std::endl;
+        throw std::runtime_error(strerror(errno)) ;
       }
+
+      if (listen(server_fd, MAX_CONNECTION) < 0) {
+        std::cout << "IN LISTEN" << std::endl;
+        exit(EXIT_FAILURE);
+      }
+
+      FD_SET(server_fd, &master_fds_);
+
+      max_fd_ = server_fd;
     }
   }
-  std::cout << "[Server] Shutdown." << std::endl;
-  close(server_fd_);
 }
 
-# define BUF_SIZE 500
+# define BUF_SIZE 50000
 
 void *get_in_addr(struct sockaddr *sa)
 {
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
+  if (sa->sa_family == AF_INET) {
+    return &(((struct sockaddr_in*)sa)->sin_addr);
+  }
 
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+  return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-void Server::newConnection() {
+void Server::newConnection(int fd) {
   struct sockaddr_storage their_addr;
   socklen_t addr_size = sizeof(their_addr);
 
   // handle new connections
-  int clientFd = accept(server_fd_, (struct sockaddr *)&their_addr, &addr_size);
+  int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
   char s[INET_ADDRSTRLEN];
@@ -109,7 +75,7 @@ void Server::newConnection() {
 
   clients_[clientFd] = std::string(s);
 
-  std::cout << "[Server] New connection from " << clients_[clientFd] << " (socket " << server_fd_ << ")" << std::endl;
+  std::cout << "[Server] New connection from " << clients_[clientFd] << " (socket " << fd << ")" << std::endl;
 
   if (clientFd == -1)
     perror("accept");
@@ -122,69 +88,68 @@ void Server::newConnection() {
 }
 
 void Server::readData(int fd) {
-  std::cout << "[Server] Receiving data from " << clients_[fd] << std::endl;
   std::string msg;
   std::string response_msg;
 
-  int nbytes = 1;
+  int nbytes;
   char buf[BUF_SIZE + 1];
 
-  while (nbytes > 0) {
-    memset(buf, 0, BUF_SIZE + 1);	//clear the variable
-    if ((nbytes = recv(fd, buf, BUF_SIZE, 0)) <= 0) {
-      // std::cout << "ERROR READING DATA" << std::endl;
-      // close(fd); // bye!
-      // FD_CLR(fd, &master_fds_); // remove from master set
-      break ;
+  if ((nbytes = recv(fd, buf, BUF_SIZE, 0)) <= 0) {
+    if (nbytes == 0) {
+      std::cout << "[Server] Connection closed (socket " << fd << ")." << std::endl;
     } else {
-      buf[BUF_SIZE] = '\0';
-      msg += buf;
+      perror("recv");
     }
-	}
+    close(fd); // bye!
+    FD_CLR(fd, &master_fds_); // remove from master set
+  } else {
+    std::cout << "[Server] Receiving data from " << clients_[fd] << std::endl;
 
-  Request request(msg);
+    buf[nbytes] = '\0';
+    msg += buf;
 
-  request.parse();
+    Request request(msg);
 
-  request.print();
+    request.parse();
+    request.print();
 
-  Response response(request);
+    Response response(request);
 
-  response_msg = response.getResponseBody();
-
-  write(fd, response_msg.c_str(), response_msg.length());
-
-  // std::cout << "[Server] Closed socket " << fd << std::endl;
-  // close(fd); // bye!
-  // FD_CLR(fd, &master_fds_); // remove from master set
+    response_msg = response.getResponseBody();
+    write(fd, response_msg.c_str(), response_msg.length());
+  }
 }
 
 void Server::Run() {
-  // std::string hello = "Hello from server";
+  std::signal(SIGINT, Server::interruptionHandler);
 
-  // while (1) {
+  running_ = true;
 
-  //   /* Here we need to use select and check fds */
-  //   int client;
+  std::cout << "[Server] Starting." << std::endl;
 
-  //   std::cout << " *** WAITING FOR NEW CONNECTION ***" << std::endl;
+  fd_set server_fds;
 
-  //   if ((client = accept(server_fd_, (struct sockaddr *)&address_, (socklen_t*)&addrlen_)) < 0)
-  //   {
-  //       std::cout << "IN ACCEPT" << std::endl;
-  //       exit(EXIT_FAILURE);
-  //   }
+  server_fds = master_fds_;
 
-  //   fcntl(client, F_SETFL, O_NONBLOCK);  // set it as non-blocking
+  while (running_) {
+    read_fds_ = master_fds_; // copy it
+    // std::cout << "[Server] Waiting for connexion..." << std::endl;
+    if (select(max_fd_ + 1, &read_fds_, NULL, NULL, NULL) == -1) {
+      strerror(errno);
+      break ;
+    }
 
-  //   /* We read the request and process it */
-
-  //   /* We write our response into the socket */
-
-  //   write(client, hello.c_str(), hello.length());
-
-  //   std::cout << " MESSAGE SENT" << std::endl;
-
-  //   close(client);
-  // }
+    // run through the existing connections looking for data to read
+    for (int fd = 0; fd <= max_fd_; fd++) {
+      if (FD_ISSET(fd, &read_fds_)) { // we got one!!
+        if (FD_ISSET(fd, &server_fds)) {
+          newConnection(fd);
+        }
+        else
+          readData(fd);
+      }
+    }
+  }
+  std::cout << "[Server] Shutdown." << std::endl;
+  // close(server_fd_);
 }

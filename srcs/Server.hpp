@@ -28,8 +28,9 @@ class Server {
 
   void Setup();
   void Run();
+
   void readData(int fd);
-  void newConnection();
+  void newConnection(int fd);
 
   static void interruptionHandler(int sig_num) {
     (void)sig_num;
@@ -42,15 +43,10 @@ class Server {
   std::vector<ServerConfig> &servers_;
   std::map<int, std::string> clients_;
   struct sockaddr_in address_;
-  int server_fd_;
+  std::vector<int> server_fds_;
   fd_set master_fds_;
   fd_set read_fds_;
   int max_fd_;
-  // std::string addr_;
-  // int port_;
-  // struct sockaddr_in address_;
-  // int server_fd_;
-  // int addrlen_;
 };
 
 #endif

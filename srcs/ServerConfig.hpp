@@ -4,6 +4,13 @@
 # include "IConfig.hpp"
 # include "LocationConfig.hpp"
 
+struct Listen {
+  std::string ip_;
+  uint32_t port_;
+
+  Listen(std::string ip, uint32_t port) : ip_(ip), port_(port) {};
+};
+
 class ServerConfig : public IConfig {
  public:
   // Constructors & Deconstructors
@@ -18,10 +25,15 @@ class ServerConfig : public IConfig {
   void server_name(std::vector<std::string>::iterator &it);
   void listen(std::vector<std::string>::iterator &it);
 
+  std::vector<Listen> &getListens();
+  std::vector<std::string> &getServerNames();
+  std::vector<LocationConfig> &getLocations();
+
   void print();
 
  private:
-  std::map<std::string, uint32_t> host_ips_;
+  std::vector<Listen> listens_;
+  // std::map<std::string, uint32_t> host_ips_;
   std::vector<std::string> server_name_;
   std::vector<LocationConfig> locations_;
 };
