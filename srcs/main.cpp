@@ -1,9 +1,3 @@
-#include <iostream>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <unistd.h>
-
 #include "Config.hpp"
 #include "Server.hpp"
 

@@ -35,27 +35,23 @@ void Config::tokenize() {
 
   int line_idx = 1;
 
-  while (std::getline(file_, line))
-  {
+  while (std::getline(file_, line)) {
     last = 0;
-    while ((first = line.find_first_not_of(" \t", last)) != std::string::npos)
-    {
+    while ((first = line.find_first_not_of(" \t", last)) != std::string::npos) {
       if (line[first] == '#')
           break;
       last = line.find_first_of(" \t", first);
       tmp = line.substr(first, last - first);
       if (tmp == "{")
         brackets.push(true);
-      else if (tmp == "}")
-      {
+      else if (tmp == "}") {
         if (brackets.empty())
           throw std::runtime_error("extra closing '}' on line " + std::to_string(line_idx));
         brackets.pop();
       }
       if (is_directive(tmp) && line[line.find_last_not_of(" \t", line.length())] != ';')
         throw std::runtime_error("missing ';' on line " + std::to_string(line_idx));
-      if (tmp.find(';', tmp.length() - 1) != std::string::npos)
-      {
+      if (tmp.find(';', tmp.length() - 1) != std::string::npos) {
         tmp.pop_back();
         tokens_.push_back(tmp);
         tokens_.push_back(";");
@@ -70,8 +66,7 @@ void Config::tokenize() {
 void Config::parse() {
   std::vector<std::string>::iterator it;
 
-  for (it = tokens_.begin(); it != tokens_.end(); ++it)
-  {
+  for (it = tokens_.begin(); it != tokens_.end(); ++it) {
     if (*it == "server") {
       ServerConfig serv;
 

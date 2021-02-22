@@ -54,21 +54,21 @@ bool File::is_directory() {
   return S_ISDIR(statbuf.st_mode);
 }
 
-void File::open_index(std::vector<std::string> index) {
-  DIR *dir;
-  struct dirent *ent;
-  if ((dir = opendir(name_)) != NULL) {
-    /* print all the files and directories within directory */
-    while ((ent = readdir (dir)) != NULL) {
-      printf ("%s\n", ent->d_name);
-    }
-    closedir (dir);
-  } else {
-    /* could not open directory */
-    perror ("");
-    return EXIT_FAILURE;
-  }
-}
+// void File::open_index(std::vector<std::string> index) {
+//   DIR *dir;
+//   struct dirent *ent;
+//   if ((dir = opendir(name_)) != NULL) {
+//     /* print all the files and directories within directory */
+//     while ((ent = readdir (dir)) != NULL) {
+//       if (ent->d_name == "")
+//     }
+//     closedir (dir);
+//   } else {
+//     /* could not open directory */
+//     perror ("");
+//     return EXIT_FAILURE;
+//   }
+// }
 
 // void File::open_dir() {
 //   DIR *dir;

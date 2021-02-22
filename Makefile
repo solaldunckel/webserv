@@ -2,22 +2,9 @@ NAME			= webserv
 
 SRCS_DIR	= srcs
 
-FILES			= main.cpp \
-						Config.cpp \
-						Listen.cpp \
-						Parser.cpp \
-						Server.cpp
+INCLUDES	= includes
 
-SRCS			= $(addprefix ${SRCS_DIR}/, main.cpp \
-							Config.cpp \
-							ServerConfig.cpp \
-							LocationConfig.cpp \
-							Request.cpp \
-							Utils.cpp \
-							File.cpp \
-							MimeTypes.cpp \
-							Response.cpp \
-							Server.cpp)
+SRCS			= $(wildcard $(SRCS_DIR)/*.cpp)
 
 OBJS			= ${SRCS:.cpp=.o}
 
@@ -31,7 +18,7 @@ $(NAME):		$(OBJS)
 						$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
 
 %.o: %.cpp
-						${CC} ${CFLAGS} -o $@ -c $<
+						${CC} ${CFLAGS} -o $@ -c $< -I $(INCLUDES)
 
 clean:
 						${RM} ${OBJS}
