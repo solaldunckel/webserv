@@ -17,6 +17,8 @@ class LocationConfig : public IConfig {
   void index(std::vector<std::string>::iterator &it);
   void cgi(std::vector<std::string>::iterator &it);
 
+  std::string &getUri();
+  std::vector<std::string> &getIndexes();
   void print();
 
  private:

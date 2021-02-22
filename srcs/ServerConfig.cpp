@@ -72,6 +72,10 @@ void ServerConfig::listen(std::vector<std::string>::iterator &it) {
       throw std::runtime_error("double value in 'listen'");
 }
 
+/*
+** Getter Functions
+*/
+
 std::vector<Listen> &ServerConfig::getListens() {
   return listens_;
 };
@@ -83,6 +87,8 @@ std::vector<std::string> &ServerConfig::getServerNames() {
 std::vector<LocationConfig> &ServerConfig::getLocations() {
   return locations_;
 };
+
+/* Debug Functions */
 
 void ServerConfig::print() {
   std::cout << "Server :" << std::endl;

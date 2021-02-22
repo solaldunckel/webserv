@@ -38,6 +38,10 @@ class IConfig {
       throw std::runtime_error("double value in 'root'");
   };
 
+  std::string &getRoot() {
+    return root_;
+  }
+
   // virtual void print() = 0;
 
  protected:

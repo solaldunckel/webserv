@@ -46,6 +46,14 @@ void LocationConfig::cgi(std::vector<std::string>::iterator &it) {
   cgi_[ext] = *it++;
 }
 
+std::string &LocationConfig::getUri() {
+  return uri_;
+}
+
+std::vector<std::string> &LocationConfig::getIndexes() {
+  return index_;
+}
+
 void LocationConfig::print() {
   std::cout << "    - uri : " << uri_ << std::endl;
 

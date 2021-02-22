@@ -33,11 +33,11 @@ std::string Response::getResponseBody() {
   std::string response;
   File file;
 
-  file.open("./data" + request_.target_);
+  file.open("." + request_.getRoot() + request_.target_);
 
-  if (file.is_directory()) {
-    file.open("./data" + request_.target_ + "index.html");
-  }
+  // if (file.is_directory()) {
+  //   file.open("." + request_.getRoot() + request_.target_ + "index.html");
+  // }
 
   if (file.is_open())
     status_code_ = 200;
@@ -60,4 +60,10 @@ std::string Response::getResponseBody() {
   }
 
   return response;
+}
+
+int Response::send(int fd) {
+  std::string response_msg = getResponseBody();
+  write(fd, response_msg.c_str(), response_msg.length());
+  return 1;
 }

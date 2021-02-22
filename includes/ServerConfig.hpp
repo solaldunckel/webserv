@@ -12,8 +12,7 @@ struct Listen {
 };
 
 class ServerConfig : public IConfig {
- public:
-  // Constructors & Deconstructors
+ public
   ServerConfig();
   ~ServerConfig();
 
@@ -33,7 +32,6 @@ class ServerConfig : public IConfig {
 
  private:
   std::vector<Listen> listens_;
-  // std::map<std::string, uint32_t> host_ips_;
   std::vector<std::string> server_name_;
   std::vector<LocationConfig> locations_;
 };

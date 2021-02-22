@@ -16,13 +16,12 @@ class Response {
 
   // Constructors & Deconstructors
   Response(Request &request);
- // Response(Request &request, Config &config);
   ~Response();
 
   static void initErrorCodes();
-  static void initMimeTypes();
 
   std::string getResponseBody();
+  int send(int fd);
 
  private:
   Request &request_;

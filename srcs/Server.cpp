@@ -33,11 +33,8 @@ void Server::Setup() {
 
       setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
-      if (bind(server_fd, (struct sockaddr *)&address_, sizeof(address_)) < 0) {
-        // std::cout << "[Server] Cannot bind " << list->ip_ << ":" << list->port_ << std::endl;
-        // std::cout << strerror(errno) << std::endl;
+      if (bind(server_fd, (struct sockaddr *)&address_, sizeof(address_)) < 0)
         throw std::runtime_error(strerror(errno)) ;
-      }
 
       if (listen(server_fd, MAX_CONNECTION) < 0) {
         std::cout << "IN LISTEN" << std::endl;
@@ -87,9 +84,15 @@ void Server::newConnection(int fd) {
   }
 }
 
+// IConfig &Server::getLocationForTarget(ServerConfig &server, std::string &target) {
+//   std::vector<LocationConfig> locations = server.getLocations();
+
+
+
+// }
+
 void Server::readData(int fd) {
   std::string msg;
-  std::string response_msg;
 
   int nbytes;
   char buf[BUF_SIZE + 1];
@@ -111,12 +114,16 @@ void Server::readData(int fd) {
     Request request(msg);
 
     request.parse();
-    request.print();
+    // request.print();
+
+    request.setServer(request.getServerForRequest(servers_));
+    request.setLocation(request.getLocationForRequest(request.getTarget()));
+
+    request.removeUriFromTarget();
 
     Response response(request);
 
-    response_msg = response.getResponseBody();
-    write(fd, response_msg.c_str(), response_msg.length());
+    response.send(fd);
   }
 }
 
@@ -132,14 +139,12 @@ void Server::Run() {
   server_fds = master_fds_;
 
   while (running_) {
-    read_fds_ = master_fds_; // copy it
-    // std::cout << "[Server] Waiting for connexion..." << std::endl;
+    read_fds_ = master_fds_;
     if (select(max_fd_ + 1, &read_fds_, NULL, NULL, NULL) == -1) {
       strerror(errno);
       break ;
     }
 
-    // run through the existing connections looking for data to read
     for (int fd = 0; fd <= max_fd_; fd++) {
       if (FD_ISSET(fd, &read_fds_)) { // we got one!!
         if (FD_ISSET(fd, &server_fds)) {
@@ -151,5 +156,4 @@ void Server::Run() {
     }
   }
   std::cout << "[Server] Shutdown." << std::endl;
-  // close(server_fd_);
 }

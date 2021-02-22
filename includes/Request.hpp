@@ -8,6 +8,7 @@
 # include <vector>
 # include <algorithm>
 
+# include "Config.hpp"
 # include "Utils.hpp"
 
 struct comp {
@@ -28,6 +29,16 @@ class Request {
   void isValid();
   void parse();
 
+  void setServer(ServerConfig *server);
+  void setLocation(LocationConfig *location);
+  void removeUriFromTarget();
+
+  ServerConfig *getServerForRequest(std::vector<ServerConfig> &servers);
+  LocationConfig *getLocationForRequest(std::string target);
+
+  std::string &getTarget();
+  std::string &getRoot();
+
   void print();
 
  private:
@@ -36,6 +47,8 @@ class Request {
   std::string target_;
   std::string protocol_;
   std::string req_body_;
+  ServerConfig *server_;
+  LocationConfig *location_;
   std::map<std::string, std::string, comp> headers_;
 };
 
