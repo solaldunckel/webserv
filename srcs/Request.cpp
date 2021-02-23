@@ -4,10 +4,10 @@
 ** Constructors & Deconstructors
 */
 
-Request::Request() {
-}
+// Request::Request() {
+// }
 
-Request::Request(std::string &msg) : msg_(msg), server_(nullptr), location_(nullptr) {
+Request::Request(std::string &msg, std::vector<ServerConfig> &servers) : msg_(msg), servers_(servers) {
   headers_["Accept-Charsets"];
   headers_["Accept-Language"];
   headers_["Allow"];
@@ -60,74 +60,30 @@ void Request::parse() {
   }
 }
 
-ServerConfig *Request::getServerForRequest(std::vector<ServerConfig> &servers) {
-  std::string host_port = headers_["Host"];
+// void Request::removeUriFromTarget() {
+//   if (location_) {
+//     std::cout << "TARGET : [" << target_  << "]" << std::endl;
+//     if (target_.find(location_->getUri()) != std::string::npos) {
+//       target_ = target_.substr(location_->getUri().length());
+//       std::cout << "NEW TARGET: [" << target_ << "]" << std::endl;
+//     }
+//   }
+// }
 
-  std::string host = host_port.substr(0, host_port.find(':'));
-  uint32_t port = std::stod(host_port.substr(host_port.find(':') + 1));
-
-  std::vector<ServerConfig>::iterator it = servers.begin();
-
-  while (it != servers.end()) {
-    for (std::vector<Listen>::iterator list = it->getListens().begin(); list != it->getListens().end(); list++) {
-      if (list->ip_ == host && list->port_ == port) {
-        std::cout << "MATCHING SERVER : " << list->ip_ << ":" << list->port_ << std::endl;
-        return &(*it);
-      }
-    }
-    it++;
-  }
-  return nullptr;
-}
-
-LocationConfig *Request::getLocationForRequest(std::string target) {
-  if (!server_)
-    return nullptr;
-  if (!target.length())
-    target = "/";
-
-  for (std::vector<LocationConfig>::iterator it = server_->getLocations().begin(); it != server_->getLocations().end(); it++) {
-    if (it->getUri() == target) {
-      std::cout << "MATCHING LOCATION : " << it->getUri() << std::endl;
-      return &(*it);
-    }
-  }
-
-  if (target == "/")
-    return nullptr;
-  return getLocationForRequest(target.substr(0, target.find_last_of('/')));
-}
-
-void Request::removeUriFromTarget() {
-  if (location_) {
-    std::cout << "TARGET : [" << target_  << "]" << std::endl;
-    if (target_.find(location_->getUri()) != std::string::npos) {
-      target_ = target_.substr(location_->getUri().length());
-      std::cout << "NEW TARGET: [" << target_ << "]" << std::endl;
-    }
-  }
-}
-
-void Request::setServer(ServerConfig *server) {
-  server_ = server;
-}
-
-void Request::setLocation(LocationConfig *location) {
-  location_ = location;
+std::string &Request::getHeader(std::string key) {
+  return headers_[key];
 }
 
 std::string &Request::getTarget() {
   return target_;
 }
 
-std::string &Request::getRoot() {
-  if (location_) {
-    return location_->getRoot();
-  }
-  return server_->getRoot();
+std::vector<ServerConfig> &Request::getServers() {
+  return servers_;
 }
 
 void Request::print() {
-  std::cout << "\n###\n\n";
+  std::cout << "\n### REQUEST\n\n";
   std::cout << msg_ << std::endl;
+  std::cout << "###" << std::endl;
 }

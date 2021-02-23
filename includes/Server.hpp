@@ -16,6 +16,7 @@
 
 # include "Config.hpp"
 # include "Request.hpp"
+# include "RequestConfig.hpp"
 # include "Response.hpp"
 
 # define MAX_CONNECTION 10
@@ -26,8 +27,8 @@ class Server {
   Server(std::vector<ServerConfig> &servers);
   ~Server();
 
-  void Setup();
-  void Run();
+  void setup();
+  void run();
 
   void readData(int fd);
   void newConnection(int fd);
@@ -43,8 +44,8 @@ class Server {
   std::vector<ServerConfig> &servers_;
   std::map<int, std::string> clients_;
   struct sockaddr_in address_;
-  std::vector<int> server_fds_;
   fd_set master_fds_;
+  fd_set server_fds_;
   fd_set read_fds_;
   int max_fd_;
 };

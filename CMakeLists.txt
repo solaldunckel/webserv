@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+
 # set the project name
 project(webserv)
 
@@ -9,10 +11,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(SRCS
   srcs/Config.cpp
   srcs/File.cpp
-  srcs/LocationConfig.cpp
   srcs/main.cpp
   srcs/MimeTypes.cpp
   srcs/Request.cpp
+  srcs/RequestConfig.cpp
   srcs/Response.cpp
   srcs/Server.cpp
   srcs/ServerConfig.cpp

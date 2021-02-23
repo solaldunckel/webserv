@@ -11,11 +11,19 @@ Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
 }
 
 Server::~Server() {
+  std::cout << "[Server] Shutdown." << std::endl;
+
+  for (int fd = 0; fd <= max_fd_; fd++) {
+    if (FD_ISSET(fd, &master_fds_)) {
+      close(fd);
+      FD_CLR(fd, &master_fds_);
+    }
+  }
 }
 
 bool Server::running_ = 0;
 
-void Server::Setup() {
+void Server::setup() {
   int yes = 1;
   int server_fd;
 
@@ -84,13 +92,6 @@ void Server::newConnection(int fd) {
   }
 }
 
-// IConfig &Server::getLocationForTarget(ServerConfig &server, std::string &target) {
-//   std::vector<LocationConfig> locations = server.getLocations();
-
-
-
-// }
-
 void Server::readData(int fd) {
   std::string msg;
 
@@ -111,33 +112,29 @@ void Server::readData(int fd) {
     buf[nbytes] = '\0';
     msg += buf;
 
-    Request request(msg);
+    Request request(msg, servers_);
 
     request.parse();
-    // request.print();
+    request.print();
 
-    request.setServer(request.getServerForRequest(servers_));
-    request.setLocation(request.getLocationForRequest(request.getTarget()));
+    RequestConfig config(request);
 
-    request.removeUriFromTarget();
+    config.setup();
 
-    Response response(request);
+    Response response(config);
 
     response.send(fd);
   }
 }
 
-void Server::Run() {
+void Server::run() {
   std::signal(SIGINT, Server::interruptionHandler);
 
   running_ = true;
 
+  server_fds_ = master_fds_;
+
   std::cout << "[Server] Starting." << std::endl;
-
-  fd_set server_fds;
-
-  server_fds = master_fds_;
-
   while (running_) {
     read_fds_ = master_fds_;
     if (select(max_fd_ + 1, &read_fds_, NULL, NULL, NULL) == -1) {
@@ -147,7 +144,7 @@ void Server::Run() {
 
     for (int fd = 0; fd <= max_fd_; fd++) {
       if (FD_ISSET(fd, &read_fds_)) { // we got one!!
-        if (FD_ISSET(fd, &server_fds)) {
+        if (FD_ISSET(fd, &server_fds_)) {
           newConnection(fd);
         }
         else
@@ -155,5 +152,4 @@ void Server::Run() {
       }
     }
   }
-  std::cout << "[Server] Shutdown." << std::endl;
 }

@@ -20,24 +20,20 @@ struct comp {
 class Request {
  public:
   // Constructors & Deconstructors
-  Request();
-  Request(std::string &msg);
+  // Request();
+  Request(std::string &msg, std::vector<ServerConfig> &servers);
   ~Request();
-
-  friend class Response;
 
   void isValid();
   void parse();
 
-  void setServer(ServerConfig *server);
-  void setLocation(LocationConfig *location);
   void removeUriFromTarget();
 
-  ServerConfig *getServerForRequest(std::vector<ServerConfig> &servers);
-  LocationConfig *getLocationForRequest(std::string target);
-
+  std::string &getMethod();
   std::string &getTarget();
-  std::string &getRoot();
+  std::string &getProtocol();
+  std::vector<ServerConfig> &getServers();
+  std::string &getHeader(std::string key);
 
   void print();
 
@@ -47,8 +43,7 @@ class Request {
   std::string target_;
   std::string protocol_;
   std::string req_body_;
-  ServerConfig *server_;
-  LocationConfig *location_;
+  std::vector<ServerConfig> &servers_;
   std::map<std::string, std::string, comp> headers_;
 };
 

@@ -10,6 +10,8 @@
 # include <unistd.h>
 # include <dirent.h>
 
+# include <vector>
+
 class File {
  public:
   // Constructors & Deconstructors
@@ -21,6 +23,8 @@ class File {
   void set_path(std::string &path);
   bool is_open();
   bool is_directory();
+
+  std::string find_index(std::string path, std::vector<std::string> indexes);
 
   std::string &getExtension();
   std::string getContent();

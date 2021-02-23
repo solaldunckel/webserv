@@ -1,17 +1,8 @@
 #include "Config.hpp"
 
-bool is_directive(std::string str) {
-    return (str == "listen" || str == "server_name" || str == "root" ||
-            str == "error_page" || str == "upload" || str == "autoIndex" ||
-            str == "index" || str == "cgi");
-}
-
 /*
 ** Constructors & Deconstructors
 */
-
-Config::Config() {
-}
 
 Config::Config(std::string &path) : file_(path) {
   if (!file_.is_open() || !file_.good()) {
@@ -19,14 +10,7 @@ Config::Config(std::string &path) : file_(path) {
   }
 }
 
-Config::~Config() {
-  file_.close();
-}
-
-void Config::init() {
-  tokenize();
-  parse();
-}
+Config::~Config() {}
 
 void Config::tokenize() {
   std::string line, tmp;
@@ -64,6 +48,7 @@ void Config::tokenize() {
 }
 
 void Config::parse() {
+  tokenize();
   std::vector<std::string>::iterator it;
 
   for (it = tokens_.begin(); it != tokens_.end(); ++it) {
@@ -77,7 +62,19 @@ void Config::parse() {
       throw std::runtime_error("invalid directive '" + *it + "' in main block");
   }
   if (servers_.empty())
-      throw std::runtime_error("missing server block"); // servers_.push_back(base_);
+      throw std::runtime_error("missing server block");
+  file_.close();
+}
+
+bool Config::is_directive(std::string str) {
+  return (str == "listen" ||
+          str == "server_name" ||
+          str == "root" ||
+          str == "error_page" ||
+          str == "upload" ||
+          str == "autoindex" ||
+          str == "index" ||
+          str == "cgi");
 }
 
 std::vector<ServerConfig> &Config::getServers() {
@@ -85,10 +82,12 @@ std::vector<ServerConfig> &Config::getServers() {
 }
 
 void Config::print() {
+  std::cout << "### CONFIG :\n" << std::endl;
   for (std::vector<ServerConfig>::iterator it = servers_.begin(); it != servers_.end(); it++) {
     it->print();
     std::cout << std::endl;
   }
+  std::cout << "###\n" << std::endl;
 }
 
 

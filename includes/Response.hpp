@@ -9,13 +9,14 @@
 # include "Request.hpp"
 # include "Config.hpp"
 # include "MimeTypes.hpp"
+# include "RequestConfig.hpp"
 # include "File.hpp"
 
 class Response {
  public:
 
   // Constructors & Deconstructors
-  Response(Request &request);
+  Response(RequestConfig &config);
   ~Response();
 
   static void initErrorCodes();
@@ -24,7 +25,7 @@ class Response {
   int send(int fd);
 
  private:
-  Request &request_;
+  RequestConfig &config_;
   int status_code_;
   std::string body_;
   static std::map<int, std::string> error_codes_;

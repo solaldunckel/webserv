@@ -11,13 +11,12 @@
 class Config {
  public:
   // Constructors & Deconstructors
-  Config();
   Config(std::string &path);
   ~Config();
 
-  void init();
   void tokenize();
   void parse();
+  bool is_directive(std::string str);
 
   std::vector<ServerConfig> &getServers();
 

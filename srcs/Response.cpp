@@ -4,7 +4,7 @@
 ** Constructors & Deconstructors
 */
 
-Response::Response(Request &request) : request_(request) {
+Response::Response(RequestConfig &config) : config_(config) {
   status_code_ = 200;
   initErrorCodes();
 }
@@ -33,18 +33,26 @@ std::string Response::getResponseBody() {
   std::string response;
   File file;
 
-  file.open("." + request_.getRoot() + request_.target_);
+  std::cout << "\n###\n" << std::endl;
 
-  // if (file.is_directory()) {
-  //   file.open("." + request_.getRoot() + request_.target_ + "index.html");
-  // }
+  std::cout << "ROOT: " << config_.getRoot() << std::endl;
+  std::cout << "PATH: " << config_.getRoot() + config_.getTarget() << std::endl;
+  // request_.removeUriFromTarget();
+  file.open("." + config_.getRoot() + "/" + config_.getTarget());
+
+  return "";
+  if (file.is_directory()) {
+    file.open("." + config_.getRoot() + config_.getTarget() + "/" + file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes()));
+  }
+
+  std::cout << "\n###\n" << std::endl;
 
   if (file.is_open())
     status_code_ = 200;
   else
     status_code_ = 404;
 
-  response = response + request_.protocol_ + " " + std::to_string(status_code_) + " " + error_codes_[status_code_] + "\n";
+  response = response + config_.getRequest().getProtocol() + " " + std::to_string(status_code_) + " " + error_codes_[status_code_] + "\n";
 
   if (status_code_ >= 400) {
     body_ = std::to_string(status_code_) + " " + error_codes_[status_code_] + ". Franksmon is dead :(";
