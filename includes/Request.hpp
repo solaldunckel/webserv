@@ -29,6 +29,7 @@ class Request {
 
   void removeUriFromTarget();
 
+  void setServer(std::string &server);
   std::string &getMethod();
   std::string &getTarget();
   std::string &getProtocol();
@@ -43,6 +44,7 @@ class Request {
   std::string target_;
   std::string protocol_;
   std::string req_body_;
+  std::string server_;
   std::vector<ServerConfig> &servers_;
   std::map<std::string, std::string, comp> headers_;
 };

@@ -60,22 +60,20 @@ void Request::parse() {
   }
 }
 
-// void Request::removeUriFromTarget() {
-//   if (location_) {
-//     std::cout << "TARGET : [" << target_  << "]" << std::endl;
-//     if (target_.find(location_->getUri()) != std::string::npos) {
-//       target_ = target_.substr(location_->getUri().length());
-//       std::cout << "NEW TARGET: [" << target_ << "]" << std::endl;
-//     }
-//   }
-// }
-
 std::string &Request::getHeader(std::string key) {
   return headers_[key];
 }
 
 std::string &Request::getTarget() {
   return target_;
+}
+
+std::string &Request::getMethod() {
+  return method_;
+}
+
+void Request::setServer(std::string &server) {
+  server_ = server;
 }
 
 std::vector<ServerConfig> &Request::getServers() {

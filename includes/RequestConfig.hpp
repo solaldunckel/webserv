@@ -6,7 +6,7 @@
 class RequestConfig {
  public:
   // Constructors & Deconstructors
-  RequestConfig(Request &request);
+  RequestConfig(Request &request, std::string &host);
   ~RequestConfig();
 
   void setup();
@@ -14,7 +14,7 @@ class RequestConfig {
   ServerConfig *getServerForRequest(std::vector<ServerConfig> &servers);
   ServerConfig *getLocationForRequest(ServerConfig *server, std::string target);
 
-  Request &getRequest();
+  std::string &getMethod();
   std::string &getRoot();
   std::string &getTarget();
   int &getClientMaxBodySize();
@@ -22,13 +22,10 @@ class RequestConfig {
 
  private:
   Request &request_;
+  std::string &host_;
   ServerConfig *server_;
   ServerConfig *location_;
   std::string target_;
-  // std::string root_;
-  // int client_max_body_size_;
-  // std::map<int, std::string> error_codes_;
-
 };
 
 #endif

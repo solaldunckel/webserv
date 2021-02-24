@@ -4,7 +4,7 @@
 ** Constructors & Deconstructors
 */
 
-RequestConfig::RequestConfig(Request &request) : request_(request) {
+RequestConfig::RequestConfig(Request &request, std::string &host) : request_(request), host_(host) {
 }
 
 RequestConfig::~RequestConfig() {
@@ -15,36 +15,43 @@ void RequestConfig::setup() {
   ServerConfig *location = getLocationForRequest(server, request_.getTarget());
 
   server_ = server;
-  if (location)
+  location_ = server;
+
+  if (location) {
+    if (request_.getTarget().find(location->getUri()) != std::string::npos)
+      target_ = target_.substr(location_->getUri().length());
+  }
+
+  if (location) {
     location_ = location;
-  else
-    location_ = server;
-
-  target_ = request_.getTarget();
-
-  // root_ = server->getRoot();
-  // client_max_body_size_ = server->getClientMaxBodySize();
-  // error_codes_ = server->getErrorCodes();
-
-  // if (location) {
-  //   if (!location->getRoot().empty())
-  //     root_ = location->getRoot();
-  //   if (location->getClientMaxBodySize() > 0)
-  //     root_ = location->getClientMaxBodySize();
-  // }
+    if (request_.getTarget().find(location->getUri()) != std::string::npos)
+      target_ = request_.getTarget().substr(location_->getUri().length());
+  }
 }
 
 ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &servers) {
   std::string host_port = request_.getHeader("Host");
 
-  std::string host = host_port.substr(0, host_port.find(':'));
-  uint32_t port = std::stod(host_port.substr(host_port.find(':') + 1));
+  uint32_t port = 80;
+
+  if (host_port.find(':') != std::string::npos)
+    port = std::stod(host_port.substr(host_port.find(':') + 1));
 
   std::vector<ServerConfig>::iterator it = servers.begin();
 
   while (it != servers.end()) {
     for (std::vector<Listen>::iterator list = it->getListens().begin(); list != it->getListens().end(); list++) {
-      if (list->ip_ == host && list->port_ == port) {
+      if (list->ip_ == host_ && list->port_ == port) {
+        std::cout << "MATCHING SERVER : " << list->ip_ << ":" << list->port_ << std::endl;
+        return &(*it);
+      }
+    }
+    it++;
+  }
+  it = servers.begin();
+  while (it != servers.end()) {
+    for (std::vector<Listen>::iterator list = it->getListens().begin(); list != it->getListens().end(); list++) {
+      if (list->ip_ == "0.0.0.0" && list->port_ == port) {
         std::cout << "MATCHING SERVER : " << list->ip_ << ":" << list->port_ << std::endl;
         return &(*it);
       }
@@ -76,8 +83,8 @@ std::string &RequestConfig::getTarget() {
   return target_;
 }
 
-Request &RequestConfig::getRequest() {
-  return request_;
+std::string &RequestConfig::getMethod() {
+  return request_.getMethod();
 }
 
 std::string &RequestConfig::getRoot() {

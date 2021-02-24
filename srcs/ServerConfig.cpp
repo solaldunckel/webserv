@@ -4,11 +4,7 @@
 ** Constructors & Deconstructors
 */
 
-ServerConfig::ServerConfig() {
-  initDirectiveMap();
-}
-
-ServerConfig::ServerConfig(std::string type) : type_(type) {
+ServerConfig::ServerConfig() : client_max_body_size_(0) {
   initDirectiveMap();
 }
 
@@ -19,6 +15,7 @@ ServerConfig	&ServerConfig::operator=(const ServerConfig &copy) {
   client_max_body_size_ = copy.client_max_body_size_;
   root_ = copy.root_;
   error_codes_ = copy.error_codes_;
+  index_ = copy.index_;
   return (*this);
 }
 
@@ -41,6 +38,7 @@ void ServerConfig::server(std::vector<std::string>::iterator &it) {
     if (*it == "location") {
       ServerConfig loc;
 
+      loc = *this;
       loc.location(++it);
       locations_.push_back(loc);
     }
@@ -120,8 +118,7 @@ void ServerConfig::location(std::vector<std::string>::iterator &it) {
   uri_ = *it++;
   if (*it != "{")
     throw std::runtime_error("missing opening bracket in server block");
-  while (*(++it) != "}")
-  {
+  while (*(++it) != "}") {
     if (ServerConfig::directive_[*it])
       (this->*(ServerConfig::directive_[*it]))(++it);
     else
@@ -196,7 +193,7 @@ void ServerConfig::print() {
 }
 
 void ServerConfig::printLocation() {
-    std::cout << "    - uri : " << uri_ << std::endl;
+  std::cout << "    - uri : " << uri_ << std::endl;
 
   if (!index_.empty()) {
     std::cout << "      index :" << std::endl;

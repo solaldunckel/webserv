@@ -58,15 +58,6 @@ void Server::setup() {
 
 # define BUF_SIZE 50000
 
-void *get_in_addr(struct sockaddr *sa)
-{
-  if (sa->sa_family == AF_INET) {
-    return &(((struct sockaddr_in*)sa)->sin_addr);
-  }
-
-  return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
-
 void Server::newConnection(int fd) {
   struct sockaddr_storage their_addr;
   socklen_t addr_size = sizeof(their_addr);
@@ -75,10 +66,7 @@ void Server::newConnection(int fd) {
   int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
-  char s[INET_ADDRSTRLEN];
-  inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof(s));
-
-  clients_[clientFd] = std::string(s);
+  clients_[clientFd] = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
 
   std::cout << "[Server] New connection from " << clients_[clientFd] << " (socket " << fd << ")" << std::endl;
 
@@ -116,13 +104,14 @@ void Server::readData(int fd) {
 
     request.parse();
     request.print();
-
-    RequestConfig config(request);
+  
+    RequestConfig config(request, clients_[fd]);
 
     config.setup();
 
     Response response(config);
 
+    response.build();
     response.send(fd);
   }
 }

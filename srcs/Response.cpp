@@ -29,49 +29,78 @@ void Response::initErrorCodes()
   Response::error_codes_[505] = "HTTP Version Not Supported";
 }
 
-std::string Response::getResponseBody() {
-  std::string response;
+void Response::build() {
+  if (config_.getMethod() == "GET") {
+    std::cout << "GET METHOD" << std::endl;
+    handleGet();
+  }
+}
+
+int Response::handleGet() {
   File file;
 
-  std::cout << "\n###\n" << std::endl;
-
-  std::cout << "ROOT: " << config_.getRoot() << std::endl;
-  std::cout << "PATH: " << config_.getRoot() + config_.getTarget() << std::endl;
-  // request_.removeUriFromTarget();
   file.open("." + config_.getRoot() + "/" + config_.getTarget());
 
-  return "";
-  if (file.is_directory()) {
+  if (file.is_directory())
     file.open("." + config_.getRoot() + config_.getTarget() + "/" + file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes()));
-  }
-
-  std::cout << "\n###\n" << std::endl;
 
   if (file.is_open())
     status_code_ = 200;
   else
     status_code_ = 404;
 
-  response = response + config_.getRequest().getProtocol() + " " + std::to_string(status_code_) + " " + error_codes_[status_code_] + "\n";
+  response_ = response_ + "HTTP 1.1" + " " + std::to_string(status_code_) + " " + error_codes_[status_code_] + "\n";
 
+  std::string body;
   if (status_code_ >= 400) {
-    body_ = std::to_string(status_code_) + " " + error_codes_[status_code_] + ". Franksmon is dead :(";
+    body = std::to_string(status_code_) + " " + error_codes_[status_code_] + ". Franksmon is dead :(";
   } else if (status_code_ < 300) {
-    body_ = file.getContent();
+    body = file.getContent();
   }
 
-  if (!body_.empty()) {
-    response = response + "Content-Type: " + MimeTypes::getType(file.getExtension()) + "\r\n";
-    response = response + "Content-Length: " + std::to_string(body_.length()) + "\r\n";
-    response = response + "\r\n";
-    response = response + body_;
+  if (!body.empty()) {
+    response_ = response_ + "Content-Type: " + MimeTypes::getType(file.getExtension()) + "\r\n";
+    response_ = response_ + "Content-Length: " + std::to_string(body.length()) + "\r\n";
+    response_ = response_ + "\r\n";
+    response_ = response_ + body;
   }
+  return 1;
+}
 
-  return response;
+std::string Response::getResponseBody() {
+  // std::string response;
+  // File file;
+
+  // file.open("." + config_.getRoot() + "/" + config_.getTarget());
+
+  // if (file.is_directory())
+  //   file.open("." + config_.getRoot() + config_.getTarget() + "/" + file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes()));
+
+  // if (file.is_open())
+  //   status_code_ = 200;
+  // else
+  //   status_code_ = 404;
+
+  // response = response + "HTTP 1.1" + " " + std::to_string(status_code_) + " " + error_codes_[status_code_] + "\n";
+
+  // if (status_code_ >= 400) {
+  //   body_ = std::to_string(status_code_) + " " + error_codes_[status_code_] + ". Franksmon is dead :(";
+  // } else if (status_code_ < 300) {
+  //   body_ = file.getContent();
+  // }
+
+  // if (!body_.empty()) {
+  //   response = response + "Content-Type: " + MimeTypes::getType(file.getExtension()) + "\r\n";
+  //   response = response + "Content-Length: " + std::to_string(body_.length()) + "\r\n";
+  //   response = response + "\r\n";
+  //   response = response + body_;
+  // }
+
+  // return response;
+  return "";
 }
 
 int Response::send(int fd) {
-  std::string response_msg = getResponseBody();
-  write(fd, response_msg.c_str(), response_msg.length());
+  write(fd, response_.c_str(), response_.length());
   return 1;
 }

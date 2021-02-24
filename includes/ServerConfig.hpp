@@ -18,7 +18,6 @@ struct Listen {
 class ServerConfig {
  public:
   ServerConfig();
-  ServerConfig(std::string type);
   ~ServerConfig();
 
   ServerConfig	&operator=(const ServerConfig &copy);
@@ -51,7 +50,6 @@ class ServerConfig {
   void printLocation();
 
  private:
-  std::string type_;
   std::vector<Listen> listens_;
   std::vector<std::string> server_name_;
   std::vector<ServerConfig> locations_;
