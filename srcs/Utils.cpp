@@ -13,4 +13,17 @@ namespace ft {
       s[i] = c;
     return (b);
   }
+
+  std::string inet_ntop(const void *s) {
+    const u_char *src = (const u_char*)s;
+    std::ostringstream oss;
+
+    oss << std::to_string(src[0]) << '.' << std::to_string(src[1]) << '.' <<
+      std::to_string(src[2]) << '.' << std::to_string(src[3]);
+    return oss.str();
+  }
+
+  void *get_in_addr(struct sockaddr *sa) {
+    return &(((struct sockaddr_in*)sa)->sin_addr);
+  }
 };
