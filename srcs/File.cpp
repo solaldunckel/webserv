@@ -42,15 +42,16 @@ bool File::is_open() {
   return false;
 }
 
-std::string &File::getExtension() {
-  if (extension_.empty())
-    extension_ = name_.substr(name_.find_last_of('.'));
-  return extension_;
+std::string File::getExtension() {
+  // extension_ = name_.substr(name_.find_last_of('.'));
+  if (name_.length())
+    return name_.substr(name_.find_last_of('.'));
+  return "";
 }
 
-bool File::is_directory() {
+bool File::is_directory(std::string &path) {
   struct stat statbuf;
-  stat(name_.c_str(), &statbuf);
+  stat(path.c_str(), &statbuf);
   return S_ISDIR(statbuf.st_mode);
 }
 

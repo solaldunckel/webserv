@@ -30,6 +30,7 @@ class ServerConfig {
   void location(std::vector<std::string>::iterator &it);
   void listen(std::vector<std::string>::iterator &it);
   void server_name(std::vector<std::string>::iterator &it);
+  void limit_except(std::vector<std::string>::iterator &it);
 
   void client_max_body_size(std::vector<std::string>::iterator &it);
   void error_page(std::vector<std::string>::iterator &it);
@@ -44,6 +45,7 @@ class ServerConfig {
   std::string &getRoot();
   std::map<int, std::string> &getErrorCodes();
   std::vector<std::string> &getIndexes();
+  std::vector<std::string> &getMethods();
   std::string &getUri();
 
   void print();
@@ -56,6 +58,7 @@ class ServerConfig {
   std::string uri_;
   int client_max_body_size_;
   std::string root_;
+  std::vector<std::string> methods_;
   std::map<int, std::string> error_codes_;
   std::vector<std::string> index_;
   std::map<std::string, std::string> cgi_;

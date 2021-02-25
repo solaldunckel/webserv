@@ -20,6 +20,8 @@ class RequestConfig {
   int &getClientMaxBodySize();
   std::vector<std::string> &getIndexes();
 
+  bool methodAccepted(std::string &method);
+
  private:
   Request &request_;
   std::string &host_;

@@ -98,3 +98,13 @@ int &RequestConfig::getClientMaxBodySize() {
 std::vector<std::string> &RequestConfig::getIndexes() {
   return location_->getIndexes();
 }
+
+bool RequestConfig::methodAccepted(std::string &method) {
+  std::vector<std::string> methods = location_->getMethods();
+
+  if (methods.empty())
+    return true;
+  if (std::find(methods.begin(), methods.end(), method) != methods.end())
+    return true;
+  return false;
+}

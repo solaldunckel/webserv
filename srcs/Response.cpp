@@ -30,6 +30,9 @@ void Response::initErrorCodes()
 }
 
 void Response::build() {
+  if (!config_.methodAccepted(config_.getMethod())) {
+    std::cout << config_.getMethod() << " METHOD NOT ACCEPTED" << std::endl;
+  }
   if (config_.getMethod() == "GET") {
     std::cout << "GET METHOD" << std::endl;
     handleGet();
@@ -38,28 +41,37 @@ void Response::build() {
 
 int Response::handleGet() {
   File file;
+  std::string path = "." + config_.getRoot() + "/" + config_.getTarget();
 
-  file.open("." + config_.getRoot() + "/" + config_.getTarget());
-
-  if (file.is_directory())
-    file.open("." + config_.getRoot() + config_.getTarget() + "/" + file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes()));
+  if (file.is_directory(path)) {
+    std::string index = file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes());
+    if (index.length()) {
+      file.open("." + config_.getRoot() + config_.getTarget() + "/" + file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes()));
+    }
+  }
+  else {
+    file.open(path);
+  }
 
   if (file.is_open())
     status_code_ = 200;
   else
     status_code_ = 404;
 
-  response_ = response_ + "HTTP 1.1" + " " + std::to_string(status_code_) + " " + error_codes_[status_code_] + "\n";
+  std::string content_type = MimeTypes::getType(file.getExtension());
+  response_ = response_ + "HTTP/1.1" + " " + std::to_string(status_code_) + " " + error_codes_[status_code_] + "\n";
 
   std::string body;
+
   if (status_code_ >= 400) {
     body = std::to_string(status_code_) + " " + error_codes_[status_code_] + ". Franksmon is dead :(";
+    content_type = "text/html";
   } else if (status_code_ < 300) {
     body = file.getContent();
   }
 
   if (!body.empty()) {
-    response_ = response_ + "Content-Type: " + MimeTypes::getType(file.getExtension()) + "\r\n";
+    response_ = response_ + "Content-Type: " + content_type + "\r\n";
     response_ = response_ + "Content-Length: " + std::to_string(body.length()) + "\r\n";
     response_ = response_ + "\r\n";
     response_ = response_ + body;

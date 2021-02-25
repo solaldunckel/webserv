@@ -27,6 +27,7 @@ void ServerConfig::initDirectiveMap() {
   ServerConfig::directive_["error_page"] = &ServerConfig::error_page;
   ServerConfig::directive_["client_max_body_size"] = &ServerConfig::client_max_body_size;
   ServerConfig::directive_["root"] = &ServerConfig::root;
+  ServerConfig::directive_["limit_except"] = &ServerConfig::limit_except;
   ServerConfig::directive_["index"] = &ServerConfig::index;
   ServerConfig::directive_["cgi"] = &ServerConfig::cgi;
 }
@@ -114,6 +115,11 @@ void ServerConfig::index(std::vector<std::string>::iterator &it) {
     index_.push_back(*it++);
 };
 
+void ServerConfig::limit_except(std::vector<std::string>::iterator &it) {
+  while (*it != ";")
+    methods_.push_back(*it++);
+};
+
 void ServerConfig::location(std::vector<std::string>::iterator &it) {
   uri_ = *it++;
   if (*it != "{")
@@ -166,6 +172,10 @@ std::map<int, std::string>  &ServerConfig::getErrorCodes() {
 
 std::vector<std::string> &ServerConfig::getIndexes() {
   return index_;
+}
+
+std::vector<std::string> &ServerConfig::getMethods() {
+  return methods_;
 }
 
 /* Debug Functions */

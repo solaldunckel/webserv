@@ -13,6 +13,8 @@ void MimeTypes::initMap() {
 
 std::string MimeTypes::getType(std::string extension) {
   initMap();
+  if (!extension.length())
+    return "application/octet-stream";
   std::string ext(ft::to_lower(extension));
   if (mimes_.count(ext))
     return mimes_[ext];

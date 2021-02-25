@@ -83,7 +83,7 @@ void Server::newConnection(int fd) {
 void Server::readData(int fd) {
   std::string msg;
 
-  int nbytes;
+  int nbytes = 0;
   char buf[BUF_SIZE + 1];
 
   if ((nbytes = recv(fd, buf, BUF_SIZE, 0)) <= 0) {

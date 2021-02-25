@@ -22,11 +22,11 @@ class File {
   void open(std::string path);
   void set_path(std::string &path);
   bool is_open();
-  bool is_directory();
+  bool is_directory(std::string &path);
 
   std::string find_index(std::string path, std::vector<std::string> indexes);
 
-  std::string &getExtension();
+  std::string getExtension();
   std::string getContent();
 
  private:
