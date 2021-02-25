@@ -7,7 +7,7 @@
 // Request::Request() {
 // }
 
-Request::Request(std::string &msg, std::vector<ServerConfig> &servers) : msg_(msg), servers_(servers) {
+Request::Request(std::string &msg, std::vector<ServerConfig> &servers) : msg_(msg), valid_(true), servers_(servers) {
   headers_["Accept-Charsets"];
   headers_["Accept-Language"];
   headers_["Allow"];
@@ -31,6 +31,11 @@ Request::Request(std::string &msg, std::vector<ServerConfig> &servers) : msg_(ms
 Request::~Request() {
 }
 
+bool isValidMethod(std::string str) {
+  return (str == "GET" || str == "POST" || str == "HEAD" || str == "PUT"
+          || str == "DELETE");
+}
+
 void Request::parse() {
   std::string line, header;
   size_t last;
@@ -39,6 +44,8 @@ void Request::parse() {
   if (std::getline(input, line)) {
     if ((last = line.find(' ')) != std::string::npos)
       method_ = line.substr(0, last);
+    if (!isValidMethod(method_))
+      valid_ = false;
     size_t tmp = last;
     if ((last = line.find(' ', last + 1)) != std::string::npos)
       target_ = line.substr(tmp + 1, last - tmp - 1);
@@ -48,6 +55,7 @@ void Request::parse() {
   while (std::getline(input, line)) {
     if ((last = line.find(':', 0)) != std::string::npos) {
       header = line.substr(0, last);
+      std::cout << header.length() << std::endl;
       if (headers_.count(header))
         headers_[header] = line.substr(last + 2, line.find('\r') - last - 2);
     }
@@ -58,6 +66,10 @@ void Request::parse() {
   while (std::getline(input, line)) {
     req_body_ += line;
   }
+}
+
+bool Request::isValid() {
+  return valid_;
 }
 
 std::string &Request::getHeader(std::string key) {
@@ -72,8 +84,12 @@ std::string &Request::getMethod() {
   return method_;
 }
 
-void Request::setServer(std::string &server) {
-  server_ = server;
+std::string &Request::getBody() {
+  return req_body_;
+}
+
+std::string &Request::getProtocol() {
+  return protocol_;
 }
 
 std::vector<ServerConfig> &Request::getServers() {

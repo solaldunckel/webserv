@@ -24,15 +24,15 @@ class Request {
   Request(std::string &msg, std::vector<ServerConfig> &servers);
   ~Request();
 
-  void isValid();
   void parse();
 
   void removeUriFromTarget();
 
-  void setServer(std::string &server);
+  bool isValid();
   std::string &getMethod();
   std::string &getTarget();
   std::string &getProtocol();
+  std::string &getBody();
   std::vector<ServerConfig> &getServers();
   std::string &getHeader(std::string key);
 
@@ -45,6 +45,7 @@ class Request {
   std::string protocol_;
   std::string req_body_;
   std::string server_;
+  bool valid_;
   std::vector<ServerConfig> &servers_;
   std::map<std::string, std::string, comp> headers_;
 };

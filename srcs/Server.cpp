@@ -56,7 +56,7 @@ void Server::setup() {
   }
 }
 
-# define BUF_SIZE 50000
+# define BUF_SIZE 500000
 
 void Server::newConnection(int fd) {
   struct sockaddr_storage their_addr;
@@ -81,8 +81,6 @@ void Server::newConnection(int fd) {
 }
 
 void Server::readData(int fd) {
-  std::string msg;
-
   int nbytes = 0;
   char buf[BUF_SIZE + 1];
 
@@ -94,17 +92,19 @@ void Server::readData(int fd) {
     }
     close(fd); // bye!
     FD_CLR(fd, &master_fds_); // remove from master set
-  } else {
-    std::cout << "[Server] Receiving data from " << clients_[fd] << std::endl;
+    return ;
+  }
 
-    buf[nbytes] = '\0';
-    msg += buf;
+  buf[nbytes] = '\0';
+  buffer_ += buf;
+  std::cout << "[Server] Receiving data from " << clients_[fd] << std::endl;
 
-    Request request(msg, servers_);
+  if (buffer_.find("\r\n\r\n") + 4 == buffer_.length()) {
+    Request request(buffer_, servers_);
 
     request.parse();
     request.print();
-  
+
     RequestConfig config(request, clients_[fd]);
 
     config.setup();
@@ -113,7 +113,21 @@ void Server::readData(int fd) {
 
     response.build();
     response.send(fd);
+    buffer_.clear();
   }
+  // Request request(buffer_, servers_);
+
+  // request.parse();
+  // request.print();
+
+  // RequestConfig config(request, clients_[fd]);
+
+  // config.setup();
+
+  // Response response(config);
+
+  // response.build();
+  // response.send(fd);
 }
 
 void Server::run() {

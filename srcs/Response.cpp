@@ -7,36 +7,112 @@
 Response::Response(RequestConfig &config) : config_(config) {
   status_code_ = 200;
   initErrorCodes();
+  initMethodMap();
 }
 
 Response::~Response() {
 }
 
+std::map<std::string, Response::type> Response::methods_;
+void Response::initMethodMap() {
+  Response::methods_["GET"] = &Response::handleGet;
+  Response::methods_["HEAD"] = &Response::handleGet;
+  Response::methods_["POST"] = &Response::handleGet;
+  Response::methods_["PUT"] = &Response::handlePut;
+}
+
 std::map<int, std::string> Response::error_codes_;
-void Response::initErrorCodes()
-{
+void Response::initErrorCodes() {
+  // Successful 2xx
   Response::error_codes_[200] = "OK";
   Response::error_codes_[201] = "Created";
   Response::error_codes_[202] = "Accepted";
   Response::error_codes_[204] = "No Content";
+
+  // Redirection 3xx
+
+
+  // Client Error 4xx
   Response::error_codes_[400] = "Bad Request";
   Response::error_codes_[401] = "Unauthorized";
   Response::error_codes_[403] = "Forbidden";
   Response::error_codes_[404] = "Not Found";
   Response::error_codes_[405] = "Method Not Allowed";
+  Response::error_codes_[408] = "Request Timeout";
   Response::error_codes_[411] = "Length Required";
   Response::error_codes_[413] = "Payload Too Large";
+
+
+  // Server Error 5xx
+  Response::error_codes_[500] = "Internal Server Error";
+  Response::error_codes_[501] = "Not Implemented";
   Response::error_codes_[505] = "HTTP Version Not Supported";
 }
 
+void Response::buildErrorPage(int status_code) {
+  body_ += "<!DOCTYPE html>\n\
+            <html>\n\
+            <head>\n\
+              <title>Webserv: " + std::to_string(status_code) + " " + error_codes_[status_code] + "</title>\n\
+            </head>\n\
+            <body>\n\
+              <h1>" + std::to_string(status_code) + " " + error_codes_[status_code] + "</h1>\n\
+            </body>\n\
+            </html>";
+  headers_["Content-Type"] = MimeTypes::getType(".html");
+  headers_["Content-Length"] = std::to_string(body_.length());
+}
+
 void Response::build() {
-  if (!config_.methodAccepted(config_.getMethod())) {
-    std::cout << config_.getMethod() << " METHOD NOT ACCEPTED" << std::endl;
+  int status_code = 200;
+  std::string method = config_.getMethod();
+
+  if (config_.isValidRequest()) {
+    if (!config_.methodAccepted(method)) {
+      status_code = 405;
+      std::cout << "METHOD NOT ACCEPTED" << std::endl;
+    }
+    else if (Response::methods_[method]) {
+      std::cout << "HANDLING " << method << " REQUEST" << std::endl;
+      status_code = (this->*(Response::methods_[method]))();
+    }
+  } else {
+    status_code = 400;
   }
-  if (config_.getMethod() == "GET") {
-    std::cout << "GET METHOD" << std::endl;
-    handleGet();
+
+  if (status_code >= 400) {
+    std::cout << "HANDLING ERROR" << std::endl;
+    buildErrorPage(status_code);
   }
+
+  response_ = response_ + "HTTP/1.1" + " " + std::to_string(status_code) + " " + error_codes_[status_code] + "\n";
+
+  for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++)
+    response_ += it->first + ": " + it->second + "\r\n";
+
+  std::cout << "\n### RESPONSE\n\n" << response_ <<  "\n###\n" << std::endl;
+
+  response_ = response_ + "\r\n";
+  if (!body_.empty()) {
+    response_ = response_ + body_;
+  }
+
+  // response_ = response_ + "\r\n";
+
+  // if (status_code_ >= 400) {
+  //   body = std::to_string(status_code_) + " " + error_codes_[status_code_] + ". Franksmon is dead :(";
+  //   content_type = "text/html";
+  // } else if (status_code_ < 300) {
+  //   body = file.getContent();
+  // }
+
+  // if (!body.empty()) {
+  //   response_ = response_ + "Content-Type: " + content_type + "\r\n";
+  //   response_ = response_ + "Content-Length: " + std::to_string(body.length()) + "\r\n";
+  //   response_ = response_ + "\r\n";
+  //   response_ = response_ + body;
+  // }
+  // return 1;
 }
 
 int Response::handleGet() {
@@ -53,63 +129,32 @@ int Response::handleGet() {
     file.open(path);
   }
 
-  if (file.is_open())
-    status_code_ = 200;
-  else
-    status_code_ = 404;
+  if (!file.is_open())
+    return 404;
 
-  std::string content_type = MimeTypes::getType(file.getExtension());
-  response_ = response_ + "HTTP/1.1" + " " + std::to_string(status_code_) + " " + error_codes_[status_code_] + "\n";
+  body_ = file.getContent();
 
-  std::string body;
-
-  if (status_code_ >= 400) {
-    body = std::to_string(status_code_) + " " + error_codes_[status_code_] + ". Franksmon is dead :(";
-    content_type = "text/html";
-  } else if (status_code_ < 300) {
-    body = file.getContent();
-  }
-
-  if (!body.empty()) {
-    response_ = response_ + "Content-Type: " + content_type + "\r\n";
-    response_ = response_ + "Content-Length: " + std::to_string(body.length()) + "\r\n";
-    response_ = response_ + "\r\n";
-    response_ = response_ + body;
-  }
-  return 1;
+  headers_["Content-Type"] = MimeTypes::getType(file.getExtension());
+  headers_["Content-Length"] = std::to_string(body_.length());
+  if (config_.getMethod() == "HEAD")
+    body_.clear();
+  return 200;
 }
 
-std::string Response::getResponseBody() {
-  // std::string response;
-  // File file;
+int Response::handlePut() {
+  int status_code = 200;
+  File file;
+  std::string path = "." + config_.getRoot() + "/" + config_.getTarget();
 
-  // file.open("." + config_.getRoot() + "/" + config_.getTarget());
-
-  // if (file.is_directory())
-  //   file.open("." + config_.getRoot() + config_.getTarget() + "/" + file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes()));
-
-  // if (file.is_open())
-  //   status_code_ = 200;
-  // else
-  //   status_code_ = 404;
-
-  // response = response + "HTTP 1.1" + " " + std::to_string(status_code_) + " " + error_codes_[status_code_] + "\n";
-
-  // if (status_code_ >= 400) {
-  //   body_ = std::to_string(status_code_) + " " + error_codes_[status_code_] + ". Franksmon is dead :(";
-  // } else if (status_code_ < 300) {
-  //   body_ = file.getContent();
-  // }
-
-  // if (!body_.empty()) {
-  //   response = response + "Content-Type: " + MimeTypes::getType(file.getExtension()) + "\r\n";
-  //   response = response + "Content-Length: " + std::to_string(body_.length()) + "\r\n";
-  //   response = response + "\r\n";
-  //   response = response + body_;
-  // }
-
-  // return response;
-  return "";
+  if (!file.exists(path)) {
+    file.create(path, config_.getBody());
+    status_code = 201;
+  }
+  else {
+    file.create(path, config_.getBody());
+  }
+  headers_["Content-Location"] = "/" + config_.getTarget();
+  return status_code;
 }
 
 int Response::send(int fd) {

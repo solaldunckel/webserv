@@ -17,8 +17,11 @@ class RequestConfig {
   std::string &getMethod();
   std::string &getRoot();
   std::string &getTarget();
+  std::string &getBody();
   int &getClientMaxBodySize();
+  std::string &getProtocol();
   std::vector<std::string> &getIndexes();
+  bool isValidRequest();
 
   bool methodAccepted(std::string &method);
 

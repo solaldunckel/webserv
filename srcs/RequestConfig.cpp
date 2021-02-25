@@ -91,6 +91,18 @@ std::string &RequestConfig::getRoot() {
   return location_->getRoot();
 }
 
+std::string &RequestConfig::getBody() {
+  return request_.getBody();
+}
+
+std::string &RequestConfig::getProtocol() {
+  return request_.getProtocol();
+}
+
+bool RequestConfig::isValidRequest() {
+  return request_.isValid();
+}
+
 int &RequestConfig::getClientMaxBodySize() {
   return location_->getClientMaxBodySize();
 }

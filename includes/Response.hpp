@@ -18,11 +18,17 @@ class Response {
   Response(RequestConfig &config);
   ~Response();
 
+  typedef int (Response::*type)();
+  static std::map<std::string, type> methods_;
+  static void initMethodMap();
   static void initErrorCodes();
+
+  void buildErrorPage(int status_code);
 
   void build();
 
   int handleGet();
+  int handlePut();
 
   std::string getResponseBody();
   int send(int fd);
@@ -31,6 +37,7 @@ class Response {
   RequestConfig &config_;
   int status_code_;
   std::string response_;
+  std::string body_;
   std::map<std::string, std::string> headers_;
   static std::map<int, std::string> error_codes_;
 };

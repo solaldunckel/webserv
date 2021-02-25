@@ -20,9 +20,12 @@ class File {
   ~File();
 
   void open(std::string path);
+  void create(std::string path, std::string &body);
   void set_path(std::string &path);
   bool is_open();
   bool is_directory(std::string &path);
+
+  bool exists(std::string &path);
 
   std::string find_index(std::string path, std::vector<std::string> indexes);
 
@@ -32,7 +35,7 @@ class File {
  private:
   int           fd_;
   int           status_;
-  std::ifstream stream_;
+  std::fstream  stream_;
   bool          is_dir_;
   std::string   name_;
   std::string   full_path_;
