@@ -4,14 +4,14 @@
 ** Constructors & Deconstructors
 */
 
-RequestConfig::RequestConfig(Request &request, std::string &host) : request_(request), host_(host) {
+RequestConfig::RequestConfig(Request &request, std::string &host, std::vector<ServerConfig> &servers) : request_(request), host_(host), servers_(servers) {
 }
 
 RequestConfig::~RequestConfig() {
 }
 
 void RequestConfig::setup() {
-  ServerConfig *server = getServerForRequest(request_.getServers());
+  ServerConfig *server = getServerForRequest(servers_);
   ServerConfig *location = getLocationForRequest(server, request_.getTarget());
 
   server_ = server;

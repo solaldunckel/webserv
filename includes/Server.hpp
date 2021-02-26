@@ -41,13 +41,13 @@ class Server {
 
  private:
   static bool running_;
+  Request request_;
   std::vector<ServerConfig> &servers_;
   std::map<int, std::string> clients_;
   struct sockaddr_in address_;
   fd_set master_fds_;
   fd_set server_fds_;
   fd_set read_fds_;
-  std::string buffer_;
   int max_fd_;
 };
 

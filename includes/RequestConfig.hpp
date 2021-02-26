@@ -6,7 +6,7 @@
 class RequestConfig {
  public:
   // Constructors & Deconstructors
-  RequestConfig(Request &request, std::string &host);
+  RequestConfig(Request &request, std::string &host, std::vector<ServerConfig> &servers);
   ~RequestConfig();
 
   void setup();
@@ -28,6 +28,7 @@ class RequestConfig {
  private:
   Request &request_;
   std::string &host_;
+  std::vector<ServerConfig> &servers_;
   ServerConfig *server_;
   ServerConfig *location_;
   std::string target_;

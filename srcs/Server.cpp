@@ -96,16 +96,17 @@ void Server::readData(int fd) {
   }
 
   buf[nbytes] = '\0';
-  buffer_ += buf;
   std::cout << "[Server] Receiving data from " << clients_[fd] << std::endl;
 
-  if (buffer_.find("\r\n\r\n") + 4 == buffer_.length()) {
-    Request request(buffer_, servers_);
+  std::string buffer(buf, nbytes);
 
-    request.parse();
-    request.print();
+  request_.parse(buffer);
+  request_.print();
 
-    RequestConfig config(request, clients_[fd]);
+  int ret = 0;
+
+  if (ret == 1) {
+    RequestConfig config(request_, clients_[fd], servers_);
 
     config.setup();
 
@@ -113,8 +114,10 @@ void Server::readData(int fd) {
 
     response.build();
     response.send(fd);
-    buffer_.clear();
+  } else if (ret == -1) {
+    //error
   }
+
   // Request request(buffer_, servers_);
 
   // request.parse();

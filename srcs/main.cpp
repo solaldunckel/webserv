@@ -15,18 +15,28 @@ int main(int argc, char **argv) {
   }
 
   try {
-    Config config(path);
+    Request req;
 
-    config.parse();
+    req.parse("GET /md");
+    req.parse("r HTTP/1.1\r\n");
+    req.parse("Content-Length: 24\r\n");
+    req.parse("Host: localhost:80\r\n");
+    req.parse("\r\n");
+    req.parse("the content");
+    req.parse(" of your life\r\n");
+    req.print();
+    // Config config(path);
 
-    if (DEBUG)
-      config.print();
-    std::cout << "TEST" << std::endl;
+    // config.parse();
 
-    Server serv(config.getServers());
+    // if (DEBUG)
+    //   config.print();
+    // std::cout << "TEST" << std::endl;
 
-    serv.setup();
-    serv.run();
+    // Server serv(config.getServers());
+
+    // serv.setup();
+    // serv.run();
   }
   catch (std::exception &e) {
     std::cout << "error: " << e.what() << std::endl;

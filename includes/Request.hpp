@@ -20,13 +20,24 @@ struct comp {
 class Request {
  public:
   // Constructors & Deconstructors
-  // Request();
+  Request();
   Request(std::string &msg, std::vector<ServerConfig> &servers);
   ~Request();
 
-  void parse();
+  int parse(std::string buffer);
+  int method_line();
+  int headers();
+  int body();
 
-  void removeUriFromTarget();
+  enum Status {
+    FIRST_LINE,
+    HEADERS,
+    BODY,
+    COMPLETE,
+    ERROR
+  };
+
+  void initHeadersMap();
 
   bool isValid();
   std::string &getMethod();
@@ -39,14 +50,17 @@ class Request {
   void print();
 
  private:
-  std::string msg_;
+  std::stringstream input_;
+  std::string buffer_;
+
   std::string method_;
   std::string target_;
   std::string protocol_;
   std::string req_body_;
-  std::string server_;
+
+  Status status_;
   bool valid_;
-  std::vector<ServerConfig> &servers_;
+  // std::vector<ServerConfig> &servers_;
   std::map<std::string, std::string, comp> headers_;
 };
 
