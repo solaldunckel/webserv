@@ -27,14 +27,23 @@ class Request {
   int parse(std::string buffer);
   int method_line();
   int headers();
+  int prebody();
   int body();
+  int chunk();
 
   enum Status {
     FIRST_LINE,
     HEADERS,
+    PREBODY,
     BODY,
+    CHUNK,
     COMPLETE,
     ERROR
+  };
+
+  enum ChunkStatus {
+    CHUNK_BODY,
+    CHUNK_SIZE,
   };
 
   void initHeadersMap();
@@ -47,6 +56,7 @@ class Request {
   std::vector<ServerConfig> &getServers();
   std::string &getHeader(std::string key);
 
+  void clear();
   void print();
 
  private:
@@ -58,6 +68,10 @@ class Request {
   std::string protocol_;
   std::string req_body_;
 
+  int body_offset_;
+  int chunk_status_;
+  int chunk_size_;
+  size_t length_;
   Status status_;
   bool valid_;
   // std::vector<ServerConfig> &servers_;

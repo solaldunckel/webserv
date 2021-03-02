@@ -7,7 +7,7 @@
 // Request::Request() {
 // }
 
-Request::Request() : status_(FIRST_LINE) {
+Request::Request() : status_(FIRST_LINE), valid_(true) {
   headers_["Accept-Charsets"];
   headers_["Accept-Language"];
   headers_["Allow"];
@@ -57,77 +57,54 @@ void Request::initHeadersMap() {
   headers_["WWW-Authenticate"];
 }
 
-// void Request::parse() {
-//   std::string line, header;
-//   size_t last;
-//   std::stringstream input(msg_);
+void Request::clear() {
+  input_.clear();
+  buffer_.clear();
+  method_.clear();
+  target_.clear();
+  protocol_.clear();
+  req_body_.clear();
 
-//   if (std::getline(input, line)) {
-//     if ((last = line.find(' ')) != std::string::npos)
-//       method_ = line.substr(0, last);
-//     if (!isValidMethod(method_))
-//       valid_ = false;
-//     size_t tmp = last;
-//     if ((last = line.find(' ', last + 1)) != std::string::npos)
-//       target_ = line.substr(tmp + 1, last - tmp - 1);
-//     protocol_ = line.substr(last + 1, line.find('\r', last) - last - 1);
-//   }
-
-//   while (std::getline(input, line)) {
-//     if ((last = line.find(':', 0)) != std::string::npos) {
-//       header = line.substr(0, last);
-//       std::cout << header.length() << std::endl;
-//       if (headers_.count(header))
-//         headers_[header] = line.substr(last + 2, line.find('\r') - last - 2);
-//     }
-//     else
-//       break;
-//   }
-
-//   while (std::getline(input, line)) {
-//     req_body_ += line;
-//   }
-// }
+  body_offset_ = 0;
+  status_ = FIRST_LINE;
+  valid_ = true;
+  headers_.clear();
+  initHeadersMap();
+}
 
 int Request::parse(std::string buffer) {
-  int ret = 0;
+  size_t ret = 0;
   buffer_ += buffer;
 
-  if (status_ == FIRST_LINE) {
-    std::cout << "PARSING FIRST LINE" << std::endl;
+  if (status_ == FIRST_LINE)
     ret = method_line();
-  }
-  if (status_ == HEADERS) {
-    std::cout << "PARSING HEADERS" << std::endl;
-    ret = headers();
-  }
-  if (status_ == BODY) {
-    std::cout << "PARSING BODY" << std::endl;
-    ret = body();
-  }
-  if (status_ == COMPLETE) {
-    std::cout << "PARSING COMPLETE" << std::endl;
-    ret = 1;
-  }
-  if (status_ == ERROR) {
-    std::cout << "PARSING ERROR" << std::endl;
-    ret = -1;
+  if (status_ == HEADERS)
+    headers();
+  if (status_ == PREBODY)
+    ret = prebody();
+  if (status_ == BODY)
+    body();
+  if (status_ == CHUNK)
+    chunk();
+  if (status_ == COMPLETE)
+    return 1;
+  else if (status_ == ERROR || ret > 1) {
+    status_ = ERROR;
+    return ret;
   }
   return ret;
 }
 
 int Request::method_line() {
-  std::string tmp;
-
-  if (buffer_.find_first_of("\r\n") != std::string::npos) {
-    tmp = buffer_.substr(0, buffer_.find(' '));
+  if (buffer_.find("\r\n") != std::string::npos) {
+    std::string tmp = buffer_.substr(0, buffer_.find(' '));
 
     if (isValidMethod(tmp)) {
       method_ = tmp;
       buffer_ = buffer_.substr(method_.length() + 1);
     } else {
       status_ = ERROR;
-      return -1;
+      return 400;
     }
 
     tmp = buffer_.substr(0, buffer_.find(' '));
@@ -137,66 +114,122 @@ int Request::method_line() {
       buffer_ = buffer_.substr(target_.length() + 1);
     } else {
       status_ = ERROR;
-      return -1;
+      return 414;
     }
 
-    tmp = buffer_.substr(0, buffer_.find_first_of("\r\n"));
+    tmp = buffer_.substr(0, buffer_.find("\r\n"));
 
     if (tmp == "HTTP/1.1") {
       protocol_ = tmp;
-      buffer_ = buffer_.substr(buffer_.find_first_of("\r\n") + 2);
+      buffer_ = buffer_.substr(buffer_.find("\r\n") + 2);
     } else {
       status_ = ERROR;
-      return -1;
+      return 505;
     }
 
     status_ = HEADERS;
   }
 
-  return 1;
+  return 0;
 }
-
-// GET / HTTP/1.1\r\n
-// Content-Type: Test
-// \r\n
-// body
 
 int Request::headers() {
   size_t end, last;
-  std::string tmp;
+  std::string header;
 
-  if (buffer_.find_first_of("\r\n") != std::string::npos) {
-    while ((end = buffer_.find_first_of("\r\n")) != std::string::npos) {
-      if (buffer_.find("\r\n") == 0) {
+  while ((end = buffer_.find("\r\n")) != std::string::npos) {
+    if (buffer_.find("\r\n") == 0) {
+      buffer_ = buffer_.substr(end + 2);
+      status_ = PREBODY;
+      break;
+    }
+    if ((last = buffer_.find(':', 0)) != std::string::npos) {
+      header = buffer_.substr(0, last);
+      if (headers_.count(header))
+        headers_[header] = ft::trim_left(buffer_.substr(last + 1, end - last - 1), ' ');
+    }
+    buffer_ = buffer_.substr(end + 2);
+  }
+  return 0;
+}
+
+int Request::prebody() {
+  body_offset_ = 0;
+
+  if (headers_["Host"].empty())
+    return 400;
+
+  if (method_ != "POST" && method_ != "PUT") {
+    status_ = COMPLETE;
+    return 1;
+  }
+
+  if (!headers_["Transfer-Encoding"].empty() && headers_["Transfer-Encoding"] == "chunked") {
+    status_ = CHUNK;
+    chunk_status_ = CHUNK_SIZE;
+  }
+  else if (!headers_["Content-Length"].empty()) {
+    if (headers_["Content-Length"].find_first_not_of("0123456789") != std::string::npos)
+      return 400;
+    try {
+      length_ = std::stoi(headers_["Content-Length"]);
+    }
+    catch (std::exception &e) {
+      return 501;
+    }
+    status_ = BODY;
+  }
+  else
+    return 400;
+  return 0;
+}
+
+int Request::chunk() {
+  size_t end;
+
+  while (1) {
+    if (chunk_status_ == CHUNK_SIZE) {
+      if ((end = buffer_.find("\r\n")) != std::string::npos) {
+        std::string hex = buffer_.substr(0, end);
+        chunk_size_ = ft::to_hex(hex);
         buffer_ = buffer_.substr(end + 2);
-        status_ = BODY;
+        chunk_status_ = CHUNK_BODY;
+      } else
         break;
-      }
-      if ((last = buffer_.find(':', 0)) != std::string::npos) {
-        tmp = buffer_.substr(0, last);
-        if (headers_.count(tmp))
-          headers_[tmp] = buffer_.substr(last + 1, end);
-      }
-      buffer_ = buffer_.substr(buffer_.find_first_of("\r\n") + 2);
+    }
+
+    if (chunk_status_ == CHUNK_BODY) {
+      if ((end = buffer_.find("\r\n")) != std::string::npos) {
+        if (chunk_size_ == 0) {
+          status_ = COMPLETE;
+          return 0;
+        }
+        req_body_ += buffer_.substr(0, end);
+        buffer_ = buffer_.substr(end + 2);
+        chunk_size_ = 0;
+        chunk_status_ = CHUNK_SIZE;
+      } else
+        break;
     }
   }
-  return 1;
+
+  return 0;
 }
 
 int Request::body() {
-  size_t count = 0;
-
-  if (buffer_.find_first_of("\r\n") != std::string::npos) {
-    if (!headers_["Content-Length"].empty())
-      count = std::stoi(headers_["Content-Length"]);
-
-    std::cout <<buffer_.length() << std::endl;
-    if (buffer_.length() > count) {
-      req_body_ = std::string(buffer_, count);
-      status_ = COMPLETE;
-    }
+  if (buffer_.length() + body_offset_ > length_) {
+    status_ = ERROR;
+    return 0;
   }
-  return 1;
+
+  req_body_.insert(body_offset_, buffer_, 0, length_);
+  body_offset_ += buffer_.length();
+  buffer_.clear();
+
+  if (req_body_.length() == length_)
+    status_ = COMPLETE;
+
+  return 0;
 }
 
 bool Request::isValid() {
@@ -223,10 +256,6 @@ std::string &Request::getProtocol() {
   return protocol_;
 }
 
-// std::vector<ServerConfig> &Request::getServers() {
-//   return servers_;
-// }
-
 void Request::print() {
   std::cout << "\n### REQUEST\n\n";
   std::cout << "Method: " << method_ << std::endl;
@@ -237,6 +266,7 @@ void Request::print() {
       std::cout << it->first << ": " << it->second << std::endl;;
   }
   std::cout << "Body: [" << req_body_ << "]" << std::endl;
-  // std::cout << msg_ << std::endl; 
-  std::cout << "###" << std::endl;
+  std::cout << "Status: " << status_ << std::endl;
+  // std::cout << msg_ << std::endl;
+  std::cout << "\n###" << std::endl;
 }

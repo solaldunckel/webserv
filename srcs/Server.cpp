@@ -5,7 +5,6 @@
 */
 
 Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
-  (void)servers_;
   FD_ZERO(&master_fds_);
   FD_ZERO(&read_fds_);
 }
@@ -68,7 +67,10 @@ void Server::newConnection(int fd) {
 
   clients_[clientFd] = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
 
-  std::cout << "[Server] New connection from " << clients_[clientFd] << " (socket " << fd << ")" << std::endl;
+  // std::cout << "[Server] New connection from " << clients_[clientFd] << " (socket " << fd << ")" << std::endl;
+
+  std::cout << "[Server] New connection (socket " << fd << ")" << std::endl;
+
 
   if (clientFd == -1)
     perror("accept");
@@ -100,12 +102,12 @@ void Server::readData(int fd) {
 
   std::string buffer(buf, nbytes);
 
-  request_.parse(buffer);
-  request_.print();
-
-  int ret = 0;
+  std::cout << "THE MESSAGE: [" << buffer << "]" << std::endl;
+  int ret = request_.parse(buffer);
 
   if (ret == 1) {
+    std::cout << "REQUEST OK" << std::endl;
+    request_.print();
     RequestConfig config(request_, clients_[fd], servers_);
 
     config.setup();
@@ -114,23 +116,20 @@ void Server::readData(int fd) {
 
     response.build();
     response.send(fd);
-  } else if (ret == -1) {
-    //error
+    request_.clear();
+  } else if (ret > 1) {
+    std::cout << "REQUEST ERROR" << std::endl;
+    request_.print();
+    RequestConfig config(request_, clients_[fd], servers_);
+
+    config.setup();
+
+    Response response(config);
+
+    response.build();
+    response.send(fd);
+    request_.clear();
   }
-
-  // Request request(buffer_, servers_);
-
-  // request.parse();
-  // request.print();
-
-  // RequestConfig config(request, clients_[fd]);
-
-  // config.setup();
-
-  // Response response(config);
-
-  // response.build();
-  // response.send(fd);
 }
 
 void Server::run() {

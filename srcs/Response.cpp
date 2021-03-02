@@ -41,7 +41,7 @@ void Response::initErrorCodes() {
   Response::error_codes_[408] = "Request Timeout";
   Response::error_codes_[411] = "Length Required";
   Response::error_codes_[413] = "Payload Too Large";
-
+  Response::error_codes_[414] = "URI Too Long";
 
   // Server Error 5xx
   Response::error_codes_[500] = "Internal Server Error";
@@ -85,34 +85,17 @@ void Response::build() {
     buildErrorPage(status_code);
   }
 
-  response_ = response_ + "HTTP/1.1" + " " + std::to_string(status_code) + " " + error_codes_[status_code] + "\n";
+  response_ = response_ + "HTTP/1.1" + " " + std::to_string(status_code) + " " + error_codes_[status_code] + "\r\n";
 
   for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++)
     response_ += it->first + ": " + it->second + "\r\n";
 
   std::cout << "\n### RESPONSE\n\n" << response_ <<  "\n###\n" << std::endl;
 
-  response_ = response_ + "\r\n";
-  if (!body_.empty()) {
+  response_ += "\r\n";
+
+  if (!body_.empty())
     response_ = response_ + body_;
-  }
-
-  // response_ = response_ + "\r\n";
-
-  // if (status_code_ >= 400) {
-  //   body = std::to_string(status_code_) + " " + error_codes_[status_code_] + ". Franksmon is dead :(";
-  //   content_type = "text/html";
-  // } else if (status_code_ < 300) {
-  //   body = file.getContent();
-  // }
-
-  // if (!body.empty()) {
-  //   response_ = response_ + "Content-Type: " + content_type + "\r\n";
-  //   response_ = response_ + "Content-Length: " + std::to_string(body.length()) + "\r\n";
-  //   response_ = response_ + "\r\n";
-  //   response_ = response_ + body;
-  // }
-  // return 1;
 }
 
 int Response::handleGet() {
@@ -136,13 +119,15 @@ int Response::handleGet() {
 
   headers_["Content-Type"] = MimeTypes::getType(file.getExtension());
   headers_["Content-Length"] = std::to_string(body_.length());
+
   if (config_.getMethod() == "HEAD")
     body_.clear();
+
   return 200;
 }
 
 int Response::handlePut() {
-  int status_code = 200;
+  int status_code = 204;
   File file;
   std::string path = "." + config_.getRoot() + "/" + config_.getTarget();
 
@@ -153,7 +138,8 @@ int Response::handlePut() {
   else {
     file.create(path, config_.getBody());
   }
-  headers_["Content-Location"] = "/" + config_.getTarget();
+  std::cout << config_.getTarget() << std::endl;
+  headers_["Content-Location"] = config_.getTarget();
   return status_code;
 }
 
