@@ -67,7 +67,7 @@ void Response::build() {
   int status_code = 200;
   std::string method = config_.getMethod();
 
-  if (config_.isValidRequest()) {
+  // if (config_.isValidRequest()) {
     if (!config_.methodAccepted(method)) {
       status_code = 405;
       std::cout << "METHOD NOT ACCEPTED" << std::endl;
@@ -76,9 +76,9 @@ void Response::build() {
       std::cout << "HANDLING " << method << " REQUEST" << std::endl;
       status_code = (this->*(Response::methods_[method]))();
     }
-  } else {
-    status_code = 400;
-  }
+  // } else {
+  //   status_code = 400;
+  // }
 
   if (status_code >= 400) {
     std::cout << "HANDLING ERROR" << std::endl;

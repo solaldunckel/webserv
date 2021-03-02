@@ -60,22 +60,19 @@ class Request {
   void print();
 
  private:
-  std::stringstream input_;
   std::string buffer_;
 
   std::string method_;
   std::string target_;
   std::string protocol_;
   std::string req_body_;
+  std::map<std::string, std::string, comp> headers_;
 
   int body_offset_;
   int chunk_status_;
   int chunk_size_;
   size_t length_;
   Status status_;
-  bool valid_;
-  // std::vector<ServerConfig> &servers_;
-  std::map<std::string, std::string, comp> headers_;
 };
 
 #endif

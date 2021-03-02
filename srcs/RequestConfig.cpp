@@ -99,10 +99,6 @@ std::string &RequestConfig::getProtocol() {
   return request_.getProtocol();
 }
 
-bool RequestConfig::isValidRequest() {
-  return request_.isValid();
-}
-
 int &RequestConfig::getClientMaxBodySize() {
   return location_->getClientMaxBodySize();
 }

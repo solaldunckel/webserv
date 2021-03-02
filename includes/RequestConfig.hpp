@@ -21,7 +21,6 @@ class RequestConfig {
   int &getClientMaxBodySize();
   std::string &getProtocol();
   std::vector<std::string> &getIndexes();
-  bool isValidRequest();
 
   bool methodAccepted(std::string &method);
 

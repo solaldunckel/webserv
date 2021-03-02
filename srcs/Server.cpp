@@ -102,7 +102,7 @@ void Server::readData(int fd) {
 
   std::string buffer(buf, nbytes);
 
-  std::cout << "THE MESSAGE: [" << buffer << "]" << std::endl;
+  // std::cout << "THE MESSAGE: [" << buffer << "]" << std::endl;
   int ret = request_.parse(buffer);
 
   if (ret == 1) {

@@ -7,25 +7,8 @@
 // Request::Request() {
 // }
 
-Request::Request() : status_(FIRST_LINE), valid_(true) {
-  headers_["Accept-Charsets"];
-  headers_["Accept-Language"];
-  headers_["Allow"];
-  headers_["Authorization"];
-  headers_["Content-Language"];
-  headers_["Content-Length"];
-  headers_["Content-Location"];
-  headers_["Content-Type"];
-  headers_["Date"];
-  headers_["Host"];
-  headers_["Last-Modified"];
-  headers_["Location"];
-  headers_["Referer"];
-  headers_["Retry-After"];
-  headers_["Server"];
-  headers_["Transfer-Encoding"];
-  headers_["User-Agent"];
-  headers_["WWW-Authenticate"];
+Request::Request() : status_(FIRST_LINE) {
+  initHeadersMap();
 }
 
 Request::~Request() {
@@ -37,6 +20,7 @@ bool isValidMethod(std::string str) {
 }
 
 void Request::initHeadersMap() {
+  headers_.clear();
   headers_["Accept-Charsets"];
   headers_["Accept-Language"];
   headers_["Allow"];
@@ -58,7 +42,6 @@ void Request::initHeadersMap() {
 }
 
 void Request::clear() {
-  input_.clear();
   buffer_.clear();
   method_.clear();
   target_.clear();
@@ -66,9 +49,8 @@ void Request::clear() {
   req_body_.clear();
 
   body_offset_ = 0;
+  chunk_size_ = 0;
   status_ = FIRST_LINE;
-  valid_ = true;
-  headers_.clear();
   initHeadersMap();
 }
 
@@ -79,15 +61,17 @@ int Request::parse(std::string buffer) {
   if (status_ == FIRST_LINE)
     ret = method_line();
   if (status_ == HEADERS)
-    headers();
+    ret = headers();
   if (status_ == PREBODY)
     ret = prebody();
   if (status_ == BODY)
-    body();
+    ret = body();
   if (status_ == CHUNK)
-    chunk();
-  if (status_ == COMPLETE)
-    return 1;
+    ret = chunk();
+  if (status_ == COMPLETE || ret == 1) {
+    status_ = COMPLETE;
+    return ret;
+  }
   else if (status_ == ERROR || ret > 1) {
     status_ = ERROR;
     return ret;
@@ -167,8 +151,7 @@ int Request::prebody() {
   if (!headers_["Transfer-Encoding"].empty() && headers_["Transfer-Encoding"] == "chunked") {
     status_ = CHUNK;
     chunk_status_ = CHUNK_SIZE;
-  }
-  else if (!headers_["Content-Length"].empty()) {
+  } else if (!headers_["Content-Length"].empty()) {
     if (headers_["Content-Length"].find_first_not_of("0123456789") != std::string::npos)
       return 400;
     try {
@@ -187,53 +170,41 @@ int Request::prebody() {
 int Request::chunk() {
   size_t end;
 
-  while (1) {
+  while ((end = buffer_.find("\r\n")) != std::string::npos) {
     if (chunk_status_ == CHUNK_SIZE) {
-      if ((end = buffer_.find("\r\n")) != std::string::npos) {
-        std::string hex = buffer_.substr(0, end);
-        chunk_size_ = ft::to_hex(hex);
-        buffer_ = buffer_.substr(end + 2);
-        chunk_status_ = CHUNK_BODY;
-      } else
-        break;
-    }
-
-    if (chunk_status_ == CHUNK_BODY) {
-      if ((end = buffer_.find("\r\n")) != std::string::npos) {
-        if (chunk_size_ == 0) {
-          status_ = COMPLETE;
-          return 0;
-        }
-        req_body_ += buffer_.substr(0, end);
-        buffer_ = buffer_.substr(end + 2);
-        chunk_size_ = 0;
-        chunk_status_ = CHUNK_SIZE;
-      } else
-        break;
+      std::string hex = buffer_.substr(0, end);
+      chunk_size_ = ft::to_hex(hex);
+      buffer_ = buffer_.substr(end + 2);
+      chunk_status_ = CHUNK_BODY;
+    } else if (chunk_status_ == CHUNK_BODY) {
+      if (chunk_size_ == 0) {
+        status_ = COMPLETE;
+        return 1;
+      }
+      req_body_ += buffer_.substr(0, end);
+      buffer_ = buffer_.substr(end + 2);
+      chunk_size_ = 0;
+      chunk_status_ = CHUNK_SIZE;
     }
   }
-
   return 0;
 }
 
 int Request::body() {
   if (buffer_.length() + body_offset_ > length_) {
     status_ = ERROR;
-    return 0;
+    return 400;
   }
 
   req_body_.insert(body_offset_, buffer_, 0, length_);
   body_offset_ += buffer_.length();
   buffer_.clear();
 
-  if (req_body_.length() == length_)
+  if (req_body_.length() == length_) {
     status_ = COMPLETE;
-
+    return 1;
+  }
   return 0;
-}
-
-bool Request::isValid() {
-  return valid_;
 }
 
 std::string &Request::getHeader(std::string key) {
