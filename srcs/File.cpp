@@ -71,20 +71,21 @@ bool File::exists(std::string &path) {
 std::string File::find_index(std::string path, std::vector<std::string> indexes) {
   DIR *dir;
   struct dirent *ent;
+
   if ((dir = opendir(path.c_str())) != NULL) {
     /* print all the files and directories within directory */
     while ((ent = readdir (dir)) != NULL) {
       for (std::vector<std::string>::iterator it = indexes.begin(); it != indexes.end(); it++) {
         if (*it == ent->d_name) {
           std::cout << "FOUND INDEX: " << ent->d_name << std::endl;
+          closedir(dir);
           return ent->d_name;
         }
       }
     }
-    closedir (dir);
+    closedir(dir);
   } else {
-    /* could not open directory */
-    perror ("");
+    perror("");
     return "";
   }
   return "";
