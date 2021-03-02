@@ -67,21 +67,18 @@ void Response::build() {
   int status_code = 200;
   std::string method = config_.getMethod();
 
-  // if (config_.isValidRequest()) {
-    if (!config_.methodAccepted(method)) {
-      status_code = 405;
-      std::cout << "METHOD NOT ACCEPTED" << std::endl;
-    }
-    else if (Response::methods_[method]) {
-      std::cout << "HANDLING " << method << " REQUEST" << std::endl;
-      status_code = (this->*(Response::methods_[method]))();
-    }
-  // } else {
-  //   status_code = 400;
-  // }
+  if (!config_.methodAccepted(method)) {
+    status_code = 405;
+    std::cout << "METHOD NOT ACCEPTED" << std::endl;
+  } else if (config_.getClientMaxBodySize() > 0 && config_.getBody().length() > config_.getClientMaxBodySize()) {
+    status_code = 413;
+  } else if (Response::methods_[method]) {
+    std::cout << "HANDLING " << method << " REQUEST" << std::endl;
+    status_code = (this->*(Response::methods_[method]))();
+  }
 
   if (status_code >= 400) {
-    std::cout << "HANDLING ERROR" << std::endl;
+    std::cout << "HANDLING ERROR " << status_code_ << std::endl;
     buildErrorPage(status_code);
   }
 
@@ -89,6 +86,8 @@ void Response::build() {
 
   for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++)
     response_ += it->first + ": " + it->second + "\r\n";
+
+  // response_ += "Server: webserv/1.1\r\n";
 
   std::cout << "\n### RESPONSE\n\n" << response_ <<  "\n###\n" << std::endl;
 
@@ -133,17 +132,19 @@ int Response::handlePut() {
 
   if (!file.exists(path)) {
     file.create(path, config_.getBody());
+    headers_["Content-Length"] = "0";
     status_code = 201;
   }
   else {
     file.create(path, config_.getBody());
   }
-  std::cout << config_.getTarget() << std::endl;
-  headers_["Content-Location"] = config_.getTarget();
+  headers_["Content-Location"] = config_.getUri() + config_.getTarget();
   return status_code;
 }
 
 int Response::send(int fd) {
+  std::cout << "\n\nbuffer: [" << response_ << "]\n\n" << std::endl;
   write(fd, response_.c_str(), response_.length());
+  // std::cout << "message sent!" << std::endl;
   return 1;
 }

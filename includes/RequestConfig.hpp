@@ -16,9 +16,10 @@ class RequestConfig {
 
   std::string &getMethod();
   std::string &getRoot();
+  std::string &getUri();
   std::string &getTarget();
   std::string &getBody();
-  int &getClientMaxBodySize();
+  size_t &getClientMaxBodySize();
   std::string &getProtocol();
   std::vector<std::string> &getIndexes();
 

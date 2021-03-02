@@ -158,7 +158,7 @@ std::vector<ServerConfig> &ServerConfig::getLocations() {
   return locations_;
 };
 
-int &ServerConfig::getClientMaxBodySize() {
+size_t &ServerConfig::getClientMaxBodySize() {
   return client_max_body_size_;
 }
 
