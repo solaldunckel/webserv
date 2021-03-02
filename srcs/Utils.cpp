@@ -26,4 +26,21 @@ namespace ft {
   void *get_in_addr(struct sockaddr *sa) {
     return &(((struct sockaddr_in*)sa)->sin_addr);
   }
+
+  std::string trim_left(std::string str, char c) {
+    size_t startpos = str.find_first_not_of(c);
+    if (startpos != std::string::npos)
+      str = str.substr(startpos);
+    return str;
+  }
+
+  size_t to_hex(std::string &str) {
+    std::stringstream ss;
+    size_t hex;
+
+    ss << std::hex << str;
+    ss >> hex;
+
+    return hex;
+  }
 };

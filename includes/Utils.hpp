@@ -12,6 +12,8 @@ namespace ft {
   void *memset(void *b, int c, size_t len);
   std::string inet_ntop(const void *s);
   void *get_in_addr(struct sockaddr *sa);
+  std::string trim_left(std::string str, char c);
+  size_t to_hex(std::string &str);
 };
 
 #endif
