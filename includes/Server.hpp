@@ -2,6 +2,8 @@
 # define SERVER_HPP
 
 # include <iostream>
+# include <vector>
+
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <netinet/in.h>
@@ -10,11 +12,8 @@
 # include <unistd.h>
 # include <fcntl.h>
 # include <sys/select.h>
+# include <signal.h>
 
-# include <csignal>
-# include <vector>
-
-# include "Config.hpp"
 # include "Request.hpp"
 # include "RequestConfig.hpp"
 # include "Response.hpp"
@@ -33,14 +32,9 @@ class Server {
   void readData(int fd);
   void newConnection(int fd);
 
-  static void interruptionHandler(int sig_num) {
-    (void)sig_num;
-    std::cout << "\b\b  \b\b";
-    running_ = false;
-  };
+  static bool running_;
 
  private:
-  static bool running_;
   Request request_;
   std::vector<ServerConfig> &servers_;
   std::map<int, std::string> clients_;

@@ -1,8 +1,6 @@
 #ifndef SERVERCONFIG_HPP
 # define SERVERCONFIG_HPP
 
-// # include "IConfig.hpp"
-// # include "LocationConfig.hpp"
 # include <iostream>
 # include <string>
 # include <vector>
@@ -37,6 +35,7 @@ class ServerConfig {
   void root(std::vector<std::string>::iterator &it);
   void index(std::vector<std::string>::iterator &it);
   void cgi(std::vector<std::string>::iterator &it);
+  void autoindex(std::vector<std::string>::iterator &it);
 
   std::vector<Listen> &getListens();
   std::vector<std::string> &getServerNames();
@@ -56,6 +55,7 @@ class ServerConfig {
   std::vector<std::string> server_name_;
   std::vector<ServerConfig> locations_;
   std::string uri_;
+  bool autoindex_;
   size_t client_max_body_size_;
   std::string root_;
   std::vector<std::string> methods_;

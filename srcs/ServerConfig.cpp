@@ -19,6 +19,13 @@ ServerConfig	&ServerConfig::operator=(const ServerConfig &copy) {
   return (*this);
 }
 
+/*
+** To add :
+**  - upload / directory
+**  - authentification
+**  - cgi-bin ?
+*/
+
 std::map<std::string, ServerConfig::type> ServerConfig::directive_;
 void ServerConfig::initDirectiveMap() {
   ServerConfig::directive_["listen"] = &ServerConfig::listen;
@@ -28,6 +35,7 @@ void ServerConfig::initDirectiveMap() {
   ServerConfig::directive_["client_max_body_size"] = &ServerConfig::client_max_body_size;
   ServerConfig::directive_["root"] = &ServerConfig::root;
   ServerConfig::directive_["limit_except"] = &ServerConfig::limit_except;
+  ServerConfig::directive_["autoindex"] = &ServerConfig::autoindex;
   ServerConfig::directive_["index"] = &ServerConfig::index;
   ServerConfig::directive_["cgi"] = &ServerConfig::cgi;
 }
@@ -120,6 +128,18 @@ void ServerConfig::limit_except(std::vector<std::string>::iterator &it) {
     methods_.push_back(*it++);
 };
 
+void ServerConfig::autoindex(std::vector<std::string>::iterator &it) {
+  if (*it == "on")
+    autoindex_ = true;
+  else if (*it == "off")
+    autoindex_ = false;
+  else
+    throw std::runtime_error("unknown value in 'autoindex'");
+
+  if (*++it != ";")
+    throw std::runtime_error("double value in 'autoindex'");
+};
+
 void ServerConfig::location(std::vector<std::string>::iterator &it) {
   uri_ = *it++;
   if (*it != "{")
@@ -137,10 +157,6 @@ void ServerConfig::cgi(std::vector<std::string>::iterator &it) {
 
   cgi_[ext] = *it++;
 };
-
-std::string &ServerConfig::getUri() {
-  return uri_;
-}
 
 /*
 ** Getter Functions
@@ -176,6 +192,10 @@ std::vector<std::string> &ServerConfig::getIndexes() {
 
 std::vector<std::string> &ServerConfig::getMethods() {
   return methods_;
+}
+
+std::string &ServerConfig::getUri() {
+  return uri_;
 }
 
 /* Debug Functions */

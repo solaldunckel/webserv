@@ -6,6 +6,7 @@
 
 Response::Response(RequestConfig &config) : config_(config) {
   status_code_ = 200;
+  headers_["Server"] = "WEBSERV/1.0";
   initErrorCodes();
   initMethodMap();
 }
@@ -87,8 +88,6 @@ void Response::build() {
   for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++)
     response_ += it->first + ": " + it->second + "\r\n";
 
-  // response_ += "Server: webserv/1.1\r\n";
-
   std::cout << "\n### RESPONSE\n\n" << response_ <<  "\n###\n" << std::endl;
 
   response_ += "\r\n";
@@ -143,8 +142,6 @@ int Response::handlePut() {
 }
 
 int Response::send(int fd) {
-  std::cout << "\n\nbuffer: [" << response_ << "]\n\n" << std::endl;
   write(fd, response_.c_str(), response_.length());
-  // std::cout << "message sent!" << std::endl;
   return 1;
 }

@@ -4,6 +4,14 @@
 ** Constructors & Deconstructors
 */
 
+bool Server::running_ = false;
+
+static void interruptHandler(int sig_int) {
+  (void)sig_int;
+	std::cout << "\b\b \b\b";
+	Server::running_ = false;
+}
+
 Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
   FD_ZERO(&master_fds_);
   FD_ZERO(&read_fds_);
@@ -19,8 +27,6 @@ Server::~Server() {
     }
   }
 }
-
-bool Server::running_ = 0;
 
 void Server::setup() {
   int yes = 1;
@@ -133,12 +139,11 @@ void Server::readData(int fd) {
 }
 
 void Server::run() {
-  std::signal(SIGINT, Server::interruptionHandler);
-
-  running_ = true;
 
   server_fds_ = master_fds_;
 
+  signal(SIGINT, interruptHandler);
+  running_ = true;
   std::cout << "[Server] Starting." << std::endl;
   while (running_) {
     read_fds_ = master_fds_;

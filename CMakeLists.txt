@@ -16,9 +16,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # )
 
 set(SRCS
+  srcs/main.cpp
   srcs/Config.cpp
   srcs/File.cpp
-  srcs/main.cpp
   srcs/MimeTypes.cpp
   srcs/Request.cpp
   srcs/RequestConfig.cpp
