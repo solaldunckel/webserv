@@ -91,12 +91,20 @@ std::string &RequestConfig::getRoot() {
   return location_->getRoot();
 }
 
+std::string &RequestConfig::getAuth() {
+  return location_->getAuth();
+}
+
 std::string &RequestConfig::getUri() {
   return location_->getUri();
 }
 
 std::string &RequestConfig::getBody() {
   return request_.getBody();
+}
+
+std::string &RequestConfig::getHeader(std::string key) {
+  return request_.getHeader(key);
 }
 
 std::string &RequestConfig::getProtocol() {

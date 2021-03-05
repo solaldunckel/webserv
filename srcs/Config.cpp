@@ -70,6 +70,7 @@ bool Config::is_directive(std::string str) {
   return (str == "listen" ||
           str == "server_name" ||
           str == "root" ||
+          str == "auth" ||
           str == "error_page" ||
           str == "upload" ||
           str == "autoindex" ||
@@ -89,5 +90,3 @@ void Config::print() {
   }
   std::cout << "###\n" << std::endl;
 }
-
-

@@ -26,6 +26,7 @@ class Response {
   void buildErrorPage(int status_code);
 
   void build();
+  bool checkAuth();
 
   int handleGet();
   int handlePut();
