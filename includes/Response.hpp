@@ -24,11 +24,12 @@ class Response {
   static void initErrorCodes();
 
   void buildErrorPage(int status_code);
-
+  bool isCGI();
   void build();
 
   int handleGet();
   int handlePut();
+  int handleDelete();
 
   std::string getResponseBody();
   int send(int fd);

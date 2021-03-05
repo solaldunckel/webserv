@@ -29,20 +29,27 @@ void RequestConfig::setup() {
   }
 }
 
+// http://nginx.org/en/docs/http/request_processing.html
+// https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
+
 ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &servers) {
   std::string host_port = request_.getHeader("Host");
 
   uint32_t port = 80;
+
+  std::string host = host_port.substr(host_port.find(':'));
 
   if (host_port.find(':') != std::string::npos)
     port = std::stod(host_port.substr(host_port.find(':') + 1));
 
   std::vector<ServerConfig>::iterator it = servers.begin();
 
+  // Handle server names with * ?
   while (it != servers.end()) {
     for (std::vector<Listen>::iterator list = it->getListens().begin(); list != it->getListens().end(); list++) {
       if (list->ip_ == host_ && list->port_ == port) {
-        std::cout << "MATCHING SERVER : " << list->ip_ << ":" << list->port_ << std::endl;
+        std::cout << "MATCHING SERVER : " << list->ip_ << ":" << list->port_ << " from " << host_ << std::endl;
+        port_ = list->port_;
         return &(*it);
       }
     }
@@ -53,6 +60,8 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
     for (std::vector<Listen>::iterator list = it->getListens().begin(); list != it->getListens().end(); list++) {
       if (list->ip_ == "0.0.0.0" && list->port_ == port) {
         std::cout << "MATCHING SERVER : " << list->ip_ << ":" << list->port_ << std::endl;
+        port_ = list->port_;
+        host_ = host; // ?
         return &(*it);
       }
     }
@@ -109,6 +118,14 @@ size_t &RequestConfig::getClientMaxBodySize() {
 
 std::vector<std::string> &RequestConfig::getIndexes() {
   return location_->getIndexes();
+}
+
+std::string &RequestConfig::getHost() {
+  return host_;
+}
+
+uint32_t RequestConfig::getPort() {
+  return port_;
 }
 
 bool RequestConfig::methodAccepted(std::string &method) {

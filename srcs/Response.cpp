@@ -6,7 +6,7 @@
 
 Response::Response(RequestConfig &config) : config_(config) {
   status_code_ = 200;
-  headers_["Server"] = "WEBSERV/1.0";
+  headers_["Server"] = "webserv/1.0";
   initErrorCodes();
   initMethodMap();
 }
@@ -20,6 +20,7 @@ void Response::initMethodMap() {
   Response::methods_["HEAD"] = &Response::handleGet;
   Response::methods_["POST"] = &Response::handleGet;
   Response::methods_["PUT"] = &Response::handlePut;
+  Response::methods_["DELETE"] = &Response::handleDelete;
 }
 
 std::map<int, std::string> Response::error_codes_;
@@ -48,6 +49,10 @@ void Response::initErrorCodes() {
   Response::error_codes_[500] = "Internal Server Error";
   Response::error_codes_[501] = "Not Implemented";
   Response::error_codes_[505] = "HTTP Version Not Supported";
+}
+
+bool Response::isCGI() {
+  return true;
 }
 
 void Response::buildErrorPage(int status_code) {
@@ -138,6 +143,27 @@ int Response::handlePut() {
     file.create(path, config_.getBody());
   }
   headers_["Content-Location"] = config_.getUri() + config_.getTarget();
+  return status_code;
+}
+
+int Response::handleDelete() {
+  int status_code = 200;
+  File file;
+  std::string path = "." + config_.getRoot() + "/" + config_.getTarget();
+
+  if (!file.exists(path))
+    return 404;
+
+  unlink(path.c_str());
+
+  body_ += "<!DOCTYPE html>\n\
+            <html>\n\
+            <body>\n\
+              <h1>File deleted</h1>\n\
+            </body>\n\
+            </html>";
+  headers_["Content-Type"] = MimeTypes::getType(".html");
+  headers_["Content-Length"] = std::to_string(body_.length());
   return status_code;
 }
 

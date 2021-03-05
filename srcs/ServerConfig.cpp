@@ -214,6 +214,8 @@ void ServerConfig::print() {
   }
   if (client_max_body_size_ > 0)
     std::cout << "  client_max_body_size : " << client_max_body_size_ << std::endl;
+  if (autoindex_)
+    std::cout << "  autoindex : on" << std::endl;
   if (locations_.size() > 0) {
     std::cout << "  Locations :" << std::endl;
     for (std::vector<ServerConfig>::iterator it = locations_.begin(); it != locations_.end(); it++) {
@@ -236,6 +238,12 @@ void ServerConfig::printLocation() {
     for (std::map<std::string, std::string>::iterator it = cgi_.begin(); it != cgi_.end(); it++)
       std::cout << "        " << it->first << " -> " << it->second << std::endl;
   }
+
+  if (client_max_body_size_ > 0)
+    std::cout << "      client_max_body_size : " << client_max_body_size_ << std::endl;
+
+  if (autoindex_)
+    std::cout << "      autoindex : on" << std::endl;
 
   if (!root_.empty())
     std::cout << "      root : " << root_ << std::endl;

@@ -2,6 +2,7 @@
 # define UTILS_HPP
 
 # include <netinet/in.h>
+# include <stdlib.h>
 
 # include <iostream>
 # include <string>
@@ -14,6 +15,8 @@ namespace ft {
   void *get_in_addr(struct sockaddr *sa);
   std::string trim_left(std::string str, char c);
   size_t to_hex(std::string &str);
+  size_t strlen(char *str);
+  char *strdup(char *str);
 };
 
 #endif

@@ -22,6 +22,8 @@ class RequestConfig {
   size_t &getClientMaxBodySize();
   std::string &getProtocol();
   std::vector<std::string> &getIndexes();
+  std::string &getHost();
+  uint32_t getPort();
 
   bool methodAccepted(std::string &method);
 
@@ -32,6 +34,7 @@ class RequestConfig {
   ServerConfig *server_;
   ServerConfig *location_;
   std::string target_;
+  uint32_t port_;
 };
 
 #endif

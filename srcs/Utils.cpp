@@ -43,4 +43,28 @@ namespace ft {
 
     return hex;
   }
+
+  size_t strlen(char *str) {
+    int i = 0;
+    while (str[i])
+      i++;
+    return i;
+  }
+
+  char *strdup(char *str) {
+    if (!str)
+      return nullptr;
+    char *newstr = (char*)malloc(sizeof(char) * strlen(str) + 1);
+
+    if (!newstr)
+      return nullptr;
+
+    size_t i = 0;
+
+    while (str[i])
+      newstr[i] = str[i];
+
+    newstr[i] = '\0';
+    return newstr;
+  }
 };
