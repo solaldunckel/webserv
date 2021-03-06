@@ -19,6 +19,7 @@
 # include "Response.hpp"
 
 # define MAX_CONNECTION 10
+# define BUF_SIZE 4096
 
 class Server {
  public:

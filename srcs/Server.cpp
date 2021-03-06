@@ -61,8 +61,6 @@ void Server::setup() {
   }
 }
 
-# define BUF_SIZE 500000
-
 void Server::newConnection(int fd) {
   struct sockaddr_storage their_addr;
   socklen_t addr_size = sizeof(their_addr);

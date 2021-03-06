@@ -51,8 +51,17 @@ void Response::initErrorCodes() {
   Response::error_codes_[505] = "HTTP Version Not Supported";
 }
 
-bool Response::isCGI() {
-  return true;
+bool Response::isCGI(std::string &path, std::string extension) {
+  std::cout << "IS CGI ?" << std::endl;
+  std::cout << "PATH = [" << path << "]" << std::endl;
+  std::cout << "EXTENSION = [" << extension << "]" << std::endl;
+  std::map<std::string, std::string> &cgi = config_.getCGI();
+  for (std::map<std::string, std::string>::iterator it = cgi.begin(); it != cgi.end(); it++) {
+    std::cout << it->first << " / " << it->second << std::endl;
+    if (it->first == extension)
+      return true;
+  }
+  return false;
 }
 
 void Response::buildErrorPage(int status_code) {
@@ -89,7 +98,7 @@ void Response::build() {
   } else if (config_.getClientMaxBodySize() > 0 && config_.getBody().length() > config_.getClientMaxBodySize()) {
     status_code = 413;
   }
-  else if (!config_.getAuth().empty() && !checkAuth()) {
+  else if (config_.getAuth() != "off" && !checkAuth()) {
     status_code = 401;
   }
   else if (Response::methods_[method]) {
@@ -122,16 +131,22 @@ int Response::handleGet() {
   if (file.is_directory(path)) {
     std::string index = file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes());
     if (index.length()) {
-      file.open("." + config_.getRoot() + config_.getTarget() + "/" + file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes()));
+      path = "." + config_.getRoot() + config_.getTarget() + "/" + index;
+      // file.open("." + config_.getRoot() + config_.getTarget() + "/" + file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes()));
     }
   }
-  else {
-    file.open(path);
-  }
 
-  if (!file.is_open())
+  if (!file.exists(path))
     return 404;
 
+  file.open(path);
+
+  if (!file.is_open())
+    return 403;
+
+  if (isCGI(path, file.getExtension())) {
+    std::cout << "MATCHING CGI" << std::endl;
+  }
   body_ = file.getContent();
 
   headers_["Content-Type"] = MimeTypes::getType(file.getExtension());

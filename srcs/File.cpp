@@ -37,7 +37,7 @@ std::string File::getContent() {
   std::string final;
 
   while (!stream_.eof()) {
-    memset(buf, 0, 512);
+    // memset(buf, 0, 512);
     stream_.read(buf, 512);
     final += std::string(buf, stream_.gcount());
   }
@@ -51,8 +51,7 @@ bool File::is_open() {
 }
 
 std::string File::getExtension() {
-  // extension_ = name_.substr(name_.find_last_of('.'));
-  if (name_.length())
+  if (name_.length() && name_.find_last_of('.') != std::string::npos)
     return name_.substr(name_.find_last_of('.'));
   return "";
 }
@@ -74,7 +73,7 @@ std::string File::find_index(std::string path, std::vector<std::string> indexes)
 
   if ((dir = opendir(path.c_str())) != NULL) {
     /* print all the files and directories within directory */
-    while ((ent = readdir (dir)) != NULL) {
+    while ((ent = readdir(dir)) != NULL) {
       for (std::vector<std::string>::iterator it = indexes.begin(); it != indexes.end(); it++) {
         if (*it == ent->d_name) {
           std::cout << "FOUND INDEX: " << ent->d_name << std::endl;
