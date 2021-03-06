@@ -32,6 +32,7 @@ void ServerConfig::initDirectiveMap() {
   ServerConfig::directive_["location"] = &ServerConfig::location;
   ServerConfig::directive_["server_name"] = &ServerConfig::server_name;
   ServerConfig::directive_["error_page"] = &ServerConfig::error_page;
+  ServerConfig::directive_["auth"] = &ServerConfig::auth;
   ServerConfig::directive_["client_max_body_size"] = &ServerConfig::client_max_body_size;
   ServerConfig::directive_["root"] = &ServerConfig::root;
   ServerConfig::directive_["limit_except"] = &ServerConfig::limit_except;
@@ -112,6 +113,12 @@ void ServerConfig::error_page(std::vector<std::string>::iterator &it) {
     throw std::runtime_error("double value in 'listen'");
 };
 
+void ServerConfig::auth(std::vector<std::string>::iterator &it) {
+  credentials_ = *it;
+  if (*++it != ";")
+    throw std::runtime_error("double value in 'root'");
+};
+
 void ServerConfig::root(std::vector<std::string>::iterator &it) {
   root_ = *it;
   if (*++it != ";")
@@ -176,6 +183,10 @@ std::vector<ServerConfig> &ServerConfig::getLocations() {
 
 size_t &ServerConfig::getClientMaxBodySize() {
   return client_max_body_size_;
+}
+
+std::string &ServerConfig::getAuth() {
+  return credentials_;
 }
 
 std::string &ServerConfig::getRoot() {

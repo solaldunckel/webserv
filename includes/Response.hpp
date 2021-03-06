@@ -26,6 +26,7 @@ class Response {
   void buildErrorPage(int status_code);
   bool isCGI();
   void build();
+  bool checkAuth();
 
   int handleGet();
   int handlePut();

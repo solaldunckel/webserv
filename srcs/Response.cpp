@@ -67,6 +67,16 @@ void Response::buildErrorPage(int status_code) {
             </html>";
   headers_["Content-Type"] = MimeTypes::getType(".html");
   headers_["Content-Length"] = std::to_string(body_.length());
+  if (status_code == 401)
+    headers_["WWW-Authenticate"] = "Basic realm=\"Access to restricted area\"";
+}
+
+bool Response::checkAuth() {
+  if (config_.getHeader("Authorization").empty())
+    return false;
+  std::string aut_cred = config_.getHeader("Authorization");
+  std::string token = ft::b64decode(aut_cred.substr(aut_cred.find(' ') + 1));
+  return (token == config_.getAuth());
 }
 
 void Response::build() {
@@ -78,7 +88,11 @@ void Response::build() {
     std::cout << "METHOD NOT ACCEPTED" << std::endl;
   } else if (config_.getClientMaxBodySize() > 0 && config_.getBody().length() > config_.getClientMaxBodySize()) {
     status_code = 413;
-  } else if (Response::methods_[method]) {
+  }
+  else if (!config_.getAuth().empty() && !checkAuth()) {
+    status_code = 401;
+  }
+  else if (Response::methods_[method]) {
     std::cout << "HANDLING " << method << " REQUEST" << std::endl;
     status_code = (this->*(Response::methods_[method]))();
   }
