@@ -108,6 +108,10 @@ std::string &RequestConfig::getUri() {
   return location_->getUri();
 }
 
+std::map<std::string, std::string> &RequestConfig::getCGI() {
+  return location_->getCGI();
+}
+
 std::string &RequestConfig::getBody() {
   return request_.getBody();
 }

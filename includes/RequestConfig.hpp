@@ -20,6 +20,7 @@ class RequestConfig {
   std::string &getTarget();
   std::string &getBody();
   std::string &getAuth();
+  std::map<std::string, std::string> &getCGI();
   std::string &getHeader(std::string key);
   size_t &getClientMaxBodySize();
   std::string &getProtocol();
