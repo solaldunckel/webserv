@@ -17,15 +17,12 @@ void RequestConfig::setup() {
   server_ = server;
   location_ = server;
 
-  if (location) {
-    if (request_.getTarget().find(location->getUri()) != std::string::npos)
-      target_ = target_.substr(location_->getUri().length());
-  }
+  target_ = request_.getTarget();
 
   if (location) {
     location_ = location;
     if (request_.getTarget().find(location->getUri()) != std::string::npos)
-      target_ = request_.getTarget().substr(location_->getUri().length());
+      target_.erase(0, location_->getUri().length());
   }
 }
 
@@ -136,7 +133,7 @@ std::string &RequestConfig::getHost() {
   return host_;
 }
 
-uint32_t RequestConfig::getPort() {
+uint32_t &RequestConfig::getPort() {
   return port_;
 }
 

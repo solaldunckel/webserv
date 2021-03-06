@@ -28,16 +28,15 @@ class Response {
   void build();
   bool checkAuth();
 
-  int handleGet();
-  int handlePut();
-  int handleDelete();
+  int GET();
+  int PUT();
+  int DELETE();
 
   std::string getResponseBody();
   int send(int fd);
 
  private:
   RequestConfig &config_;
-  int status_code_;
   std::string response_;
   std::string body_;
   std::map<std::string, std::string> headers_;

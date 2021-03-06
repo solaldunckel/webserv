@@ -15,6 +15,7 @@ static void interruptHandler(int sig_int) {
 Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
   FD_ZERO(&master_fds_);
   FD_ZERO(&read_fds_);
+  FD_ZERO(&write_fds_);
 }
 
 Server::~Server() {

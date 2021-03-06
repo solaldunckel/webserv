@@ -25,7 +25,6 @@ void File::open(std::string path) {
 }
 
 void File::create(std::string path, std::string &body) {
-  // int exists = 0;
   name_ = path;
 
   stream_.open(name_, std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
@@ -72,7 +71,6 @@ std::string File::find_index(std::string path, std::vector<std::string> indexes)
   struct dirent *ent;
 
   if ((dir = opendir(path.c_str())) != NULL) {
-    /* print all the files and directories within directory */
     while ((ent = readdir(dir)) != NULL) {
       for (std::vector<std::string>::iterator it = indexes.begin(); it != indexes.end(); it++) {
         if (*it == ent->d_name) {

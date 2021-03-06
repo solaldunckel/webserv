@@ -26,7 +26,7 @@ class RequestConfig {
   std::string &getProtocol();
   std::vector<std::string> &getIndexes();
   std::string &getHost();
-  uint32_t getPort();
+  uint32_t &getPort();
 
   bool methodAccepted(std::string &method);
 

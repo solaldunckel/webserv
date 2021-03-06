@@ -33,15 +33,9 @@ class File {
   std::string getContent();
 
  private:
-  int           fd_;
-  int           status_;
   std::fstream  stream_;
-  bool          is_dir_;
   std::string   name_;
   std::string   full_path_;
-  std::string   body_;
-  std::string   mime_;
-  std::string   extension_;
 };
 
 #endif

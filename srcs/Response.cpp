@@ -5,22 +5,20 @@
 */
 
 Response::Response(RequestConfig &config) : config_(config) {
-  status_code_ = 200;
-  headers_["Server"] = "webserv/1.0";
+  headers_["Server"] = "Webserv/1.0";
   initErrorCodes();
   initMethodMap();
 }
 
-Response::~Response() {
-}
+Response::~Response() {}
 
 std::map<std::string, Response::type> Response::methods_;
 void Response::initMethodMap() {
-  Response::methods_["GET"] = &Response::handleGet;
-  Response::methods_["HEAD"] = &Response::handleGet;
-  Response::methods_["POST"] = &Response::handleGet;
-  Response::methods_["PUT"] = &Response::handlePut;
-  Response::methods_["DELETE"] = &Response::handleDelete;
+  Response::methods_["GET"] = &Response::GET;
+  Response::methods_["HEAD"] = &Response::GET;
+  Response::methods_["POST"] = &Response::GET;
+  Response::methods_["PUT"] = &Response::PUT;
+  Response::methods_["DELETE"] = &Response::DELETE;
 }
 
 std::map<int, std::string> Response::error_codes_;
@@ -107,7 +105,7 @@ void Response::build() {
   }
 
   if (status_code >= 400) {
-    std::cout << "HANDLING ERROR " << status_code_ << std::endl;
+    std::cout << "HANDLING ERROR " << status_code << std::endl;
     buildErrorPage(status_code);
   }
 
@@ -124,16 +122,16 @@ void Response::build() {
     response_ = response_ + body_;
 }
 
-int Response::handleGet() {
+int Response::GET() {
   File file;
   std::string path = "." + config_.getRoot() + "/" + config_.getTarget();
 
   if (file.is_directory(path)) {
     std::string index = file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes());
-    if (index.length()) {
+    if (index.length())
       path = "." + config_.getRoot() + config_.getTarget() + "/" + index;
-      // file.open("." + config_.getRoot() + config_.getTarget() + "/" + file.find_index("." + config_.getRoot() + config_.getTarget(), config_.getIndexes()));
-    }
+    else
+      return 404;
   }
 
   if (!file.exists(path))
@@ -158,7 +156,7 @@ int Response::handleGet() {
   return 200;
 }
 
-int Response::handlePut() {
+int Response::PUT() {
   int status_code = 204;
   File file;
   std::string path = "." + config_.getRoot() + "/" + config_.getTarget();
@@ -175,8 +173,7 @@ int Response::handlePut() {
   return status_code;
 }
 
-int Response::handleDelete() {
-  int status_code = 200;
+int Response::DELETE() {
   File file;
   std::string path = "." + config_.getRoot() + "/" + config_.getTarget();
 
@@ -193,7 +190,7 @@ int Response::handleDelete() {
             </html>";
   headers_["Content-Type"] = MimeTypes::getType(".html");
   headers_["Content-Length"] = std::to_string(body_.length());
-  return status_code;
+  return 200;
 }
 
 int Response::send(int fd) {

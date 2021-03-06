@@ -45,6 +45,7 @@ void Config::tokenize() {
     }
     line_idx++;
   }
+  file_.close();
 }
 
 void Config::parse() {
@@ -62,8 +63,8 @@ void Config::parse() {
       throw std::runtime_error("invalid directive '" + *it + "' in main block");
   }
   if (servers_.empty())
-      throw std::runtime_error("missing server block");
-  file_.close();
+    throw std::runtime_error("missing server block");
+  tokens_.clear();
 }
 
 bool Config::is_directive(std::string str) {

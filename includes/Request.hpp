@@ -21,7 +21,6 @@ class Request {
  public:
   // Constructors & Deconstructors
   Request();
-  Request(std::string &msg, std::vector<ServerConfig> &servers);
   ~Request();
 
   int parse(std::string buffer);
@@ -48,12 +47,10 @@ class Request {
 
   void initHeadersMap();
 
-  bool isValid();
   std::string &getMethod();
   std::string &getTarget();
   std::string &getProtocol();
   std::string &getBody();
-  std::vector<ServerConfig> &getServers();
   std::string &getHeader(std::string key);
 
   void clear();
@@ -69,10 +66,10 @@ class Request {
   std::map<std::string, std::string, comp> headers_;
 
   int body_offset_;
-  int chunk_status_;
   int chunk_size_;
   size_t length_;
   Status status_;
+  ChunkStatus chunk_status_;
 };
 
 #endif

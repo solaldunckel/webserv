@@ -17,8 +17,9 @@ int main(int argc, char **argv) {
 
     config.parse();
 
-    if (DEBUG)
+    #ifdef DEBUG
       config.print();
+    #endif
 
     Server serv(config.getServers());
 

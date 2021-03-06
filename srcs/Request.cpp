@@ -4,11 +4,8 @@
 ** Constructors & Deconstructors
 */
 
-// Request::Request() {
-// }
-
-Request::Request() : status_(FIRST_LINE) {
-  initHeadersMap();
+Request::Request() {
+  clear();
 }
 
 Request::~Request() {
@@ -85,7 +82,7 @@ int Request::method_line() {
 
     if (isValidMethod(tmp)) {
       method_ = tmp;
-      buffer_ = buffer_.substr(method_.length() + 1);
+      buffer_.erase(0, method_.length() + 1);
     } else {
       status_ = ERROR;
       return 400;
@@ -95,17 +92,18 @@ int Request::method_line() {
 
     if (tmp.length() < 10000) {
       target_ = tmp;
-      buffer_ = buffer_.substr(target_.length() + 1);
+      buffer_.erase(0, target_.length() + 1);
     } else {
       status_ = ERROR;
       return 414;
     }
 
-    tmp = buffer_.substr(0, buffer_.find("\r\n"));
+    size_t end = buffer_.find("\r\n");
+    tmp = buffer_.substr(0, end);
 
     if (tmp == "HTTP/1.1") {
       protocol_ = tmp;
-      buffer_ = buffer_.substr(buffer_.find("\r\n") + 2);
+      buffer_.erase(0, end + 2);
     } else {
       status_ = ERROR;
       return 505;
@@ -123,7 +121,7 @@ int Request::headers() {
 
   while ((end = buffer_.find("\r\n")) != std::string::npos) {
     if (buffer_.find("\r\n") == 0) {
-      buffer_ = buffer_.substr(end + 2);
+      buffer_.erase(0, end + 2);
       status_ = PREBODY;
       break;
     }
@@ -132,7 +130,7 @@ int Request::headers() {
       if (headers_.count(header))
         headers_[header] = ft::trim_left(buffer_.substr(last + 1, end - last - 1), ' ');
     }
-    buffer_ = buffer_.substr(end + 2);
+    buffer_.erase(0, end + 2);
   }
   return 0;
 }
@@ -174,7 +172,7 @@ int Request::chunk() {
     if (chunk_status_ == CHUNK_SIZE) {
       std::string hex = buffer_.substr(0, end);
       chunk_size_ = ft::to_hex(hex);
-      buffer_ = buffer_.substr(end + 2);
+      buffer_.erase(0, end + 2);
       chunk_status_ = CHUNK_BODY;
     } else if (chunk_status_ == CHUNK_BODY) {
       if (chunk_size_ == 0) {
@@ -182,7 +180,7 @@ int Request::chunk() {
         return 1;
       }
       req_body_ += buffer_.substr(0, end);
-      buffer_ = buffer_.substr(end + 2);
+      buffer_.erase(0, end + 2);
       chunk_size_ = 0;
       chunk_status_ = CHUNK_SIZE;
     }

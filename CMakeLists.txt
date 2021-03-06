@@ -1,25 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
-
 # set the project name
 project(webserv)
 
-option(DEBUG "PRINT DEBUG MESSAGES" OFF)
-
-if (DEBUG)
-  add_definitions(-DDEBUG)
-endif()
-
+# set variables
+set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-# add_custom_target(fclean
-#   COMMAND rm -rf CMakeCache.txt
-#   COMMAND rm -rf CMakeFiles/
-#   COMMAND rm -rf cmake_install.cmake
-#   COMMAND rm -rf Makefile
-# )
 
 set(SRCS
   srcs/main.cpp
@@ -36,8 +23,20 @@ set(SRCS
 
 add_compile_options(-Wall -Werror -Wextra)
 
+option(DEBUG "PRINT DEBUG MESSAGES" ON)
+
+# custom fclean target
+add_custom_target(fclean
+  COMMAND rm -rf CMakeCache.txt
+  COMMAND rm -rf CMakeFiles/
+  COMMAND rm -rf cmake_install.cmake
+  COMMAND rm -rf Makefile
+)
+
 # add the executable
 add_executable(webserv ${SRCS})
-
-# add includes
 target_include_directories(webserv PUBLIC includes)
+
+if (DEBUG)
+  target_compile_definitions(webserv PUBLIC -DDEBUG)
+endif()

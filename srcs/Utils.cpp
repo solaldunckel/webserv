@@ -2,8 +2,8 @@
 
 namespace ft {
   std::string to_lower(std::string s) {
-      std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-      return s;
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+    return s;
   }
 
   void	*memset(void *b, int c, size_t len) {
@@ -30,7 +30,7 @@ namespace ft {
   std::string trim_left(std::string str, char c) {
     size_t startpos = str.find_first_not_of(c);
     if (startpos != std::string::npos)
-      str = str.substr(startpos);
+      str.erase(0, startpos);
     return str;
   }
 
