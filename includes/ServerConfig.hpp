@@ -48,6 +48,7 @@ class ServerConfig {
   std::vector<std::string> &getIndexes();
   std::vector<std::string> &getMethods();
   std::string &getUri();
+  std::map<std::string, std::string> &getCGI();
 
   void print();
   void printLocation();

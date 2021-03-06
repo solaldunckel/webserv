@@ -4,7 +4,7 @@
 ** Constructors & Deconstructors
 */
 
-ServerConfig::ServerConfig() : client_max_body_size_(0) {
+ServerConfig::ServerConfig() : credentials_("off"), client_max_body_size_(0) {
   initDirectiveMap();
 }
 
@@ -16,13 +16,14 @@ ServerConfig	&ServerConfig::operator=(const ServerConfig &copy) {
   root_ = copy.root_;
   error_codes_ = copy.error_codes_;
   index_ = copy.index_;
+  cgi_ = copy.cgi_;
+  credentials_ = copy.credentials_;
   return (*this);
 }
 
 /*
 ** To add :
 **  - upload / directory
-**  - authentification
 **  - cgi-bin ?
 */
 
@@ -116,7 +117,7 @@ void ServerConfig::error_page(std::vector<std::string>::iterator &it) {
 void ServerConfig::auth(std::vector<std::string>::iterator &it) {
   credentials_ = *it;
   if (*++it != ";")
-    throw std::runtime_error("double value in 'root'");
+    throw std::runtime_error("double value in 'auth'");
 };
 
 void ServerConfig::root(std::vector<std::string>::iterator &it) {
@@ -161,8 +162,10 @@ void ServerConfig::location(std::vector<std::string>::iterator &it) {
 
 void ServerConfig::cgi(std::vector<std::string>::iterator &it) {
   std::string ext = *it++;
-
-  cgi_[ext] = *it++;
+  std::string exec = *it++;
+  cgi_[ext] = exec;
+  if (*it != ";")
+    throw std::runtime_error("triple value in 'cgi'");
 };
 
 /*
@@ -193,7 +196,7 @@ std::string &ServerConfig::getRoot() {
   return root_;
 }
 
-std::map<int, std::string>  &ServerConfig::getErrorCodes() {
+std::map<int, std::string> &ServerConfig::getErrorCodes() {
   return error_codes_;
 }
 
@@ -209,6 +212,10 @@ std::string &ServerConfig::getUri() {
   return uri_;
 }
 
+std::map<std::string, std::string> &ServerConfig::getCGI() {
+  return cgi_;
+}
+
 /* Debug Functions */
 
 void ServerConfig::print() {
@@ -221,7 +228,7 @@ void ServerConfig::print() {
   }
   std::cout << "  server_name :" << std::endl;
   for (std::vector<std::string>::iterator it = server_name_.begin(); it != server_name_.end(); it++) {
-      std::cout << "    " << *it << std::endl;
+    std::cout << "    " << *it << std::endl;
   }
   if (client_max_body_size_ > 0)
     std::cout << "  client_max_body_size : " << client_max_body_size_ << std::endl;
