@@ -45,7 +45,9 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
   while (it != servers.end()) {
     for (std::vector<Listen>::iterator list = it->getListens().begin(); list != it->getListens().end(); list++) {
       if (list->ip_ == host_ && list->port_ == port) {
+        #ifdef DEBUG
         std::cout << "MATCHING SERVER : " << list->ip_ << ":" << list->port_ << " from " << host_ << std::endl;
+        #endif
         port_ = list->port_;
         return &(*it);
       }
@@ -56,7 +58,9 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
   while (it != servers.end()) {
     for (std::vector<Listen>::iterator list = it->getListens().begin(); list != it->getListens().end(); list++) {
       if (list->ip_ == "0.0.0.0" && list->port_ == port) {
+        #ifdef DEBUG
         std::cout << "MATCHING SERVER : " << list->ip_ << ":" << list->port_ << std::endl;
+        #endif
         port_ = list->port_;
         host_ = host; // ?
         return &(*it);
@@ -73,7 +77,9 @@ ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::st
 
   for (std::vector<ServerConfig>::iterator it = server->getLocations().begin(); it != server->getLocations().end(); it++) {
     if (it->getUri() == target) {
+      #ifdef DEBUG
       std::cout << "MATCHING LOCATION : " << it->getUri() << std::endl;
+      #endif
       return &(*it);
     }
   }

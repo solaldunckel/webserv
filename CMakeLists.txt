@@ -12,6 +12,7 @@ set(SRCS
   srcs/main.cpp
   srcs/Config.cpp
   srcs/File.cpp
+  srcs/StatusCode.cpp
   srcs/MimeTypes.cpp
   srcs/Request.cpp
   srcs/RequestConfig.cpp
@@ -31,6 +32,7 @@ add_custom_target(fclean
   COMMAND rm -rf CMakeFiles/
   COMMAND rm -rf cmake_install.cmake
   COMMAND rm -rf Makefile
+  COMMAND rm -rf webserv
 )
 
 # add the executable

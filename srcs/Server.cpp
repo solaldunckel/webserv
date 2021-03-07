@@ -45,6 +45,7 @@ void Server::setup() {
       address_.sin_addr.s_addr = inet_addr(list->ip_.c_str());
       address_.sin_port = htons(list->port_);
 
+      std::cout << "setup server on " << list->ip_ << ":" << list->port_ << " on fd " << server_fd << std::endl;
       setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
       if (bind(server_fd, (struct sockaddr *)&address_, sizeof(address_)) < 0)
@@ -74,16 +75,18 @@ void Server::newConnection(int fd) {
 
   // std::cout << "[Server] New connection from " << clients_[clientFd] << " (socket " << fd << ")" << std::endl;
 
-  std::cout << "[Server] New connection (socket " << fd << ")" << std::endl;
+  std::cout << "[Server] New connection on socket " << fd << std::endl;
+  std::cout << "[Server] New client on socket " << clientFd << std::endl;
 
+  FD_CLR(fd, &read_fds_);
 
   if (clientFd == -1)
-    perror("accept");
+    strerror(errno);
   else {
     //std::cout << "[Server] Connection from " << buf << std::endl;
     FD_SET(clientFd, &master_fds_); // add to master set
     if (clientFd > max_fd_)   // keep track of the max
-        max_fd_ = clientFd;
+      max_fd_ = clientFd;
   }
 }
 
@@ -95,24 +98,29 @@ void Server::readData(int fd) {
     if (nbytes == 0) {
       std::cout << "[Server] Connection closed (socket " << fd << ")." << std::endl;
     } else {
-      perror("recv");
+      strerror(errno);
     }
     close(fd); // bye!
     FD_CLR(fd, &master_fds_); // remove from master set
     return ;
   }
 
+  FD_CLR(fd, &read_fds_);
+
   buf[nbytes] = '\0';
+  #ifdef DEBUG
   std::cout << "[Server] Receiving data from " << clients_[fd] << std::endl;
+  #endif
 
   std::string buffer(buf, nbytes);
 
-  // std::cout << "THE MESSAGE: [" << buffer << "]" << std::endl;
   int ret = request_.parse(buffer);
 
   if (ret == 1) {
+    #ifdef DEBUG
     std::cout << "REQUEST OK" << std::endl;
     request_.print();
+    #endif
     RequestConfig config(request_, clients_[fd], servers_);
 
     config.setup();
@@ -123,8 +131,10 @@ void Server::readData(int fd) {
     response.send(fd);
     request_.clear();
   } else if (ret > 1) {
+    #ifdef DEBUG
     std::cout << "REQUEST ERROR" << std::endl;
     request_.print();
+    #endif
     RequestConfig config(request_, clients_[fd], servers_);
 
     config.setup();
@@ -132,13 +142,17 @@ void Server::readData(int fd) {
     Response response(config);
 
     response.build();
-    response.send(fd);
+    if (FD_ISSET(fd, &write_fds_)) {
+      response.send(fd);
+    }
     request_.clear();
   }
 }
 
 void Server::run() {
+  int server_max_fd = max_fd_;
 
+  std::cout << "SERVER MAX FD " << server_max_fd << std::endl;
   server_fds_ = master_fds_;
 
   signal(SIGINT, interruptHandler);
@@ -146,7 +160,8 @@ void Server::run() {
   std::cout << "[Server] Starting." << std::endl;
   while (running_) {
     read_fds_ = master_fds_;
-    if (select(max_fd_ + 1, &read_fds_, NULL, NULL, NULL) == -1) {
+    write_fds_ = master_fds_;
+    if (select(max_fd_ + 1, &read_fds_, &write_fds_, NULL, NULL) == -1) {
       strerror(errno);
       break ;
     }
