@@ -54,7 +54,7 @@ namespace ft {
   char *strdup(char *str) {
     if (!str)
       return nullptr;
-    char *newstr = (char*)malloc(sizeof(char) * strlen(str) + 1);
+    char *newstr = (char*)malloc(sizeof(char) * ft::strlen(str) + 1);
 
     if (!newstr)
       return nullptr;
@@ -98,5 +98,16 @@ namespace ft {
 
   std::string b64decode(const std::string &str64) {
     return b64decode(str64.c_str(), str64.size());
+  }
+
+  std::string get_http_date() {
+    struct timeval tv;
+    char buf[32];
+    gettimeofday(&tv, NULL);
+
+    struct tm	*tm;
+    tm = gmtime(&tv.tv_sec);
+    int ret = strftime(buf, 32, "%a, %d %b %Y %T GMT", tm);
+    return std::string(buf, ret);
   }
 };

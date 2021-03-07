@@ -7,6 +7,8 @@
 # include <iostream>
 # include <string>
 # include <sstream>
+# include <sys/time.h>
+# include <time.h>
 
 namespace ft {
   static const int B64index[256] = {
@@ -30,6 +32,7 @@ namespace ft {
   char *strdup(char *str);
   const std::string b64decode(const void* data, const size_t &len);
   std::string b64decode(const std::string& str64);
+  std::string get_http_date();
 };
 
 #endif
