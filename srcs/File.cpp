@@ -68,6 +68,17 @@ bool File::exists() {
   return stat(path_.c_str(), &statbuf) == 0;
 }
 
+std::string File::last_modified() {
+  struct stat statbuf;
+  struct tm	*tm;
+  char buf[32];
+
+  stat(path_.c_str(), &statbuf);
+  tm = gmtime(&statbuf.st_mtime);
+  int ret = strftime(buf, 32, "%a, %d %b %Y %T GMT", tm);
+  return std::string(buf, ret);
+}
+
 std::string File::find_index(std::vector<std::string> indexes) {
   DIR *dir;
   struct dirent *ent;
