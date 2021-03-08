@@ -1,50 +1,100 @@
 #include "CGI.hpp"
 
-CGI::CGI() {}
+std::string const CGI_TMP = "__cgi_tmp__.txt";
 
-CGI::~CGI() {}
+CGI::CGI(File &file, RequestConfig &config) : file_(file), config_(config) {
+  extension_ = file_.getExtension();
+  cgi_exe_ = config.getCGI()[extension_];
+  cgi_bin_ = "/cgi-bin";
+  cgi_path_ = "." + cgi_bin_ + "/" + cgi_exe_;
+  tmp_fd_ = open(CGI_TMP.c_str(), O_CREAT | O_RDWR, 0666);
 
-int CGI::execute() {
-  return 1;
+  char *cwd = getcwd(NULL, 0);
+  cwd_ = cwd;
+  free(cwd);
 }
 
-void CGI::setCGIEnv()
-{
-	m_env_["GATEWAY_INTERFACE"] = "CGI/1.1";
-	m_env_["SERVER_SOFTWARE"] = "WEBSERV/1.0";
-	m_env_["SERVER_PROTOCOL"] = "HTTP/1.1";
-	m_env_["SERVER_PORT"] = std::to_string(config_.listen().port());
-	m_env_["SCRIPT_NAME"] = cgi_path_;
-	m_env_["SERVER_NAME"] = request_.headers.value("Host").substr(0, request_.headers.value("Host").find_first_of(':'));  // ??
-	m_env_["REMOTE_ADDR"] = "";																							  // client ip
-	m_env_["REQUEST_METHOD"] = request_.method;
-	m_env_["QUERY_STRING"] = request_.query;  // everything after ?
-	if (request_.method == "POST")
-	{
-		m_env_["CONTENT_TYPE"] = request_.headers.value("Content-Type");  // For queries which have attached information, such as HTTP POST and PUT, this is the content type of the data.
-		m_env_["CONTENT_LENGTH"] = std::to_string(request_.body.length());				  // The length of the said content only for POST requests.
+CGI::~CGI() {
+  close(tmp_fd_);
+  // unlink(CGI_TMP.c_str());
+  free(argv_[0]);
+  free(argv_[1]);
+}
+
+void CGI::execute() {
+  std::cout << "EXECUTE " << cgi_path_ << std::endl;
+  std::cout << "WORKING DIR " << cwd_ << std::endl;
+
+  argv_[0] = ft::strdup(cgi_path_.c_str());
+  argv_[1] = ft::strdup(file_.getPath().c_str());
+  argv_[2] = nullptr;
+
+  int pip[2];
+  pipe(pip);
+  pid_t pid = fork();
+
+	if (pid == 0) {
+		close(pip[1]);
+		dup2(pip[0], 0);
+		dup2(tmp_fd_, 1);
+		close(pip[0]);
+		execve(argv_[0], argv_, env_);
+		exit(1);
 	}
-	// if (authentification) {
-	// m_env_["REMOTE_IDENT"] = ""; // Distant username of client. Only when authentificated?
-	// m_env_["REMOTE_USER"] = ""; // Username of client if script is protected and server handle authentification
+	else if (pid > 0) {
+		close(pip[0]);
+    write(pip[1], file_.getContent().c_str(), file_.getContent().length());
+		close(pip[1]);
+    if (waitpid(pid, NULL, 0) == -1)
+			perror("wait");
+	}
+  else
+    perror("fork");
+  close(tmp_fd_);
+}
+
+std::string CGI::getBody() {
+  char buffer[4096 + 1];
+  int ret;
+  std::string body;
+
+  int fd = open(CGI_TMP.c_str(), O_RDWR, 0666);
+
+  while ((ret = read(fd, buffer, 4096)) > 0)
+  {
+    buffer[ret] = '\0';
+    body += buffer;
+  }
+  close(fd);
+  return body;
+}
+
+void CGI::setCGIEnv() {
+	cgi_env_["GATEWAY_INTERFACE"] = "CGI/1.1";
+	cgi_env_["SERVER_SOFTWARE"] = "WEBSERV/1.0";
+	cgi_env_["SERVER_PROTOCOL"] = "HTTP/1.1";
+	cgi_env_["SERVER_PORT"] = std::to_string(config_.getPort());
+	cgi_env_["SCRIPT_NAME"] = cgi_path_;
+	cgi_env_["SERVER_NAME"] = config_.getHost();  // ??
+	// cgi_env_["REMOTE_ADDR"] = "";																							  // client ip
+	cgi_env_["REQUEST_METHOD"] = config_.getMethod();
+	// cgi_env_["QUERY_STRING"] = request_.query;  // everything after ?
+	// if (request_.method == "POST") {
+	// 	cgi_env_["CONTENT_TYPE"] = request_.headers.value("Content-Type");  // For queries which have attached information, such as HTTP POST and PUT, this is the content type of the data.
+	// 	cgi_env_["CONTENT_LENGTH"] = std::to_string(request_.body.length());				  // The length of the said content only for POST requests.
 	// }
-	m_env_["REQUEST_URI"] = file_path_;		 // The interpreted pathname of the requested document or CGI (relative to the document root)
-	m_env_["PATH_INFO"] = file_path_;		 // ?
-	m_env_["PATH_TRANSLATED"] = file_path_;	 // ?
-	if (ext_ == "php")
-		m_env_["REDIRECT_STATUS"] = "200";
+	// cgi_env_["REQUEST_URI"] = file_path_;		 // The interpreted pathname of the requested document or CGI (relative to the document root)
+	// cgi_env_["PATH_INFO"] = file_path_;		 // ?
+	// cgi_env_["PATH_TRANSLATED"] = file_path_;	 // ?
+	if (extension_ == ".php")
+		cgi_env_["REDIRECT_STATUS"] = "200";
 
-  Headers::HeaderCollection head = request_.headers.getAll();
-  for (Headers::HeaderCollection::const_iterator it = head.begin(); it != head.end(); it++)
-		m_env_["HTTP_" + (std::string)it->name] = (std::string)it->value;
-
-	if (!(env_ = (char **)malloc(sizeof(char *) * m_env_.size() + 1)))
-		return;	 // !
+	if (!(env_ = (char **)malloc(sizeof(char *) * (cgi_env_.size() + 1))))
+		return;
 
 	int i = 0;
 
-	for (std::map<std::string, std::string>::iterator it = m_env_.begin(); it != m_env_.end(); it++)
-	{
+	for (std::map<std::string, std::string>::iterator it = cgi_env_.begin(); it != cgi_env_.end(); it++) {
 		std::string tmp = it->first + "=" + it->second;
 		env_[i] = ft::strdup(tmp.c_str());
 		i++;

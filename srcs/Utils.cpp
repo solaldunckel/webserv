@@ -44,14 +44,14 @@ namespace ft {
     return hex;
   }
 
-  size_t strlen(char *str) {
+  size_t strlen(const char *str) {
     int i = 0;
     while (str[i])
       i++;
     return i;
   }
 
-  char *strdup(char *str) {
+  char *strdup(const char *str) {
     if (!str)
       return nullptr;
     char *newstr = (char*)malloc(sizeof(char) * ft::strlen(str) + 1);
@@ -61,8 +61,10 @@ namespace ft {
 
     size_t i = 0;
 
-    while (str[i])
+    while (str[i]) {
       newstr[i] = str[i];
+      i++;
+    }
 
     newstr[i] = '\0';
     return newstr;

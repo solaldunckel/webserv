@@ -33,6 +33,7 @@ class File {
 
   std::string getExtension();
   std::string getContent();
+  std::string &getPath();
 
  private:
   std::fstream stream_;

@@ -28,8 +28,8 @@ namespace ft {
   void *get_in_addr(struct sockaddr *sa);
   std::string trim_left(std::string str, char c);
   size_t to_hex(std::string &str);
-  size_t strlen(char *str);
-  char *strdup(char *str);
+  size_t strlen(const char *str);
+  char *strdup(const char *str);
   const std::string b64decode(const void* data, const size_t &len);
   std::string b64decode(const std::string& str64);
   std::string get_http_date();

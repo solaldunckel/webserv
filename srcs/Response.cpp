@@ -128,10 +128,19 @@ int Response::GET() {
     #ifdef DEBUG
     std::cout << "MATCHING CGI" << std::endl;
     #endif
-  }
-  body_ = file.getContent();
+    CGI cgi(file, config_);
 
-  headers_["Content-Type"] = MimeTypes::getType(file.getExtension());
+    cgi.execute();
+    std::cout << "GETTING BODY" << std::endl;
+    body_ = cgi.getBody();
+    std::cout << " [" << body_ << "] " << std::endl;
+    headers_["Content-Type"] = "text/html";
+  }
+  else {
+    headers_["Content-Type"] = MimeTypes::getType(file.getExtension());
+    body_ = file.getContent();
+  }
+
   headers_["Content-Length"] = std::to_string(body_.length());
 
   if (config_.getMethod() == "HEAD")

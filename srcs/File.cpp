@@ -57,6 +57,10 @@ std::string File::getExtension() {
   return "";
 }
 
+std::string &File::getPath() {
+  return path_;
+}
+
 bool File::is_directory() {
   struct stat statbuf;
   stat(path_.c_str(), &statbuf);

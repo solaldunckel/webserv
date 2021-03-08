@@ -12,6 +12,7 @@
 # include "MimeTypes.hpp"
 # include "RequestConfig.hpp"
 # include "File.hpp"
+# include "CGI.hpp"
 
 class Response {
  public:
