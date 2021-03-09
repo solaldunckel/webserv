@@ -21,23 +21,17 @@ void Response::initMethodMap() {
 }
 
 bool Response::isCGI(std::string extension) {
-  #ifdef DEBUG
-  std::cout << "IS CGI ?" << std::endl;
-  std::cout << "EXTENSION = [" << extension << "]" << std::endl;
-  #endif
   std::map<std::string, std::string> &cgi = config_.getCGI();
   for (std::map<std::string, std::string>::iterator it = cgi.begin(); it != cgi.end(); it++) {
-    #ifdef DEBUG
-    std::cout << it->first << " / " << it->second << std::endl;
-    #endif
     if (it->first == extension)
       return true;
   }
   return false;
 }
 
-void Response::buildErrorPage(int status_code) {
-  body_ += "<!DOCTYPE html>\n\
+std::string Response::buildErrorPage(int status_code) {
+  std::string body;
+  body += "<!DOCTYPE html>\n\
             <html>\n\
             <head>\n\
               <title>Webserv: " + std::to_string(status_code) + " " + status_[status_code] + "</title>\n\
@@ -50,6 +44,7 @@ void Response::buildErrorPage(int status_code) {
   headers_["Content-Length"] = std::to_string(body_.length());
   if (status_code == 401)
     headers_["WWW-Authenticate"] = "Basic realm=\"Access to restricted area\"";
+  return body;
 }
 
 bool Response::checkAuth() {
@@ -60,36 +55,39 @@ bool Response::checkAuth() {
   return (token == config_.getAuth());
 }
 
+std::string Response::methodList() {
+  std::vector<std::string> methods = config_.getMethods();
+  std::string list;
+
+  std::vector<std::string>::iterator it = methods.begin();
+  while (it != methods.end()) {
+    list += *it;
+    it++;
+    if (it != methods.end())
+      list += ", ";
+  }
+  return list;
+}
+
 void Response::build() {
-  int status_code = 200;
   std::string method = config_.getMethod();
 
   if (!config_.methodAccepted(method)) {
-    status_code = 405;
-    #ifdef DEBUG
-    std::cout << "METHOD NOT ACCEPTED" << std::endl;
-    #endif
+    status_code_ = 405;
+    headers_["Allow"] = methodList();
   } else if (config_.getClientMaxBodySize() > 0 && config_.getBody().length() > config_.getClientMaxBodySize()) {
-    status_code = 413;
+    status_code_ = 413;
   }
-  else if (config_.getAuth() != "off" && !checkAuth()) {
-    status_code = 401;
-  }
-  else if (Response::methods_[method]) {
-    #ifdef DEBUG
-    std::cout << "HANDLING " << method << " REQUEST" << std::endl;
-    #endif
-    status_code = (this->*(Response::methods_[method]))();
+  else if (config_.getAuth() != "off" && !checkAuth())
+    status_code_ = 401;
+  else if (Response::methods_[method])
+    status_code_ = (this->*(Response::methods_[method]))();
+
+  if (status_code_ >= 400) {
+    body_ = buildErrorPage(status_code_);
   }
 
-  if (status_code >= 400) {
-    #ifdef DEBUG
-    std::cout << "HANDLING ERROR " << status_code << std::endl;
-    #endif
-    buildErrorPage(status_code);
-  }
-
-  response_ = response_ + "HTTP/1.1" + " " + std::to_string(status_code) + " " + status_[status_code] + "\r\n";
+  response_ = response_ + "HTTP/1.1" + " " + std::to_string(status_code_) + " " + status_[status_code_] + "\r\n";
 
   headers_["Date"] = ft::get_http_date();
   for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++)
@@ -102,7 +100,7 @@ void Response::build() {
   response_ += "\r\n";
 
   if (!body_.empty())
-    response_ = response_ + body_;
+    response_ += body_;
 }
 
 int Response::GET() {
@@ -125,9 +123,6 @@ int Response::GET() {
     return 403;
 
   if (isCGI(file.getExtension())) {
-    #ifdef DEBUG
-    std::cout << "MATCHING CGI" << std::endl;
-    #endif
     CGI cgi(file, config_);
 
     cgi.execute();
@@ -142,10 +137,6 @@ int Response::GET() {
   }
 
   headers_["Content-Length"] = std::to_string(body_.length());
-
-  if (config_.getMethod() == "HEAD")
-    body_.clear();
-
   headers_["Last-Modified"] = file.last_modified();
   return 200;
 }

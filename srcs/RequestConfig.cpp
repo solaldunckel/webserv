@@ -34,7 +34,7 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
 
   uint32_t port = 80;
 
-  std::string host = host_port.substr(host_port.find(':'));
+  std::string host = host_port.substr(0, host_port.find(':'));
 
   if (host_port.find(':') != std::string::npos)
     port = std::stod(host_port.substr(host_port.find(':') + 1));
@@ -133,6 +133,10 @@ size_t &RequestConfig::getClientMaxBodySize() {
 
 std::vector<std::string> &RequestConfig::getIndexes() {
   return location_->getIndexes();
+}
+
+std::vector<std::string> &RequestConfig::getMethods() {
+  return location_->getMethods();
 }
 
 std::string &RequestConfig::getHost() {

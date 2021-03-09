@@ -24,10 +24,11 @@ class Response {
   static std::map<std::string, type> methods_;
   static void initMethodMap();
 
-  void buildErrorPage(int status_code);
+  std::string buildErrorPage(int status_code);
   bool isCGI(std::string extension);
   void build();
   bool checkAuth();
+  std::string methodList();
 
   int GET();
   int HEAD();
@@ -40,6 +41,7 @@ class Response {
  private:
   RequestConfig &config_;
   StatusCode status_;
+  int status_code_;
   std::string response_;
   std::string body_;
   std::map<std::string, std::string> headers_;
