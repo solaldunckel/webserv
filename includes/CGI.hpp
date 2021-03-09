@@ -10,21 +10,28 @@
 
 class CGI {
  public:
-  CGI(File &file, RequestConfig &config);
+  CGI(File &file, RequestConfig &config, std::map<std::string, std::string, comp> &req_headers);
+  CGI(File &file, RequestConfig &config, std::map<std::string, std::string, comp> &req_headers, std::string &req_body);
   ~CGI();
 
   void execute();
   void setCGIEnv();
-  std::string getBody();
+  void createBody();
+  void parseHeaders(std::map<std::string, std::string> &headers);
+  std::string &getBody();
 
  private:
   File &file_;
   RequestConfig &config_;
+  std::map<std::string, std::string, comp> &req_headers_;
   std::string cgi_path_;
   std::string cgi_exe_;
   std::string cgi_bin_;
   std::string extension_;
   std::string cwd_;
+  std::string file_path_;
+  std::string body_;
+  std::string req_body_;
   int tmp_fd_;
   std::map<std::string, std::string> cgi_env_;
   char **env_;

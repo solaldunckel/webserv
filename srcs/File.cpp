@@ -18,11 +18,12 @@ void File::set_path(std::string path) {
   path_ = path;
 }
 
-void File::open() {
+bool File::open() {
   if (stream_.is_open())
     stream_.close();
 
   stream_.open(path_, std::ios::binary | std::ios::in);
+  return stream_.is_open() && stream_.good();
 }
 
 void File::create(std::string &body) {

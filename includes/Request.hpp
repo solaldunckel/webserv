@@ -51,6 +51,7 @@ class Request {
   std::string &getTarget();
   std::string &getProtocol();
   std::string &getBody();
+  std::map<std::string, std::string, comp> &getHeaders();
   std::string &getHeader(std::string key);
 
   void clear();

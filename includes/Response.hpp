@@ -27,11 +27,13 @@ class Response {
   std::string buildErrorPage(int status_code);
   bool isCGI(std::string extension);
   void build();
+  void createResponse();
   bool checkAuth();
   std::string methodList();
 
   int GET();
   int HEAD();
+  int POST();
   int PUT();
   int DELETE();
 

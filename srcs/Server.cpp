@@ -109,7 +109,7 @@ void Server::readData(int fd) {
 
   buf[nbytes] = '\0';
   #ifdef DEBUG
-  std::cout << "[Server] Receiving data from " << clients_[fd] << std::endl;
+  // std::cout << "[Server] Receiving data from " << clients_[fd] << std::endl;
   #endif
 
   std::string buffer(buf, nbytes);
@@ -142,6 +142,7 @@ void Server::readData(int fd) {
     Response response(config);
 
     response.build();
+    usleep(1000);
     if (FD_ISSET(fd, &write_fds_)) {
       response.send(fd);
     }

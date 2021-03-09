@@ -21,8 +21,10 @@ void RequestConfig::setup() {
 
   if (location) {
     location_ = location;
-    if (request_.getTarget().find(location->getUri()) != std::string::npos)
+    if (request_.getTarget().find(location->getUri()) != std::string::npos) {
       target_.erase(0, location_->getUri().length());
+      target_ = ft::trim_left(target_, '/');
+    }
   }
 }
 
@@ -121,6 +123,10 @@ std::string &RequestConfig::getBody() {
 
 std::string &RequestConfig::getHeader(std::string key) {
   return request_.getHeader(key);
+}
+
+std::map<std::string, std::string, comp> &RequestConfig::getHeaders() {
+  return request_.getHeaders();
 }
 
 std::string &RequestConfig::getProtocol() {

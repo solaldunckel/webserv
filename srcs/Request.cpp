@@ -127,8 +127,7 @@ int Request::headers() {
     }
     if ((last = buffer_.find(':', 0)) != std::string::npos) {
       header = buffer_.substr(0, last);
-      if (headers_.count(header))
-        headers_[header] = ft::trim_left(buffer_.substr(last + 1, end - last - 1), ' ');
+      headers_[header] = ft::trim_left(buffer_.substr(last + 1, end - last - 1), ' ');
     }
     buffer_.erase(0, end + 2);
   }
@@ -207,6 +206,10 @@ int Request::body() {
 
 std::string &Request::getHeader(std::string key) {
   return headers_[key];
+}
+
+std::map<std::string, std::string, comp> &Request::getHeaders() {
+  return headers_;
 }
 
 std::string &Request::getTarget() {

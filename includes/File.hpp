@@ -20,7 +20,7 @@ class File {
   File(std::string path);
   ~File();
 
-  void open();
+  bool open();
   void create(std::string &body);
   void unlink();
   void set_path(std::string path);

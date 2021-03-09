@@ -2,31 +2,64 @@
 
 std::string const CGI_TMP = "__cgi_tmp__.txt";
 
-CGI::CGI(File &file, RequestConfig &config) : file_(file), config_(config) {
-  extension_ = file_.getExtension();
-  cgi_exe_ = config.getCGI()[extension_];
-  cgi_bin_ = "/cgi-bin";
-  cgi_path_ = "." + cgi_bin_ + "/" + cgi_exe_;
-  tmp_fd_ = open(CGI_TMP.c_str(), O_CREAT | O_RDWR, 0666);
-
+CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, comp> &req_headers) : file_(file), config_(config), req_headers_(req_headers) {
   char *cwd = getcwd(NULL, 0);
   cwd_ = cwd;
   free(cwd);
+
+  env_ = nullptr;
+
+  // std::cout << "INIT" << std::endl;
+  req_body_ = file_.getContent();
+  extension_ = file_.getExtension();
+  cgi_exe_ = config.getCGI()[extension_];
+  cgi_bin_ = "/cgi-bin";
+  cgi_path_ = cwd_ + cgi_bin_ + "/" + cgi_exe_;
+  tmp_fd_ = open(CGI_TMP.c_str(), O_CREAT | O_RDWR, 0666);
+}
+
+CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, comp> &req_headers, std::string &req_body) : file_(file), config_(config), req_headers_(req_headers) {
+  char *cwd = getcwd(NULL, 0);
+  cwd_ = cwd;
+  free(cwd);
+
+  env_ = nullptr;
+
+  // std::cout << "INIT" << std::endl;
+  req_body_ = req_body;
+  extension_ = file_.getExtension();
+  cgi_exe_ = config.getCGI()[extension_];
+  cgi_bin_ = "/cgi-bin";
+  cgi_path_ = cwd_ + cgi_bin_ + "/" + cgi_exe_;
+  tmp_fd_ = open(CGI_TMP.c_str(), O_CREAT | O_RDWR, 0666);
+}
+
+void free_tab(char **tab) {
+	int i = 0;
+	while (tab[i]) {
+		free(tab[i]);
+    tab[i] = nullptr;
+		i++;
+	}
+  free(tab);
 }
 
 CGI::~CGI() {
+  if (env_) {
+    free_tab(env_);
+  }
   close(tmp_fd_);
-  // unlink(CGI_TMP.c_str());
-  free(argv_[0]);
-  free(argv_[1]);
+  unlink(CGI_TMP.c_str());
 }
 
 void CGI::execute() {
-  std::cout << "EXECUTE " << cgi_path_ << std::endl;
-  std::cout << "WORKING DIR " << cwd_ << std::endl;
+  // std::cout << "EXECUTE " << cgi_path_ << std::endl;
+  file_path_ = cwd_ + file_.getPath().erase(0, 1);
+  // std::cout << "FILE " << file_path_ << std::endl;
+  setCGIEnv();
 
   argv_[0] = ft::strdup(cgi_path_.c_str());
-  argv_[1] = ft::strdup(file_.getPath().c_str());
+  argv_[1] = ft::strdup(file_path_.c_str());
   argv_[2] = nullptr;
 
   int pip[2];
@@ -43,30 +76,52 @@ void CGI::execute() {
 	}
 	else if (pid > 0) {
 		close(pip[0]);
-    write(pip[1], file_.getContent().c_str(), file_.getContent().length());
+    write(pip[1], req_body_.c_str(), req_body_.length());
 		close(pip[1]);
     if (waitpid(pid, NULL, 0) == -1)
 			perror("wait");
+    close(tmp_fd_);
 	}
   else
     perror("fork");
-  close(tmp_fd_);
+  free(argv_[0]);
+  free(argv_[1]);
+  createBody();
 }
 
-std::string CGI::getBody() {
+void CGI::createBody() {
   char buffer[4096 + 1];
   int ret;
-  std::string body;
 
   int fd = open(CGI_TMP.c_str(), O_RDWR, 0666);
 
-  while ((ret = read(fd, buffer, 4096)) > 0)
-  {
+  while ((ret = read(fd, buffer, 4096)) > 0) {
     buffer[ret] = '\0';
-    body += buffer;
+    body_ += buffer;
   }
   close(fd);
-  return body;
+  // std::cout << "BODY : [" << body_ << "]" << std::endl;
+}
+
+void CGI::parseHeaders(std::map<std::string, std::string> &headers) {
+  size_t end, last;
+  std::string header;
+
+  while ((end = body_.find("\r\n")) != std::string::npos) {
+    if (body_.find("\r\n") == 0) {
+      body_.erase(0, end + 2);
+      break;
+    }
+    if ((last = body_.find(':', 0)) != std::string::npos) {
+      header = body_.substr(0, last);
+      headers[header] = ft::trim_left(body_.substr(last + 1, end - last - 1), ' ');
+    }
+    body_.erase(0, end + 2);
+  }
+}
+
+std::string &CGI::getBody() {
+  return body_;
 }
 
 void CGI::setCGIEnv() {
@@ -83,9 +138,14 @@ void CGI::setCGIEnv() {
 	// 	cgi_env_["CONTENT_TYPE"] = request_.headers.value("Content-Type");  // For queries which have attached information, such as HTTP POST and PUT, this is the content type of the data.
 	// 	cgi_env_["CONTENT_LENGTH"] = std::to_string(request_.body.length());				  // The length of the said content only for POST requests.
 	// }
-	// cgi_env_["REQUEST_URI"] = file_path_;		 // The interpreted pathname of the requested document or CGI (relative to the document root)
-	// cgi_env_["PATH_INFO"] = file_path_;		 // ?
-	// cgi_env_["PATH_TRANSLATED"] = file_path_;	 // ?
+	cgi_env_["REQUEST_URI"] = file_path_;		 // The interpreted pathname of the requested document or CGI (relative to the document root)
+	cgi_env_["PATH_INFO"] = file_path_;		 // ?
+	cgi_env_["PATH_TRANSLATED"] = file_path_;	 // ?
+  for (std::map<std::string, std::string, comp>::iterator it = req_headers_.begin(); it != req_headers_.end(); it++) {
+    if (!it->second.empty())
+      cgi_env_["HTTP_" + it->first] = it->second;
+  }
+
 	if (extension_ == ".php")
 		cgi_env_["REDIRECT_STATUS"] = "200";
 
@@ -96,6 +156,7 @@ void CGI::setCGIEnv() {
 
 	for (std::map<std::string, std::string>::iterator it = cgi_env_.begin(); it != cgi_env_.end(); it++) {
 		std::string tmp = it->first + "=" + it->second;
+    std::cout << tmp << std::endl;
 		env_[i] = ft::strdup(tmp.c_str());
 		i++;
 	}
