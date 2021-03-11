@@ -6,6 +6,8 @@
 
 Response::Response(RequestConfig &config) : config_(config) {
   headers_["Server"] = "Webserv/1.0";
+  status_send_ = BUILD;
+  total_sent_ = 0;
   initMethodMap();
 }
 
@@ -89,6 +91,7 @@ void Response::build() {
     body_ = buildErrorPage(status_code_);
   }
   createResponse();
+  status_send_ = SENDING;
 }
 
 void Response::createResponse() {
@@ -211,17 +214,17 @@ int Response::DELETE() {
 }
 
 int Response::send(int fd) {
-  int full = response_.length();
-  int totalSent = 0;
-  int ret = 1;
-
-  while (totalSent < full) {
+  if (status_send_ == SENDING) {
+    int ret;
     ret = write(fd, response_.c_str(), response_.length());
     response_.erase(0, ret);
-    totalSent += ret;
-    // std::cout << "WROTE : " << ret << " / SENT : " << totalSent << std::endl;
-    if (totalSent < full)
-      usleep(10000);
+    total_sent_ += ret;
+    if (total_sent_ >= response_.length())
+      status_send_ = COMPLETE;
   }
   return 1;
+}
+
+int Response::getStatus() {
+  return status_send_;
 }

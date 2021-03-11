@@ -3,6 +3,9 @@
 
 # include "Request.hpp"
 
+class Request;
+
+struct comp;
 class RequestConfig {
  public:
   // Constructors & Deconstructors

@@ -5,10 +5,20 @@
 */
 
 Request::Request() {
+  config_ = nullptr;
+  response_ = nullptr;
   clear();
 }
 
 Request::~Request() {
+  if (config_) {
+    delete config_;
+    config_ = nullptr;
+  }
+  if (response_) {
+    delete response_;
+    response_ = nullptr;
+  }
 }
 
 bool isValidMethod(std::string str) {
@@ -45,13 +55,21 @@ void Request::clear() {
   protocol_.clear();
   req_body_.clear();
 
+  if (config_) {
+    delete config_;
+    config_ = nullptr;
+  }
+  if (response_) {
+    delete response_;
+    response_ = nullptr;
+  }
   body_offset_ = 0;
   chunk_size_ = 0;
   status_ = FIRST_LINE;
   initHeadersMap();
 }
 
-int Request::parse(std::string buffer) {
+int Request::parse(std::string &buffer) {
   size_t ret = 0;
   buffer_ += buffer;
 
@@ -226,6 +244,24 @@ std::string &Request::getBody() {
 
 std::string &Request::getProtocol() {
   return protocol_;
+}
+
+void Request::config(std::string &host, std::vector<ServerConfig> &servers) {
+  config_ = new RequestConfig(*this, host, servers);
+
+  config_->setup();
+
+  response_ = new Response(*config_);
+
+  response_->build();
+}
+
+void Request::send(int fd) {
+  if (response_) {
+    response_->send(fd);
+    if (response_->getStatus() == 2)
+      clear();
+  }
 }
 
 void Request::print() {

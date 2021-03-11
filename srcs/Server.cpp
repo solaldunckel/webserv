@@ -47,7 +47,10 @@ void Server::setup() {
       address_.sin_addr.s_addr = inet_addr(list->ip_.c_str());
       address_.sin_port = htons(list->port_);
 
-      std::cout << "setup server on " << list->ip_ << ":" << list->port_ << " on fd " << server_fd << std::endl;
+      std::cout << "setup server " << server_fd << " on " << list->ip_ << ":" << list->port_ << std::endl;
+
+      running_server_[server_fd] = Listen(list->ip_, list->port_);
+
       setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
       if (bind(server_fd, (struct sockaddr *)&address_, sizeof(address_)) < 0)
@@ -69,30 +72,25 @@ void Server::newConnection(int fd) {
   struct sockaddr_storage their_addr;
   socklen_t addr_size = sizeof(their_addr);
 
-  // handle new connections
   int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
   clients_[clientFd] = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
 
-  // std::cout << "[Server] New connection from " << clients_[clientFd] << " (socket " << fd << ")" << std::endl;
+  std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
 
-  std::cout << "[Server] New connection on socket " << fd << std::endl;
-  std::cout << "[Server] New client on socket " << clientFd << std::endl;
+  client_[clientFd] = Client(ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr)));
 
   FD_CLR(fd, &read_fds_);
 
   if (clientFd == -1)
     strerror(errno);
   else {
-    //std::cout << "[Server] Connection from " << buf << std::endl;
     FD_SET(clientFd, &master_fds_); // add to master set
     if (clientFd > max_fd_)   // keep track of the max
       max_fd_ = clientFd;
   }
 }
-
-int num_response_sent = 0;
 
 void Server::readData(int fd) {
   int nbytes = 0;
@@ -105,56 +103,46 @@ void Server::readData(int fd) {
       strerror(errno);
     }
     close(fd); // bye!
+    client_.erase(fd);
     FD_CLR(fd, &master_fds_); // remove from master set
+    FD_CLR(fd, &read_fds_);
     return ;
   }
 
   FD_CLR(fd, &read_fds_);
-
-  buf[nbytes] = '\0';
   #ifdef DEBUG
   // std::cout << "[Server] Receiving data from " << clients_[fd] << std::endl;
   #endif
 
   std::string buffer(buf, nbytes);
 
-  int ret = request_.parse(buffer);
+  Request &req = client_[fd].req_;
+
+  int ret = req.parse(buffer);
 
   if (ret == 1) {
+    req.config(clients_[fd], servers_);
     #ifdef DEBUG
     std::cout << "REQUEST OK" << std::endl;
-    request_.print();
+    req.print();
     #endif
-    RequestConfig config(request_, clients_[fd], servers_);
+    // RequestConfig config(req, clients_[fd], servers_);
 
-    config.setup();
+    // config.setup();
 
-    Response response(config);
+    // Response response(config);
 
-    response.build();
-    if (FD_ISSET(fd, &write_fds_)) {
-      response.send(fd);
-    }
-    // num_response_sent += 1;
-    // std::cout << "RESPONSE SENT : " << num_response_sent << std::endl;
-    request_.clear();
-  } else if (ret > 1) {
-    #ifdef DEBUG
-    std::cout << "REQUEST ERROR" << std::endl;
-    request_.print();
-    #endif
-    RequestConfig config(request_, clients_[fd], servers_);
-
-    config.setup();
-
-    Response response(config);
-
-    response.build();
-    if (FD_ISSET(fd, &write_fds_)) {
-      response.send(fd);
-    }
-    request_.clear();
+    // response.build();
+    // if (FD_ISSET(fd, &write_fds_))
+    //   req.send(fd);
+    // req.clear();
   }
+}
+
+void Server::writeData(int fd) {
+  Request &req = client_[fd].req_;
+
+  req.send(fd);
 }
 
 void Server::run() {
@@ -166,21 +154,27 @@ void Server::run() {
   signal(SIGINT, interruptHandler);
   running_ = true;
   std::cout << "[Server] Starting." << std::endl;
+
   while (running_) {
     read_fds_ = master_fds_;
     write_fds_ = master_fds_;
+
     if (select(max_fd_ + 1, &read_fds_, &write_fds_, NULL, NULL) == -1) {
       strerror(errno);
       break ;
     }
 
+    for (std::map<int, Listen>::iterator it = running_server_.begin(); it != running_server_.end(); it++) {
+      if (FD_ISSET(it->first, &read_fds_))
+        newConnection(it->first);
+    }
+
     for (int fd = 0; fd <= max_fd_; fd++) {
-      if (FD_ISSET(fd, &read_fds_)) { // we got one!!
-        if (FD_ISSET(fd, &server_fds_)) {
-          newConnection(fd);
-        }
-        else
-          readData(fd);
+      if (FD_ISSET(fd, &read_fds_)) {
+        readData(fd);
+      }
+      if (FD_ISSET(fd, &write_fds_)) {
+        writeData(fd);
       }
     }
   }

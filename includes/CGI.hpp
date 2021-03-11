@@ -8,6 +8,10 @@
 # include "File.hpp"
 # include "Utils.hpp"
 
+class RequestConfig;
+
+struct comp;
+
 class CGI {
  public:
   CGI(File &file, RequestConfig &config, std::map<std::string, std::string, comp> &req_headers);

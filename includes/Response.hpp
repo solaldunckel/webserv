@@ -14,6 +14,8 @@
 # include "File.hpp"
 # include "CGI.hpp"
 
+class RequestConfig;
+
 class Response {
  public:
   // Constructors & Deconstructors
@@ -31,18 +33,27 @@ class Response {
   bool checkAuth();
   std::string methodList();
 
+  enum Status {
+    BUILD,
+    SENDING,
+    COMPLETE,
+  };
+
   int GET();
   int HEAD();
   int POST();
   int PUT();
   int DELETE();
 
+  int getStatus();
   std::string getResponseBody();
   int send(int fd);
 
  private:
   RequestConfig &config_;
   StatusCode status_;
+  Status status_send_;
+  size_t total_sent_;
   int status_code_;
   std::string response_;
   std::string body_;

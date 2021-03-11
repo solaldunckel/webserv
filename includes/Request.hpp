@@ -9,6 +9,8 @@
 # include <algorithm>
 
 # include "Config.hpp"
+# include "RequestConfig.hpp"
+# include "Response.hpp"
 # include "Utils.hpp"
 
 struct comp {
@@ -17,13 +19,15 @@ struct comp {
   };
 };
 
+class Response;
+
 class Request {
  public:
   // Constructors & Deconstructors
   Request();
   ~Request();
 
-  int parse(std::string buffer);
+  int parse(std::string &buffer);
   int method_line();
   int headers();
   int prebody();
@@ -54,6 +58,9 @@ class Request {
   std::map<std::string, std::string, comp> &getHeaders();
   std::string &getHeader(std::string key);
 
+  void config(std::string &host, std::vector<ServerConfig> &servers);
+  void send(int fd);
+
   void clear();
   void print();
 
@@ -65,6 +72,9 @@ class Request {
   std::string protocol_;
   std::string req_body_;
   std::map<std::string, std::string, comp> headers_;
+
+  RequestConfig *config_;
+  Response *response_;
 
   int body_offset_;
   int chunk_size_;

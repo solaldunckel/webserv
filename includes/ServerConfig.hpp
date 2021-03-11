@@ -10,6 +10,7 @@ struct Listen {
   std::string ip_;
   uint32_t port_;
 
+  Listen() : ip_(""), port_(0) {};
   Listen(std::string ip, uint32_t port) : ip_(ip), port_(port) {};
 };
 
