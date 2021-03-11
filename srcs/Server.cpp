@@ -143,6 +143,7 @@ void Server::writeData(int fd) {
   Request &req = client_[fd].req_;
 
   req.send(fd);
+  FD_CLR(fd, &write_fds_);
 }
 
 void Server::run() {

@@ -259,8 +259,9 @@ void Request::config(std::string &host, std::vector<ServerConfig> &servers) {
 void Request::send(int fd) {
   if (response_) {
     response_->send(fd);
-    if (response_->getStatus() == 2)
+    if (response_->getStatus() == 2) {
       clear();
+    }
   }
 }
 

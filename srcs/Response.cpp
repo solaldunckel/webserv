@@ -215,9 +215,7 @@ int Response::DELETE() {
 
 int Response::send(int fd) {
   if (status_send_ == SENDING) {
-    int ret;
-    ret = write(fd, response_.c_str(), response_.length());
-    response_.erase(0, ret);
+    int ret = write(fd, response_.c_str() + total_sent_, response_.length() - total_sent_);
     total_sent_ += ret;
     if (total_sent_ >= response_.length())
       status_send_ = COMPLETE;
