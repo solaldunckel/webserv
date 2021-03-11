@@ -41,7 +41,7 @@ std::string Response::buildErrorPage(int status_code) {
             </body>\n\
             </html>";
   headers_["Content-Type"] = MimeTypes::getType(".html");
-  headers_["Content-Length"] = std::to_string(body_.length());
+  headers_["Content-Length"] = std::to_string(body.length());
   if (status_code == 401)
     headers_["WWW-Authenticate"] = "Basic realm=\"Access to restricted area\"";
   return body;
@@ -220,7 +220,8 @@ int Response::send(int fd) {
     response_.erase(0, ret);
     totalSent += ret;
     // std::cout << "WROTE : " << ret << " / SENT : " << totalSent << std::endl;
-    usleep(10000);
+    if (totalSent < full)
+      usleep(10000);
   }
   return 1;
 }

@@ -156,7 +156,6 @@ void CGI::setCGIEnv() {
 
 	for (std::map<std::string, std::string>::iterator it = cgi_env_.begin(); it != cgi_env_.end(); it++) {
 		std::string tmp = it->first + "=" + it->second;
-    std::cout << tmp << std::endl;
 		env_[i] = ft::strdup(tmp.c_str());
 		i++;
 	}

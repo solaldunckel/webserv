@@ -4,6 +4,8 @@
 ** Constructors & Deconstructors
 */
 
+// client[fd] = Request
+
 bool Server::running_ = false;
 
 static void interruptHandler(int sig_int) {
@@ -90,6 +92,8 @@ void Server::newConnection(int fd) {
   }
 }
 
+int num_response_sent = 0;
+
 void Server::readData(int fd) {
   int nbytes = 0;
   char buf[BUF_SIZE + 1];
@@ -128,7 +132,11 @@ void Server::readData(int fd) {
     Response response(config);
 
     response.build();
-    response.send(fd);
+    if (FD_ISSET(fd, &write_fds_)) {
+      response.send(fd);
+    }
+    // num_response_sent += 1;
+    // std::cout << "RESPONSE SENT : " << num_response_sent << std::endl;
     request_.clear();
   } else if (ret > 1) {
     #ifdef DEBUG
@@ -142,7 +150,6 @@ void Server::readData(int fd) {
     Response response(config);
 
     response.build();
-    usleep(1000);
     if (FD_ISSET(fd, &write_fds_)) {
       response.send(fd);
     }
