@@ -47,9 +47,6 @@ class Request {
 
   void initHeadersMap();
 
-  void config(std::string &host, std::vector<ServerConfig> &servers);
-  int send(int fd);
-
   void print();
 
  private:
@@ -60,9 +57,6 @@ class Request {
   std::string protocol_;
   std::string req_body_;
   std::map<std::string, std::string, ft::comp> headers_;
-
-  RequestConfig *config_;
-  Response *response_;
 
   int body_offset_;
   int chunk_size_;

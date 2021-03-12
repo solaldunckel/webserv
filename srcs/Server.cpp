@@ -23,11 +23,12 @@ Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
 Server::~Server() {
   std::cout << "[Server] Shutdown." << std::endl;
 
-  for (int fd = 0; fd <= max_fd_; fd++) {
-    if (FD_ISSET(fd, &master_fds_)) {
-      close(fd);
-      FD_CLR(fd, &master_fds_);
-    }
+  for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); it++) {
+    Client *client = it->second;
+
+    close(it->first);
+    if (client)
+      client->clear();
   }
 }
 
@@ -76,11 +77,9 @@ void Server::newConnection(int fd) {
   int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
-  // clients_[clientFd] = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
-
   std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
 
-  clients_[clientFd] = Client(ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr)));
+  clients_[clientFd] = new Client(ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr)), running_server_[fd].ip_);
 
   FD_CLR(fd, &read_fds_);
 
@@ -117,25 +116,28 @@ void Server::readData(int fd) {
 
   std::string buffer(buf, nbytes);
 
-  if (!clients_[fd].req_)
-    clients_[fd].req_ = new Request();
+  Client *client = clients_[fd];
+  Request *req = client->getRequest();
 
-  int ret = clients_[fd].req_->parse(buffer);
+  if (!req) {
+    client->createRequest();
+    req = client->getRequest();
+  }
+
+  int ret = req->parse(buffer);
 
   if (ret == 1) {
-    clients_[fd].req_->config(clients_[fd].addr_, servers_);
-    #ifdef DEBUG
-    clients_[fd].req_->print();
-    #endif
+    client->setupResponse(servers_);
   }
 }
 
 void Server::writeData(int fd) {
-  if (clients_[fd].req_) {
-    if (!clients_[fd].req_->send(fd)) {
-      delete clients_[fd].req_;
-      clients_[fd].req_ = nullptr;
-    }
+  Client *client = clients_[fd];
+  Response *response = client->getResponse();
+
+  if (response) {
+    if (!response->send(fd))
+      client->clear();
   }
   FD_CLR(fd, &write_fds_);
 }

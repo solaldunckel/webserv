@@ -14,20 +14,13 @@
 # include <sys/select.h>
 # include <signal.h>
 
+# include "Client.hpp"
 # include "ServerConfig.hpp"
 # include "Request.hpp"
 # include "Response.hpp"
 
 # define MAX_CONNECTION 128
 # define BUF_SIZE 4096
-
-struct Client {
-  std::string addr_;
-  Request *req_;
-
-  Client() : addr_(""), req_(nullptr) {};
-  Client(std::string addr) : addr_(addr), req_(nullptr) {};
-};
 
 class Server {
  public:
@@ -47,7 +40,7 @@ class Server {
  private:
   std::vector<ServerConfig> &servers_;
   std::map<int, Listen> running_server_;
-  std::map<int, Client> clients_;
+  std::map<int, Client*> clients_;
   fd_set master_fds_;
   fd_set read_fds_;
   fd_set write_fds_;

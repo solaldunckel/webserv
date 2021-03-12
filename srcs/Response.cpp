@@ -208,15 +208,10 @@ int Response::DELETE() {
 }
 
 int Response::send(int fd) {
-  if (status_send_ == SENDING) {
-    int ret = ::send(fd, response_.c_str() + total_sent_, response_.length() - total_sent_, 0);
-    total_sent_ += ret;
-    if (total_sent_ >= response_.length()) {
-      response_.clear();
-      std::cout << response_.capacity() << std::endl;
-      status_send_ = COMPLETE;
-    }
-  }
+  int ret = ::send(fd, response_.c_str() + total_sent_, response_.length() - total_sent_, 0);
+  total_sent_ += ret;
+  if (total_sent_ >= response_.length())
+    return 0;
   return 1;
 }
 

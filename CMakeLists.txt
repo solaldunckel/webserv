@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(SRCS
   srcs/main.cpp
   srcs/Config.cpp
+  srcs/Client.cpp
   srcs/CGI.cpp
   srcs/File.cpp
   srcs/StatusCode.cpp

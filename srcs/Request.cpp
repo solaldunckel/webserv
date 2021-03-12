@@ -5,24 +5,13 @@
 */
 
 Request::Request() {
-  config_ = nullptr;
-  response_ = nullptr;
   body_offset_ = 0;
   chunk_size_ = 0;
   status_ = FIRST_LINE;
   initHeadersMap();
 }
 
-Request::~Request() {
-  if (config_) {
-    delete config_;
-    config_ = nullptr;
-  }
-  if (response_) {
-    delete response_;
-    response_ = nullptr;
-  }
-}
+Request::~Request() {}
 
 void Request::initHeadersMap() {
   headers_["Accept-Charsets"];
@@ -196,26 +185,6 @@ int Request::body() {
     return 1;
   }
   return 0;
-}
-
-void Request::config(std::string &host, std::vector<ServerConfig> &servers) {
-  config_ = new RequestConfig(*this, host, servers);
-
-  config_->setup();
-
-  response_ = new Response(*config_);
-
-  response_->build();
-}
-
-int Request::send(int fd) {
-  if (response_) {
-    response_->send(fd);
-    if (response_->getStatus() == 2) {
-      return 0;
-    }
-  }
-  return 1;
 }
 
 void Request::print() {
