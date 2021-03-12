@@ -11,7 +11,7 @@ class MimeTypes {
   static std::string getType(std::string extension);
 
  private:
-  static std::map<std::string, std::string> mimes_;
+  static std::map<std::string, std::string, ft::comp> mimes_;
   static void initMap();
 };
 
