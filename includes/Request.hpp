@@ -48,9 +48,8 @@ class Request {
   void initHeadersMap();
 
   void config(std::string &host, std::vector<ServerConfig> &servers);
-  void send(int fd);
+  int send(int fd);
 
-  void clear();
   void print();
 
  private:

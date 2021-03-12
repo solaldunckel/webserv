@@ -40,7 +40,7 @@ void Server::setup() {
       if ((server_fd = socket(PF_INET, SOCK_STREAM, 0)) < 0)
         throw std::runtime_error("Cannot create listening socket");
 
-      // fcntl(server_fd, F_SETFL, O_NONBLOCK);
+      fcntl(server_fd, F_SETFL, O_NONBLOCK);
 
       struct sockaddr_in address;
       ft::memset(&address, 0, sizeof(address));
@@ -117,22 +117,26 @@ void Server::readData(int fd) {
 
   std::string buffer(buf, nbytes);
 
-  Request &req = clients_[fd].req_;
+  if (!clients_[fd].req_)
+    clients_[fd].req_ = new Request();
 
-  int ret = req.parse(buffer);
+  int ret = clients_[fd].req_->parse(buffer);
 
   if (ret == 1) {
-    req.config(clients_[fd].addr_, servers_);
+    clients_[fd].req_->config(clients_[fd].addr_, servers_);
     #ifdef DEBUG
-    req.print();
+    clients_[fd].req_->print();
     #endif
   }
 }
 
 void Server::writeData(int fd) {
-  Request &req = clients_[fd].req_;
-
-  req.send(fd);
+  if (clients_[fd].req_) {
+    if (!clients_[fd].req_->send(fd)) {
+      delete clients_[fd].req_;
+      clients_[fd].req_ = nullptr;
+    }
+  }
   FD_CLR(fd, &write_fds_);
 }
 

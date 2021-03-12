@@ -23,10 +23,10 @@
 
 struct Client {
   std::string addr_;
-  Request req_;
+  Request *req_;
 
-  Client() : addr_(""), req_(Request()) {};
-  Client(std::string addr) : addr_(addr), req_(Request()) {};
+  Client() : addr_(""), req_(nullptr) {};
+  Client(std::string addr) : addr_(addr), req_(nullptr) {};
 };
 
 class Server {

@@ -7,7 +7,10 @@
 Request::Request() {
   config_ = nullptr;
   response_ = nullptr;
-  clear();
+  body_offset_ = 0;
+  chunk_size_ = 0;
+  status_ = FIRST_LINE;
+  initHeadersMap();
 }
 
 Request::~Request() {
@@ -22,7 +25,6 @@ Request::~Request() {
 }
 
 void Request::initHeadersMap() {
-  headers_.clear();
   headers_["Accept-Charsets"];
   headers_["Accept-Language"];
   headers_["Allow"];
@@ -41,27 +43,6 @@ void Request::initHeadersMap() {
   headers_["Transfer-Encoding"];
   headers_["User-Agent"];
   headers_["WWW-Authenticate"];
-}
-
-void Request::clear() {
-  buffer_.clear();
-  method_.clear();
-  target_.clear();
-  protocol_.clear();
-  req_body_.clear();
-
-  if (config_) {
-    delete config_;
-    config_ = nullptr;
-  }
-  if (response_) {
-    delete response_;
-    response_ = nullptr;
-  }
-  body_offset_ = 0;
-  chunk_size_ = 0;
-  status_ = FIRST_LINE;
-  initHeadersMap();
 }
 
 int Request::parse(std::string &buffer) {
@@ -227,13 +208,14 @@ void Request::config(std::string &host, std::vector<ServerConfig> &servers) {
   response_->build();
 }
 
-void Request::send(int fd) {
+int Request::send(int fd) {
   if (response_) {
     response_->send(fd);
     if (response_->getStatus() == 2) {
-      clear();
+      return 0;
     }
   }
+  return 1;
 }
 
 void Request::print() {
