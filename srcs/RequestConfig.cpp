@@ -125,8 +125,16 @@ size_t &RequestConfig::getClientMaxBodySize() {
   return location_->client_max_body_size_;
 }
 
+std::string &RequestConfig::getUpload() {
+  return location_->upload_;
+}
+
 std::vector<std::string> &RequestConfig::getIndexes() {
   return location_->index_;
+}
+
+std::map<int, std::string> &RequestConfig::getErrorPages() {
+  return location_->error_codes_;
 }
 
 std::vector<std::string> &RequestConfig::getMethods() {

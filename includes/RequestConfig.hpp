@@ -28,7 +28,9 @@ class RequestConfig {
   std::string &getHeader(std::string key);
   size_t &getClientMaxBodySize();
   std::string &getProtocol();
+  std::string &getUpload();
   std::vector<std::string> &getIndexes();
+  std::map<int, std::string> &getErrorPages();
   std::vector<std::string> &getMethods();
   std::string &getHost();
   uint32_t &getPort();

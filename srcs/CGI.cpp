@@ -55,6 +55,7 @@ CGI::~CGI() {
 void CGI::execute() {
   // std::cout << "EXECUTE " << cgi_path_ << std::endl;
   file_path_ = cwd_ + file_.getPath().erase(0, 1);
+  chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
   // std::cout << "FILE " << file_path_ << std::endl;
   setCGIEnv();
 
@@ -64,6 +65,7 @@ void CGI::execute() {
 
   int pip[2];
   pipe(pip);
+
   pid_t pid = fork();
 
 	if (pid == 0) {
@@ -86,7 +88,9 @@ void CGI::execute() {
     perror("fork");
   free(argv_[0]);
   free(argv_[1]);
+  chdir(cwd_.c_str());
   createBody();
+  std::cout << getcwd(NULL, 0) << std::endl;
 }
 
 void CGI::createBody() {
@@ -125,7 +129,6 @@ std::string &CGI::getBody() {
 }
 
 void CGI::setCGIEnv() {
-  std::cout << "PATH " << file_path_ << std::endl;
 	cgi_env_["GATEWAY_INTERFACE"] = "CGI/1.1";
 	cgi_env_["SERVER_SOFTWARE"] = "WEBSERV/1.0";
 	cgi_env_["SERVER_PROTOCOL"] = "HTTP/1.1";

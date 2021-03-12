@@ -20,6 +20,11 @@ void Client::setupResponse(std::vector<ServerConfig> &servers) {
   response_ = new Response(*config_);
 
   response_->build();
+
+  if (request_) {
+    delete request_;
+    request_ = nullptr;
+  }
 }
 
 void Client::clear() {

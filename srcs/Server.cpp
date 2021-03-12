@@ -103,7 +103,10 @@ void Server::readData(int fd) {
       strerror(errno);
     }
     close(fd); // bye!
+
+    delete clients_[fd];
     clients_.erase(fd);
+
     FD_CLR(fd, &master_fds_); // remove from master set
     FD_CLR(fd, &read_fds_);
     return ;
@@ -127,12 +130,18 @@ void Server::readData(int fd) {
   int ret = req->parse(buffer);
 
   if (ret == 1) {
+    if (req)
+      req->print();
     client->setupResponse(servers_);
   }
 }
 
 void Server::writeData(int fd) {
   Client *client = clients_[fd];
+
+  if (!client)
+    return ;
+
   Response *response = client->getResponse();
 
   if (response) {

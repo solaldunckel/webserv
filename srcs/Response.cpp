@@ -33,7 +33,14 @@ bool Response::isCGI(std::string extension) {
 
 std::string Response::buildErrorPage(int status_code) {
   std::string body;
-  body += "<!DOCTYPE html>\n\
+
+  if (!config_.getErrorPages()[status_code].empty()) {
+    File file('.' + config_.getRoot() + config_.getErrorPages()[status_code]);
+
+    if (file.open())
+      body += file.getContent();
+  } else {
+    body += "<!DOCTYPE html>\n\
             <html>\n\
             <head>\n\
               <title>Webserv: " + std::to_string(status_code) + " " + status_[status_code] + "</title>\n\
@@ -42,7 +49,8 @@ std::string Response::buildErrorPage(int status_code) {
               <h1>" + std::to_string(status_code) + " " + status_[status_code] + "</h1>\n\
             </body>\n\
             </html>";
-  headers_["Content-Type"] = MimeTypes::getType(".html");
+    headers_["Content-Type"] = MimeTypes::getType(".html");
+  }
   headers_["Content-Length"] = std::to_string(body.length());
   if (status_code == 401)
     headers_["WWW-Authenticate"] = "Basic realm=\"Access to restricted area\"";
@@ -174,7 +182,23 @@ int Response::POST() {
 
 int Response::PUT() {
   int status_code = 204;
-  File file("." + config_.getRoot() + "/" + config_.getTarget());
+  std::string path = "." + config_.getRoot() + "/" + config_.getTarget();
+
+  if (!config_.getUpload().empty()) {
+    File dir("." + config_.getRoot() + "/" + config_.getUpload());
+
+    if (dir.exists() && !dir.is_directory()) {
+      dir.unlink();
+    }
+
+    if (!dir.exists()) {
+      if (mkdir(dir.getPath().c_str(), 0755))
+        perror("/tmp/blah");
+    }
+    path = "." + config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget();
+  }
+
+  File file(path);
 
   if (!file.exists()) {
     file.create(config_.getBody());

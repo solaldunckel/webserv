@@ -196,7 +196,7 @@ void Request::print() {
     if (!it->second.empty())
       std::cout << it->first << ": " << it->second << std::endl;;
   }
-  // std::cout << "Body: [" << req_body_ << "]" << std::endl;
+  std::cout << "Body: [" << req_body_ << "]" << std::endl;
   std::cout << "Status: " << status_ << std::endl;
   // std::cout << msg_ << std::endl;
   std::cout << "\n###" << std::endl;
