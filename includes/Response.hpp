@@ -40,7 +40,6 @@ class Response {
   };
 
   int GET();
-  int HEAD();
   int POST();
   int PUT();
   int DELETE();

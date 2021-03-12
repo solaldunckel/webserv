@@ -1,10 +1,6 @@
 #include "Config.hpp"
 
-/*
-** Constructors & Deconstructors
-*/
-
-Config::Config(std::string &path) : file_(path) {
+Config::Config(std::string const &path) : file_(path) {
   if (!file_.is_open() || !file_.good()) {
     throw std::runtime_error("could not open config file");
   }
@@ -33,7 +29,7 @@ void Config::tokenize() {
           throw std::runtime_error("extra closing '}' on line " + std::to_string(line_idx));
         brackets.pop();
       }
-      if (is_directive(tmp) && line[line.find_last_not_of(" \t", line.length())] != ';')
+      if (isValidDirective(tmp) && line[line.find_last_not_of(" \t", line.length())] != ';')
         throw std::runtime_error("missing ';' on line " + std::to_string(line_idx));
       if (tmp.find(';', tmp.length() - 1) != std::string::npos) {
         tmp.pop_back();
@@ -65,18 +61,6 @@ void Config::parse() {
   if (servers_.empty())
     throw std::runtime_error("missing server block");
   tokens_.clear();
-}
-
-bool Config::is_directive(std::string str) {
-  return (str == "listen" ||
-          str == "server_name" ||
-          str == "root" ||
-          str == "auth" ||
-          str == "error_page" ||
-          str == "upload" ||
-          str == "autoindex" ||
-          str == "index" ||
-          str == "cgi");
 }
 
 std::vector<ServerConfig> &Config::getServers() {

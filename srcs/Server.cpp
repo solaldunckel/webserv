@@ -40,12 +40,13 @@ void Server::setup() {
       if ((server_fd = socket(PF_INET, SOCK_STREAM, 0)) < 0)
         throw std::runtime_error("Cannot create listening socket");
 
-      fcntl(server_fd, F_SETFL, O_NONBLOCK);
+      // fcntl(server_fd, F_SETFL, O_NONBLOCK);
 
-      ft::memset(&address_, 0, sizeof(address_));
-      address_.sin_family = AF_INET;
-      address_.sin_addr.s_addr = inet_addr(list->ip_.c_str());
-      address_.sin_port = htons(list->port_);
+      struct sockaddr_in address;
+      ft::memset(&address, 0, sizeof(address));
+      address.sin_family = AF_INET;
+      address.sin_addr.s_addr = inet_addr(list->ip_.c_str());
+      address.sin_port = htons(list->port_);
 
       std::cout << "setup server " << server_fd << " on " << list->ip_ << ":" << list->port_ << std::endl;
 
@@ -53,7 +54,7 @@ void Server::setup() {
 
       setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
-      if (bind(server_fd, (struct sockaddr *)&address_, sizeof(address_)) < 0)
+      if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
         throw std::runtime_error(strerror(errno)) ;
 
       if (listen(server_fd, MAX_CONNECTION) < 0) {
@@ -75,11 +76,11 @@ void Server::newConnection(int fd) {
   int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
-  clients_[clientFd] = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
+  // clients_[clientFd] = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
 
   std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
 
-  client_[clientFd] = Client(ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr)));
+  clients_[clientFd] = Client(ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr)));
 
   FD_CLR(fd, &read_fds_);
 
@@ -103,7 +104,7 @@ void Server::readData(int fd) {
       strerror(errno);
     }
     close(fd); // bye!
-    client_.erase(fd);
+    clients_.erase(fd);
     FD_CLR(fd, &master_fds_); // remove from master set
     FD_CLR(fd, &read_fds_);
     return ;
@@ -116,42 +117,26 @@ void Server::readData(int fd) {
 
   std::string buffer(buf, nbytes);
 
-  Request &req = client_[fd].req_;
+  Request &req = clients_[fd].req_;
 
   int ret = req.parse(buffer);
 
   if (ret == 1) {
-    req.config(clients_[fd], servers_);
+    req.config(clients_[fd].addr_, servers_);
     #ifdef DEBUG
-    std::cout << "REQUEST OK" << std::endl;
     req.print();
     #endif
-    // RequestConfig config(req, clients_[fd], servers_);
-
-    // config.setup();
-
-    // Response response(config);
-
-    // response.build();
-    // if (FD_ISSET(fd, &write_fds_))
-    //   req.send(fd);
-    // req.clear();
   }
 }
 
 void Server::writeData(int fd) {
-  Request &req = client_[fd].req_;
+  Request &req = clients_[fd].req_;
 
   req.send(fd);
   FD_CLR(fd, &write_fds_);
 }
 
 void Server::run() {
-  int server_max_fd = max_fd_;
-
-  std::cout << "SERVER MAX FD " << server_max_fd << std::endl;
-  server_fds_ = master_fds_;
-
   signal(SIGINT, interruptHandler);
   running_ = true;
   std::cout << "[Server] Starting." << std::endl;

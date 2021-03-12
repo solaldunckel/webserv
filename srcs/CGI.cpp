@@ -2,7 +2,7 @@
 
 std::string const CGI_TMP = "__cgi_tmp__.txt";
 
-CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, comp> &req_headers) : file_(file), config_(config), req_headers_(req_headers) {
+CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers) : file_(file), config_(config), req_headers_(req_headers) {
   char *cwd = getcwd(NULL, 0);
   cwd_ = cwd;
   free(cwd);
@@ -18,7 +18,7 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, c
   tmp_fd_ = open(CGI_TMP.c_str(), O_CREAT | O_RDWR, 0666);
 }
 
-CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, comp> &req_headers, std::string &req_body) : file_(file), config_(config), req_headers_(req_headers) {
+CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers, std::string &req_body) : file_(file), config_(config), req_headers_(req_headers) {
   char *cwd = getcwd(NULL, 0);
   cwd_ = cwd;
   free(cwd);
@@ -125,6 +125,7 @@ std::string &CGI::getBody() {
 }
 
 void CGI::setCGIEnv() {
+  std::cout << "PATH " << file_path_ << std::endl;
 	cgi_env_["GATEWAY_INTERFACE"] = "CGI/1.1";
 	cgi_env_["SERVER_SOFTWARE"] = "WEBSERV/1.0";
 	cgi_env_["SERVER_PROTOCOL"] = "HTTP/1.1";
@@ -141,7 +142,7 @@ void CGI::setCGIEnv() {
 	cgi_env_["REQUEST_URI"] = file_path_;		 // The interpreted pathname of the requested document or CGI (relative to the document root)
 	cgi_env_["PATH_INFO"] = file_path_;		 // ?
 	cgi_env_["PATH_TRANSLATED"] = file_path_;	 // ?
-  for (std::map<std::string, std::string, comp>::iterator it = req_headers_.begin(); it != req_headers_.end(); it++) {
+  for (std::map<std::string, std::string, ft::comp>::iterator it = req_headers_.begin(); it != req_headers_.end(); it++) {
     if (!it->second.empty())
       cgi_env_["HTTP_" + it->first] = it->second;
   }

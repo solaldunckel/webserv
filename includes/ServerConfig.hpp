@@ -16,6 +16,8 @@ struct Listen {
 
 class ServerConfig {
  public:
+  friend class RequestConfig;
+
   ServerConfig();
   ~ServerConfig();
 
@@ -38,18 +40,11 @@ class ServerConfig {
   void index(std::vector<std::string>::iterator &it);
   void cgi(std::vector<std::string>::iterator &it);
   void autoindex(std::vector<std::string>::iterator &it);
+  void upload(std::vector<std::string>::iterator &it);
 
   std::vector<Listen> &getListens();
   std::vector<std::string> &getServerNames();
   std::vector<ServerConfig> &getLocations();
-  size_t &getClientMaxBodySize();
-  std::string &getRoot();
-  std::string &getAuth();
-  std::map<int, std::string> &getErrorCodes();
-  std::vector<std::string> &getIndexes();
-  std::vector<std::string> &getMethods();
-  std::string &getUri();
-  std::map<std::string, std::string> &getCGI();
 
   void print();
   void printLocation();
@@ -63,6 +58,7 @@ class ServerConfig {
   bool autoindex_;
   size_t client_max_body_size_;
   std::string root_;
+  std::string upload_;
   std::vector<std::string> methods_;
   std::map<int, std::string> error_codes_;
   std::vector<std::string> index_;

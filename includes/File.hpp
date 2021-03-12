@@ -15,8 +15,6 @@
 
 class File {
  public:
-  // Constructors & Deconstructors
-  File();
   File(std::string path);
   ~File();
 
@@ -29,7 +27,7 @@ class File {
   std::string last_modified();
   bool exists();
 
-  std::string find_index(std::vector<std::string> indexes);
+  std::string find_index(std::vector<std::string> &indexes);
 
   std::string getExtension();
   std::string getContent();

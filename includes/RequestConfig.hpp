@@ -2,10 +2,10 @@
 # define REQUESTCONFIG_HPP
 
 # include "Request.hpp"
+# include "Utils.hpp"
 
 class Request;
 
-struct comp;
 class RequestConfig {
  public:
   // Constructors & Deconstructors
@@ -24,7 +24,7 @@ class RequestConfig {
   std::string &getBody();
   std::string &getAuth();
   std::map<std::string, std::string> &getCGI();
-  std::map<std::string, std::string, comp> &getHeaders();
+  std::map<std::string, std::string, ft::comp> &getHeaders();
   std::string &getHeader(std::string key);
   size_t &getClientMaxBodySize();
   std::string &getProtocol();

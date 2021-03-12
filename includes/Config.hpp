@@ -4,19 +4,18 @@
 # include <iostream>
 # include <fstream>
 # include <vector>
-# include <map>
+# include <stack>
 
 # include "ServerConfig.hpp"
+# include "Utils.hpp"
 
 class Config {
  public:
-  // Constructors & Deconstructors
-  Config(std::string &path);
+  Config(std::string const &path);
   ~Config();
 
   void tokenize();
   void parse();
-  bool is_directive(std::string str);
 
   std::vector<ServerConfig> &getServers();
 

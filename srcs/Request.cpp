@@ -21,11 +21,6 @@ Request::~Request() {
   }
 }
 
-bool isValidMethod(std::string str) {
-  return (str == "GET" || str == "POST" || str == "HEAD" || str == "PUT"
-          || str == "DELETE");
-}
-
 void Request::initHeadersMap() {
   headers_.clear();
   headers_["Accept-Charsets"];
@@ -220,30 +215,6 @@ int Request::body() {
     return 1;
   }
   return 0;
-}
-
-std::string &Request::getHeader(std::string key) {
-  return headers_[key];
-}
-
-std::map<std::string, std::string, comp> &Request::getHeaders() {
-  return headers_;
-}
-
-std::string &Request::getTarget() {
-  return target_;
-}
-
-std::string &Request::getMethod() {
-  return method_;
-}
-
-std::string &Request::getBody() {
-  return req_body_;
-}
-
-std::string &Request::getProtocol() {
-  return protocol_;
 }
 
 void Request::config(std::string &host, std::vector<ServerConfig> &servers) {

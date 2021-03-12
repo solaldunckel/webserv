@@ -1,9 +1,5 @@
 #include "ServerConfig.hpp"
 
-/*
-** Constructors & Deconstructors
-*/
-
 ServerConfig::ServerConfig() : credentials_("off"), client_max_body_size_(0) {
   initDirectiveMap();
 }
@@ -21,12 +17,6 @@ ServerConfig	&ServerConfig::operator=(const ServerConfig &copy) {
   return (*this);
 }
 
-/*
-** To add :
-**  - upload / directory
-**  - cgi-bin ?
-*/
-
 std::map<std::string, ServerConfig::type> ServerConfig::directive_;
 void ServerConfig::initDirectiveMap() {
   ServerConfig::directive_["listen"] = &ServerConfig::listen;
@@ -39,6 +29,7 @@ void ServerConfig::initDirectiveMap() {
   ServerConfig::directive_["limit_except"] = &ServerConfig::limit_except;
   ServerConfig::directive_["autoindex"] = &ServerConfig::autoindex;
   ServerConfig::directive_["index"] = &ServerConfig::index;
+  ServerConfig::directive_["upload"] = &ServerConfig::upload;
   ServerConfig::directive_["cgi"] = &ServerConfig::cgi;
 }
 
@@ -148,6 +139,12 @@ void ServerConfig::autoindex(std::vector<std::string>::iterator &it) {
     throw std::runtime_error("double value in 'autoindex'");
 };
 
+void ServerConfig::upload(std::vector<std::string>::iterator &it) {
+  upload_ = *it;
+  if (*++it != ";")
+    throw std::runtime_error("double value in 'upload'");
+};
+
 void ServerConfig::location(std::vector<std::string>::iterator &it) {
   uri_ = *it++;
   if (*it != "{")
@@ -161,8 +158,8 @@ void ServerConfig::location(std::vector<std::string>::iterator &it) {
 };
 
 void ServerConfig::cgi(std::vector<std::string>::iterator &it) {
-  std::string ext = *it++;
-  std::string exec = *it++;
+  std::string &ext = *it++;
+  std::string &exec = *it++;
   cgi_[ext] = exec;
   if (*it != ";")
     throw std::runtime_error("triple value in 'cgi'");
@@ -183,38 +180,6 @@ std::vector<std::string> &ServerConfig::getServerNames() {
 std::vector<ServerConfig> &ServerConfig::getLocations() {
   return locations_;
 };
-
-size_t &ServerConfig::getClientMaxBodySize() {
-  return client_max_body_size_;
-}
-
-std::string &ServerConfig::getAuth() {
-  return credentials_;
-}
-
-std::string &ServerConfig::getRoot() {
-  return root_;
-}
-
-std::map<int, std::string> &ServerConfig::getErrorCodes() {
-  return error_codes_;
-}
-
-std::vector<std::string> &ServerConfig::getIndexes() {
-  return index_;
-}
-
-std::vector<std::string> &ServerConfig::getMethods() {
-  return methods_;
-}
-
-std::string &ServerConfig::getUri() {
-  return uri_;
-}
-
-std::map<std::string, std::string> &ServerConfig::getCGI() {
-  return cgi_;
-}
 
 /* Debug Functions */
 

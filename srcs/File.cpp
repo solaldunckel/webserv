@@ -1,13 +1,6 @@
 #include "File.hpp"
 
-/*
-** Constructors & Deconstructors
-*/
-
-File::File() {}
-
-File::File(std::string path) : path_(path) {
-}
+File::File(std::string path) : path_(path) {}
 
 File::~File() {
   if (stream_.is_open())
@@ -84,17 +77,14 @@ std::string File::last_modified() {
   return std::string(buf, ret);
 }
 
-std::string File::find_index(std::vector<std::string> indexes) {
+std::string File::find_index(std::vector<std::string> &indexes) {
   DIR *dir;
   struct dirent *ent;
 
-  if ((dir = opendir(path_.c_str())) != NULL) {
-    while ((ent = readdir(dir)) != NULL) {
+  if ((dir = opendir(path_.c_str()))) {
+    while ((ent = readdir(dir))) {
       for (std::vector<std::string>::iterator it = indexes.begin(); it != indexes.end(); it++) {
         if (*it == ent->d_name) {
-          #ifdef DEBUG
-          std::cout << "FOUND INDEX: " << ent->d_name << std::endl;
-          #endif
           closedir(dir);
           return ent->d_name;
         }

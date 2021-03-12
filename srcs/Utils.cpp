@@ -1,5 +1,25 @@
 #include "Utils.hpp"
 
+bool isValidMethod(std::string const &str) {
+  return (str == "GET" ||
+          str == "POST" ||
+          str == "HEAD" ||
+          str == "PUT" ||
+          str == "DELETE");
+}
+
+bool isValidDirective(std::string const &str) {
+  return (str == "listen" ||
+          str == "server_name" ||
+          str == "root" ||
+          str == "auth" ||
+          str == "error_page" ||
+          str == "upload" ||
+          str == "autoindex" ||
+          str == "index" ||
+          str == "cgi");
+}
+
 namespace ft {
   std::string to_lower(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(), ::tolower);

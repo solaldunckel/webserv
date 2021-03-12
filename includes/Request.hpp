@@ -13,16 +13,12 @@
 # include "Response.hpp"
 # include "Utils.hpp"
 
-struct comp {
-  bool operator() (const std::string& lhs, const std::string& rhs) const {
-    return ft::to_lower(lhs) < ft::to_lower(rhs);
-  };
-};
-
 class Response;
 
 class Request {
  public:
+  friend class RequestConfig;
+
   // Constructors & Deconstructors
   Request();
   ~Request();
@@ -51,13 +47,6 @@ class Request {
 
   void initHeadersMap();
 
-  std::string &getMethod();
-  std::string &getTarget();
-  std::string &getProtocol();
-  std::string &getBody();
-  std::map<std::string, std::string, comp> &getHeaders();
-  std::string &getHeader(std::string key);
-
   void config(std::string &host, std::vector<ServerConfig> &servers);
   void send(int fd);
 
@@ -71,7 +60,7 @@ class Request {
   std::string target_;
   std::string protocol_;
   std::string req_body_;
-  std::map<std::string, std::string, comp> headers_;
+  std::map<std::string, std::string, ft::comp> headers_;
 
   RequestConfig *config_;
   Response *response_;

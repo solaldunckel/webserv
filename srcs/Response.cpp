@@ -16,7 +16,7 @@ Response::~Response() {}
 std::map<std::string, Response::type> Response::methods_;
 void Response::initMethodMap() {
   Response::methods_["GET"] = &Response::GET;
-  Response::methods_["HEAD"] = &Response::HEAD;
+  Response::methods_["HEAD"] = &Response::GET;
   Response::methods_["POST"] = &Response::POST;
   Response::methods_["PUT"] = &Response::PUT;
   Response::methods_["DELETE"] = &Response::DELETE;
@@ -74,7 +74,7 @@ std::string Response::methodList() {
 void Response::build() {
   std::string method = config_.getMethod();
 
-  std::map<std::string, std::string, comp> head = config_.getHeaders();
+  std::map<std::string, std::string, ft::comp> head = config_.getHeaders();
 
   if (!config_.methodAccepted(method)) {
     status_code_ = 405;
@@ -95,6 +95,8 @@ void Response::build() {
 }
 
 void Response::createResponse() {
+  if (config_.getMethod() == "HEAD")
+    body_.clear();
   response_ = response_ + "HTTP/1.1" + " " + std::to_string(status_code_) + " " + status_[status_code_] + "\r\n";
 
   headers_["Date"] = ft::get_http_date();
@@ -143,14 +145,6 @@ int Response::GET() {
   }
   headers_["Content-Length"] = std::to_string(body_.length());
   return 200;
-}
-
-int Response::HEAD() {
-  int status_code = 200;
-
-  status_code = GET();
-  body_.clear();
-  return status_code;
 }
 
 int Response::POST() {
@@ -215,7 +209,7 @@ int Response::DELETE() {
 
 int Response::send(int fd) {
   if (status_send_ == SENDING) {
-    int ret = write(fd, response_.c_str() + total_sent_, response_.length() - total_sent_);
+    int ret = ::send(fd, response_.c_str() + total_sent_, response_.length() - total_sent_, 0);
     total_sent_ += ret;
     if (total_sent_ >= response_.length())
       status_send_ = COMPLETE;

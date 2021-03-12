@@ -10,6 +10,9 @@
 # include <sys/time.h>
 # include <time.h>
 
+bool isValidMethod(std::string const &str);
+bool isValidDirective(std::string const &str);
+
 namespace ft {
   static const int B64index[256] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -31,8 +34,14 @@ namespace ft {
   size_t strlen(const char *str);
   char *strdup(const char *str);
   const std::string b64decode(const void* data, const size_t &len);
-  std::string b64decode(const std::string& str64);
+  std::string b64decode(const std::string &str64);
   std::string get_http_date();
+
+  struct comp {
+    bool operator() (const std::string& lhs, const std::string& rhs) const {
+      return to_lower(lhs) < to_lower(rhs);
+    };
+  };
 };
 
 #endif
