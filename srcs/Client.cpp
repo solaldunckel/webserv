@@ -1,48 +1,60 @@
 #include "Client.hpp"
 
-
-Client::Client(std::string addr, std::string &host) : addr_(addr), host_(host), request_(nullptr), config_(nullptr), response_(nullptr) {
+Client::Client(int fd, std::string &addr, Listen &host_port) : fd_(fd), addr_(addr), host_port_(host_port) {
+  request_ = nullptr;
+  config_ = nullptr;
+  response_ = nullptr;
 }
 
 Client::~Client() {
+  close(fd_);
   clear();
 }
 
-void Client::createRequest() {
-  request_ = new Request();
-}
-
-void Client::setupResponse(std::vector<ServerConfig> &servers) {
-  config_ = new RequestConfig(*request_, addr_, servers);
-
-  config_->setup();
-
-  response_ = new Response(*config_);
-
-  response_->build();
-
-  if (request_) {
-    delete request_;
-    request_ = nullptr;
-  }
-}
-
 void Client::clear() {
-  if (request_) {
-    delete request_;
-    request_ = nullptr;
-  }
-  if (config_) {
-    delete config_;
-    config_ = nullptr;
-  }
-  if (response_) {
-    delete response_;
-    response_ = nullptr;
-  }
+  if (request_)
+    ft::delete_(request_);
+  if (config_)
+    ft::delete_(config_);
+  if (response_)
+    ft::delete_(response_);
 }
 
-Request *Client::getRequest() {
+void Client::setupConfig(std::vector<ServerConfig> &servers) {
+  config_ = new RequestConfig(*request_, host_port_, servers, *this);
+}
+
+void Client::setupResponse(std::vector<ServerConfig> &servers, int error_code) {
+  if (!config_)
+    setupConfig(servers);
+
+  response_ = new Response(*config_, error_code);
+
+  if (request_)
+    ft::delete_(request_);
+}
+
+bool Client::timeout() {
+  if (request_) {
+    if (ft::get_current_time_in_sec() - request_->get_timer_in_sec() > TIMEOUT) {
+      if (request_->timeout())
+        return true;
+    }
+  }
+  return false;
+}
+
+int Client::getFd() {
+  return fd_;
+}
+
+std::string &Client::getAddr() {
+  return addr_;
+}
+
+Request *Client::getRequest(bool force) {
+  if (!request_ && force)
+    request_ = new Request();
   return request_;
 }
 

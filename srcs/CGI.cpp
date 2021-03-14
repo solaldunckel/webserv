@@ -9,7 +9,6 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
 
   env_ = nullptr;
 
-  // std::cout << "INIT" << std::endl;
   req_body_ = file_.getContent();
   extension_ = file_.getExtension();
   cgi_exe_ = config.getCGI()[extension_];
@@ -25,7 +24,6 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
 
   env_ = nullptr;
 
-  // std::cout << "INIT" << std::endl;
   req_body_ = req_body;
   extension_ = file_.getExtension();
   cgi_exe_ = config.getCGI()[extension_];
@@ -34,29 +32,16 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
   tmp_fd_ = open(CGI_TMP.c_str(), O_CREAT | O_RDWR, 0666);
 }
 
-void free_tab(char **tab) {
-	int i = 0;
-	while (tab[i]) {
-		free(tab[i]);
-    tab[i] = nullptr;
-		i++;
-	}
-  free(tab);
-}
-
 CGI::~CGI() {
-  if (env_) {
-    free_tab(env_);
-  }
+  if (env_)
+    ft::free_tab(env_);
   close(tmp_fd_);
   unlink(CGI_TMP.c_str());
 }
 
 void CGI::execute() {
-  // std::cout << "EXECUTE " << cgi_path_ << std::endl;
   file_path_ = cwd_ + file_.getPath().erase(0, 1);
   chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
-  // std::cout << "FILE " << file_path_ << std::endl;
   setCGIEnv();
 
   argv_[0] = ft::strdup(cgi_path_.c_str());
@@ -68,29 +53,28 @@ void CGI::execute() {
 
   pid_t pid = fork();
 
-	if (pid == 0) {
-		close(pip[1]);
-		dup2(pip[0], 0);
-		dup2(tmp_fd_, 1);
-		close(pip[0]);
-		execve(argv_[0], argv_, env_);
-		exit(1);
-	}
-	else if (pid > 0) {
-		close(pip[0]);
+  if (pid == 0) {
+    close(pip[1]);
+    dup2(pip[0], 0);
+    dup2(tmp_fd_, 1);
+    close(pip[0]);
+    execve(argv_[0], argv_, env_);
+    exit(1);
+  }
+  else if (pid > 0) {
+    close(pip[0]);
     write(pip[1], req_body_.c_str(), req_body_.length());
-		close(pip[1]);
+    close(pip[1]);
     if (waitpid(pid, NULL, 0) == -1)
-			perror("wait");
+      perror("wait");
     close(tmp_fd_);
-	}
+  }
   else
     perror("fork");
   free(argv_[0]);
   free(argv_[1]);
   chdir(cwd_.c_str());
   createBody();
-  std::cout << getcwd(NULL, 0) << std::endl;
 }
 
 void CGI::createBody() {
@@ -104,7 +88,6 @@ void CGI::createBody() {
     body_ += buffer;
   }
   close(fd);
-  // std::cout << "BODY : [" << body_ << "]" << std::endl;
 }
 
 void CGI::parseHeaders(std::map<std::string, std::string> &headers) {
@@ -131,20 +114,21 @@ std::string &CGI::getBody() {
 void CGI::setCGIEnv() {
 	cgi_env_["GATEWAY_INTERFACE"] = "CGI/1.1";
 	cgi_env_["SERVER_SOFTWARE"] = "WEBSERV/1.0";
-	cgi_env_["SERVER_PROTOCOL"] = "HTTP/1.1";
+	cgi_env_["SERVER_PROTOCOL"] = config_.getProtocol();
 	cgi_env_["SERVER_PORT"] = std::to_string(config_.getPort());
 	cgi_env_["SCRIPT_NAME"] = cgi_path_;
-	cgi_env_["SERVER_NAME"] = config_.getHost();  // ??
-	// cgi_env_["REMOTE_ADDR"] = "";																							  // client ip
+	cgi_env_["SERVER_NAME"] = config_.getHost();
+	cgi_env_["REMOTE_ADDR"] = config_.getClient().getAddr();
 	cgi_env_["REQUEST_METHOD"] = config_.getMethod();
 	// cgi_env_["QUERY_STRING"] = request_.query;  // everything after ?
-	// if (request_.method == "POST") {
-	// 	cgi_env_["CONTENT_TYPE"] = request_.headers.value("Content-Type");  // For queries which have attached information, such as HTTP POST and PUT, this is the content type of the data.
-	// 	cgi_env_["CONTENT_LENGTH"] = std::to_string(request_.body.length());				  // The length of the said content only for POST requests.
-	// }
-	cgi_env_["REQUEST_URI"] = file_path_;		 // The interpreted pathname of the requested document or CGI (relative to the document root)
-	cgi_env_["PATH_INFO"] = file_path_;		 // ?
-	cgi_env_["PATH_TRANSLATED"] = file_path_;	 // ?
+	if (config_.getMethod() == "POST") {
+		cgi_env_["CONTENT_TYPE"] = req_headers_["Content-Type"];
+		cgi_env_["CONTENT_LENGTH"] = std::to_string(req_body_.length());
+	}
+	cgi_env_["REQUEST_URI"] = file_path_;
+	cgi_env_["PATH_INFO"] = file_path_;
+	cgi_env_["PATH_TRANSLATED"] = file_path_;
+
   for (std::map<std::string, std::string, ft::comp>::iterator it = req_headers_.begin(); it != req_headers_.end(); it++) {
     if (!it->second.empty())
       cgi_env_["HTTP_" + it->first] = it->second;

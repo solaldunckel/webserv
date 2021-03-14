@@ -24,9 +24,9 @@ set(SRCS
   srcs/Utils.cpp
 )
 
-add_compile_options(-O1 -Wall -Werror -Wextra)
+add_compile_options(-Wall -Werror -Wextra)
 
-option(DEBUG "PRINT DEBUG MESSAGES" ON)
+option(DEBUG "PRINT DEBUG MESSAGES" OFF)
 
 # custom fclean target
 add_custom_target(fclean

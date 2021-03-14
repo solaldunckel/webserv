@@ -4,11 +4,12 @@
 ** Constructors & Deconstructors
 */
 
-Response::Response(RequestConfig &config) : config_(config) {
-  headers_["Server"] = "Webserv/1.0";
-  status_send_ = BUILD;
+Response::Response(RequestConfig &config, int error_code) : config_(config) {
+  headers_["Server"] = "webserv/1.0";
+  error_code_ = error_code;
   total_sent_ = 0;
   initMethodMap();
+  build();
 }
 
 Response::~Response() {}
@@ -35,20 +36,18 @@ std::string Response::buildErrorPage(int status_code) {
   std::string body;
 
   if (!config_.getErrorPages()[status_code].empty()) {
-    File file('.' + config_.getRoot() + config_.getErrorPages()[status_code]);
+    File file(config_.getRoot() + config_.getErrorPages()[status_code]);
 
     if (file.open())
       body += file.getContent();
   } else {
-    body += "<!DOCTYPE html>\n\
-            <html>\n\
-            <head>\n\
-              <title>Webserv: " + std::to_string(status_code) + " " + status_[status_code] + "</title>\n\
-            </head>\n\
-            <body>\n\
-              <h1>" + std::to_string(status_code) + " " + status_[status_code] + "</h1>\n\
-            </body>\n\
-            </html>";
+    body += "<html>\r\n";
+    body += "<head><title>" + std::to_string(status_code) + " " + status_[status_code] + "</title></head>\r\n";
+    body += "<body>\r\n";
+    body += "<center><h1>" + std::to_string(status_code) + " " + status_[status_code] + "</h1></center>\r\n";
+    body += "<hr><center>" + headers_["Server"] + "</center>\r\n";
+    body += "</body>\r\n";
+    body += "</html>\r\n";
     headers_["Content-Type"] = MimeTypes::getType(".html");
   }
   headers_["Content-Length"] = std::to_string(body.length());
@@ -84,10 +83,13 @@ void Response::build() {
 
   std::map<std::string, std::string, ft::comp> head = config_.getHeaders();
 
-  if (!config_.methodAccepted(method)) {
+  if (error_code_ > 1)
+    status_code_ = error_code_;
+  else if (!config_.methodAccepted(method)) {
     status_code_ = 405;
     headers_["Allow"] = methodList();
-  } else if (config_.getClientMaxBodySize() > 0 && config_.getBody().length() > config_.getClientMaxBodySize()) {
+  }
+  else if (config_.getClientMaxBodySize() > 0 && config_.getBody().length() > config_.getClientMaxBodySize()) {
     status_code_ = 413;
   }
   else if (config_.getAuth() != "off" && !checkAuth())
@@ -95,11 +97,10 @@ void Response::build() {
   else if (Response::methods_[method])
     status_code_ = (this->*(Response::methods_[method]))();
 
-  if (status_code_ >= 400) {
+  if (status_code_ >= 300) {
     body_ = buildErrorPage(status_code_);
   }
   createResponse();
-  status_send_ = SENDING;
 }
 
 void Response::createResponse() {
@@ -112,9 +113,9 @@ void Response::createResponse() {
   for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++)
     response_ += it->first + ": " + it->second + "\r\n";
 
-  #ifdef DEBUG
-  std::cout << "\n### RESPONSE\n\n" << response_ <<  "\n###\n" << std::endl;
-  #endif
+  // #ifdef DEBUG
+  std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
+  // #endif
 
   response_ += "\r\n";
 
@@ -123,29 +124,40 @@ void Response::createResponse() {
 }
 
 int Response::GET() {
-  File file("." + config_.getRoot() + "/" + config_.getTarget());
+  File file(config_.getRoot() + "/" + config_.getTarget());
 
   if (file.is_directory()) {
+    if (config_.getTarget().find_last_of("/") != config_.getTarget().length() - 1) {
+      headers_["Location"] = "http://" + config_.getHeader("Host") + config_.getUri() + "/" + config_.getTarget() + "/";
+      std::cout << "LOC " << headers_["Location"] << std::endl;
+      return 301;
+    }
     std::string index = file.find_index(config_.getIndexes());
     if (index.length())
-      file.set_path("." + config_.getRoot() + "/" + config_.getTarget() + "/" + index);
-    else
+      file.set_path(config_.getRoot() + "/" + config_.getTarget() + "/" + index);
+    else if (!config_.getAutoindex())
       return 404;
   }
 
-  if (!file.exists())
-    return 404;
+  if (!file.is_directory()) {
+    if (!file.exists())
+      return 404;
 
-  if (!file.open())
-    return 403;
+    if (!file.open())
+      return 403;
 
-  headers_["Last-Modified"] = file.last_modified();
+    headers_["Last-Modified"] = file.last_modified();
+  }
+
   if (isCGI(file.getExtension())) {
     CGI cgi(file, config_, config_.getHeaders());
 
     cgi.execute();
     cgi.parseHeaders(headers_);
     body_ = cgi.getBody();
+  } else if (config_.getAutoindex() && file.is_directory()) {
+    headers_["Content-Type"] = MimeTypes::getType(".html");
+    body_ = file.autoIndex(config_.getTarget());
   }
   else {
     headers_["Content-Type"] = MimeTypes::getType(file.getExtension());
@@ -157,7 +169,7 @@ int Response::GET() {
 
 int Response::POST() {
   int status_code = 200;
-  File file("." + config_.getRoot() + "/" + config_.getTarget());
+  File file(config_.getRoot() + "/" + config_.getTarget());
 
   if (isCGI(file.getExtension())) {
     CGI cgi(file, config_, config_.getHeaders(), config_.getBody());
@@ -182,10 +194,10 @@ int Response::POST() {
 
 int Response::PUT() {
   int status_code = 204;
-  std::string path = "." + config_.getRoot() + "/" + config_.getTarget();
+  std::string path = config_.getRoot() + "/" + config_.getTarget();
 
   if (!config_.getUpload().empty()) {
-    File dir("." + config_.getRoot() + "/" + config_.getUpload());
+    File dir(config_.getRoot() + "/" + config_.getUpload());
 
     if (dir.exists() && !dir.is_directory()) {
       dir.unlink();
@@ -195,7 +207,7 @@ int Response::PUT() {
       if (mkdir(dir.getPath().c_str(), 0755))
         perror("/tmp/blah");
     }
-    path = "." + config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget();
+    path = config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget();
   }
 
   File file(path);
@@ -213,7 +225,7 @@ int Response::PUT() {
 }
 
 int Response::DELETE() {
-  File file("." + config_.getRoot() + "/" + config_.getTarget());
+  File file(config_.getRoot() + "/" + config_.getTarget());
 
   if (!file.exists())
     return 404;
@@ -237,8 +249,4 @@ int Response::send(int fd) {
   if (total_sent_ >= response_.length())
     return 0;
   return 1;
-}
-
-int Response::getStatus() {
-  return status_send_;
 }

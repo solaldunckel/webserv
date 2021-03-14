@@ -90,6 +90,17 @@ namespace ft {
     return newstr;
   }
 
+  void free_tab(char **tab) {
+    int i = 0;
+
+    while (tab[i]) {
+      free(tab[i]);
+      tab[i] = nullptr;
+      i++;
+    }
+    free(tab);
+  }
+
   const std::string b64decode(const void *data, const size_t &len) {
     if (len == 0) return "";
 
@@ -131,5 +142,12 @@ namespace ft {
     tm = gmtime(&tv.tv_sec);
     int ret = strftime(buf, 32, "%a, %d %b %Y %T GMT", tm);
     return std::string(buf, ret);
+  }
+
+  time_t get_current_time_in_sec() {
+    struct timeval now;
+
+    gettimeofday(&now, NULL);
+    return (now.tv_sec);
   }
 };

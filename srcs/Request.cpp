@@ -1,38 +1,13 @@
 #include "Request.hpp"
 
-/*
-** Constructors & Deconstructors
-*/
-
 Request::Request() {
   body_offset_ = 0;
   chunk_size_ = 0;
   status_ = FIRST_LINE;
-  initHeadersMap();
+  gettimeofday(&start_timer_, NULL);
 }
 
 Request::~Request() {}
-
-void Request::initHeadersMap() {
-  headers_["Accept-Charsets"];
-  headers_["Accept-Language"];
-  headers_["Allow"];
-  headers_["Authorization"];
-  headers_["Content-Language"];
-  headers_["Content-Length"];
-  headers_["Content-Location"];
-  headers_["Content-Type"];
-  headers_["Date"];
-  headers_["Host"];
-  headers_["Last-Modified"];
-  headers_["Location"];
-  headers_["Referer"];
-  headers_["Retry-After"];
-  headers_["Server"];
-  headers_["Transfer-Encoding"];
-  headers_["User-Agent"];
-  headers_["WWW-Authenticate"];
-}
 
 int Request::parse(std::string &buffer) {
   size_t ret = 0;
@@ -66,20 +41,16 @@ int Request::method_line() {
     if (isValidMethod(tmp)) {
       method_ = tmp;
       buffer_.erase(0, method_.length() + 1);
-    } else {
-      status_ = ERROR;
+    } else
       return 400;
-    }
 
     tmp = buffer_.substr(0, buffer_.find(' '));
 
     if (tmp.length() < 10000) {
       target_ = tmp;
       buffer_.erase(0, target_.length() + 1);
-    } else {
-      status_ = ERROR;
+    } else
       return 414;
-    }
 
     size_t end = buffer_.find("\r\n");
     tmp = buffer_.substr(0, end);
@@ -87,10 +58,8 @@ int Request::method_line() {
     if (tmp == "HTTP/1.1") {
       protocol_ = tmp;
       buffer_.erase(0, end + 2);
-    } else {
-      status_ = ERROR;
+    } else
       return 505;
-    }
 
     status_ = HEADERS;
   }
@@ -123,10 +92,8 @@ int Request::prebody() {
   if (headers_["Host"].empty())
     return 400;
 
-  if (method_ != "POST" && method_ != "PUT") {
-    status_ = COMPLETE;
+  if (method_ != "POST" && method_ != "PUT")
     return 1;
-  }
 
   if (!headers_["Transfer-Encoding"].empty() && headers_["Transfer-Encoding"] == "chunked") {
     status_ = CHUNK;
@@ -171,24 +138,36 @@ int Request::chunk() {
 }
 
 int Request::body() {
-  if (buffer_.length() + body_offset_ > length_) {
-    status_ = ERROR;
+  if (buffer_.length() + body_offset_ > length_)
     return 400;
-  }
 
   req_body_.insert(body_offset_, buffer_, 0, length_);
   body_offset_ += buffer_.length();
   buffer_.clear();
 
-  if (req_body_.length() == length_) {
-    status_ = COMPLETE;
+  if (req_body_.length() == length_)
     return 1;
-  }
   return 0;
 }
 
+bool Request::timeout() {
+  if (status_ != COMPLETE) {
+    status_ = ERROR;
+    return (true);
+  }
+  return (false);
+}
+
+int Request::getStatus() {
+  return status_;
+}
+
+time_t Request::get_timer_in_sec() {
+  return start_timer_.tv_sec;
+}
+
 void Request::print() {
-  std::cout << "\n### REQUEST\n\n";
+  std::cout << "\n-> REQUEST <-\n";
   std::cout << "Method: " << method_ << std::endl;
   std::cout << "Target: " << target_ << std::endl;
   std::cout << "Protocol: " << protocol_ << std::endl;
@@ -196,8 +175,6 @@ void Request::print() {
     if (!it->second.empty())
       std::cout << it->first << ": " << it->second << std::endl;;
   }
-  std::cout << "Body: [" << req_body_ << "]" << std::endl;
-  std::cout << "Status: " << status_ << std::endl;
-  // std::cout << msg_ << std::endl;
-  std::cout << "\n###" << std::endl;
+  // std::cout << "Body: [" << req_body_ << "]" << std::endl;
+  std::cout << std::endl;
 }

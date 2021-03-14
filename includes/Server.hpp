@@ -18,9 +18,30 @@
 # include "ServerConfig.hpp"
 # include "Request.hpp"
 # include "Response.hpp"
+# include "Utils.hpp"
 
 # define MAX_CONNECTION 128
 # define BUF_SIZE 4096
+
+class webserv_exception : virtual public std::exception {
+ public:
+  webserv_exception(std::string msg, int err_num = 0, std::string arg = "") : errno_(err_num) {
+    error_msg_ = msg;
+    error_msg_.replace(error_msg_.find('%'), 2, arg);
+    if (errno_) {
+      error_msg_ = error_msg_ + " (" + std::to_string(errno_) + ": " + strerror(errno_) + ")";
+    }
+  }
+  virtual ~webserv_exception() throw () {}
+
+  const char* what() const throw () {
+    return error_msg_.c_str();
+  }
+
+ private:
+  int errno_;
+  std::string error_msg_;
+};
 
 class Server {
  public:
@@ -31,9 +52,10 @@ class Server {
   void setup();
   void run();
 
-  void readData(int fd);
+  int readData(int fd, std::string &buffer);
   void writeData(int fd);
   void newConnection(int fd);
+  void clientDisconnect(int fd, int nbytes);
 
   static bool running_;
 
@@ -41,6 +63,7 @@ class Server {
   std::vector<ServerConfig> &servers_;
   std::map<int, Listen> running_server_;
   std::map<int, Client*> clients_;
+  std::vector<int> clients_bin_;
   fd_set master_fds_;
   fd_set read_fds_;
   fd_set write_fds_;

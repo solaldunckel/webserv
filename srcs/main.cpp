@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
   std::string path = "./config/default.conf";
 
   if (argc > 2) {
-    std::cout << "error: too many arguments" << std::endl;
+    std::cout << "webserv: too many arguments" << std::endl;
     return 1;
   }
   else if (argc == 2) {
@@ -23,11 +23,10 @@ int main(int argc, char **argv) {
 
     Server serv(config.getServers());
 
-    serv.setup();
     serv.run();
   }
   catch (std::exception &e) {
-    std::cout << "error: " << e.what() << std::endl;
+    std::cerr << "webserv: " << e.what() << std::endl;
     return 1;
   }
 }

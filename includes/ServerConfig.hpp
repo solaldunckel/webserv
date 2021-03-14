@@ -14,6 +14,10 @@ struct Listen {
   Listen(std::string ip, uint32_t port) : ip_(ip), port_(port) {};
 };
 
+inline bool operator==(const Listen &lhs, const Listen &rhs) {
+  return lhs.ip_ == rhs.ip_ && lhs.port_ == rhs.port_;
+}
+
 class ServerConfig {
  public:
   friend class RequestConfig;

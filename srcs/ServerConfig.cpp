@@ -1,6 +1,6 @@
 #include "ServerConfig.hpp"
 
-ServerConfig::ServerConfig() : credentials_("off"), client_max_body_size_(0) {
+ServerConfig::ServerConfig() : credentials_("off"), autoindex_(false), client_max_body_size_(0) {
   initDirectiveMap();
 }
 
@@ -13,6 +13,7 @@ ServerConfig	&ServerConfig::operator=(const ServerConfig &copy) {
   error_codes_ = copy.error_codes_;
   index_ = copy.index_;
   cgi_ = copy.cgi_;
+  autoindex_ = copy.autoindex_;
   credentials_ = copy.credentials_;
   return (*this);
 }

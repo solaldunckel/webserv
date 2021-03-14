@@ -28,31 +28,54 @@ void File::unlink() {
   ::unlink(path_.c_str());
 }
 
-std::string File::getContent() {
-  char buf[512 + 1];
-  std::string final;
-
-  while (!stream_.eof()) {
-    stream_.read(buf, 512);
-    final += std::string(buf, stream_.gcount());
-  }
-  return final;
-};
-
 bool File::is_open() {
   if (stream_.is_open() && stream_.good())
     return true;
   return false;
 }
 
-std::string File::getExtension() {
-  if (path_.length() && path_.find_last_of('.') != std::string::npos)
-    return path_.substr(path_.find_last_of('.'));
-  return "";
+std::string set_width(size_t width, std::string str) {
+  size_t len = str.length();
+  std::string w;
+
+  for (size_t i = 0; i < width - len; i++) {
+    w += " ";
+  }
+  w += str;
+  return w;
 }
 
-std::string &File::getPath() {
-  return path_;
+std::string File::autoIndex(std::string &target) {
+  std::string body;
+  DIR *dir;
+  struct dirent *ent;
+
+  dir = opendir(path_.c_str());
+  body += "<html>\r\n";
+  body += "<head><title>Index of /" + target + "</title></head>\r\n";
+  body += "<body>\r\n";
+  body += "<h1>Index of /" + target + "</h1><hr><pre>";
+  readdir(dir);
+  while ((ent = readdir(dir))) {
+    struct stat statbuf;
+    std::string path(path_ + "/" + ent->d_name);
+    stat(path.c_str(), &statbuf);
+    std::string name = ent->d_name;
+    if (S_ISDIR(statbuf.st_mode))
+      name += "/";
+    body = body + "<a href=\"" + name + "\">" + name + "</a>";
+    body += set_width(70 - name.length(), "DATE");
+
+    if (S_ISDIR(statbuf.st_mode))
+      body += set_width(50, "-");
+    else
+      body += set_width(50, std::to_string(statbuf.st_size));
+    body += "\r\n";
+  }
+  body += "</pre><hr></body>\r\n";
+  body += "</html>\r\n";
+  closedir(dir);
+  return body;
 }
 
 bool File::is_directory() {
@@ -96,4 +119,25 @@ std::string File::find_index(std::vector<std::string> &indexes) {
     return "";
   }
   return "";
+}
+
+std::string File::getContent() {
+  char buf[512 + 1];
+  std::string final;
+
+  while (!stream_.eof()) {
+    stream_.read(buf, 512);
+    final += std::string(buf, stream_.gcount());
+  }
+  return final;
+};
+
+std::string File::getExtension() {
+  if (path_.length() && path_.find_last_of('.') != std::string::npos)
+    return path_.substr(path_.find_last_of('.'));
+  return "";
+}
+
+std::string &File::getPath() {
+  return path_;
 }

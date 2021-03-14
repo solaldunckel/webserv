@@ -8,18 +8,16 @@
 # include <vector>
 # include <algorithm>
 
+# include "Client.hpp"
 # include "Config.hpp"
 # include "RequestConfig.hpp"
 # include "Response.hpp"
 # include "Utils.hpp"
 
-class Response;
-
 class Request {
  public:
   friend class RequestConfig;
 
-  // Constructors & Deconstructors
   Request();
   ~Request();
 
@@ -29,6 +27,11 @@ class Request {
   int prebody();
   int body();
   int chunk();
+
+  bool timeout();
+  time_t get_timer_in_sec();
+
+  int getStatus();
 
   enum Status {
     FIRST_LINE,
@@ -45,8 +48,6 @@ class Request {
     CHUNK_SIZE,
   };
 
-  void initHeadersMap();
-
   void print();
 
  private:
@@ -60,6 +61,7 @@ class Request {
 
   int body_offset_;
   int chunk_size_;
+  struct timeval start_timer_;
   size_t length_;
   Status status_;
   ChunkStatus chunk_status_;

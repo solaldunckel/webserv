@@ -19,7 +19,7 @@ class RequestConfig;
 class Response {
  public:
   // Constructors & Deconstructors
-  Response(RequestConfig &config);
+  Response(RequestConfig &config, int error_code = 0);
   ~Response();
 
   typedef int (Response::*type)();
@@ -50,6 +50,7 @@ class Response {
 
  private:
   RequestConfig &config_;
+  int error_code_;
   StatusCode status_;
   Status status_send_;
   size_t total_sent_;

@@ -5,6 +5,7 @@
 # include <stdlib.h>
 
 # include <iostream>
+# include <exception>
 # include <string>
 # include <sstream>
 # include <sys/time.h>
@@ -33,9 +34,17 @@ namespace ft {
   size_t to_hex(std::string &str);
   size_t strlen(const char *str);
   char *strdup(const char *str);
+  void free_tab(char **tab);
   const std::string b64decode(const void* data, const size_t &len);
   std::string b64decode(const std::string &str64);
   std::string get_http_date();
+  time_t get_current_time_in_sec();
+
+  template<typename T>
+  void delete_(T *&ptr) {
+    delete ptr;
+    ptr = nullptr;
+  }
 
   struct comp {
     bool operator() (const std::string& lhs, const std::string& rhs) const {

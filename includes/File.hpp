@@ -3,6 +3,7 @@
 
 # include <iostream>
 # include <fstream>
+# include <sstream>
 
 # include <fcntl.h>
 # include <sys/types.h>
@@ -29,6 +30,7 @@ class File {
 
   std::string find_index(std::vector<std::string> &indexes);
 
+  std::string autoIndex(std::string &target);
   std::string getExtension();
   std::string getContent();
   std::string &getPath();
