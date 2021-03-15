@@ -19,6 +19,7 @@ class RequestConfig {
 
   ServerConfig *getServerForRequest(std::vector<ServerConfig> &servers);
   ServerConfig *getLocationForRequest(ServerConfig *server, std::string target);
+  bool redirectLocation(std::string target);
 
   bool methodAccepted(std::string &method);
 
@@ -26,6 +27,7 @@ class RequestConfig {
   std::string &getRoot();
   std::string &getUri();
   std::string &getTarget();
+  void setTarget(std::string target);
   std::string &getBody();
   std::string &getAuth();
   std::map<std::string, std::string> &getCGI();

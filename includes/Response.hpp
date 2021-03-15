@@ -26,7 +26,7 @@ class Response {
   static std::map<std::string, type> methods_;
   static void initMethodMap();
 
-  std::string buildErrorPage(int status_code);
+  int buildErrorPage(int status_code);
   bool isCGI(std::string extension);
   void build();
   void createResponse();
@@ -51,6 +51,7 @@ class Response {
  private:
   RequestConfig &config_;
   int error_code_;
+  int redirect_;
   StatusCode status_;
   Status status_send_;
   size_t total_sent_;

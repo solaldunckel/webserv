@@ -7,7 +7,9 @@
 Response::Response(RequestConfig &config, int error_code) : config_(config) {
   headers_["Server"] = "webserv/1.0";
   error_code_ = error_code;
+  status_code_ = 0;
   total_sent_ = 0;
+  redirect_ = 1;
   initMethodMap();
   build();
 }
@@ -32,28 +34,32 @@ bool Response::isCGI(std::string extension) {
   return false;
 }
 
-std::string Response::buildErrorPage(int status_code) {
-  std::string body;
-
+int Response::buildErrorPage(int status_code) {
   if (!config_.getErrorPages()[status_code].empty()) {
-    File file(config_.getRoot() + config_.getErrorPages()[status_code]);
+    std::string path = config_.getErrorPages()[status_code];
+    if (config_.redirectLocation(config_.getErrorPages()[status_code])) {
+      redirect_ = 1;
+      return 404;
+    }
+
+    File file(config_.getRoot() + path);
 
     if (file.open())
-      body += file.getContent();
+      body_ += file.getContent();
   } else {
-    body += "<html>\r\n";
-    body += "<head><title>" + std::to_string(status_code) + " " + status_[status_code] + "</title></head>\r\n";
-    body += "<body>\r\n";
-    body += "<center><h1>" + std::to_string(status_code) + " " + status_[status_code] + "</h1></center>\r\n";
-    body += "<hr><center>" + headers_["Server"] + "</center>\r\n";
-    body += "</body>\r\n";
-    body += "</html>\r\n";
+    body_ += "<html>\r\n";
+    body_ += "<head><title>" + std::to_string(status_code) + " " + status_[status_code] + "</title></head>\r\n";
+    body_ += "<body>\r\n";
+    body_ += "<center><h1>" + std::to_string(status_code) + " " + status_[status_code] + "</h1></center>\r\n";
+    body_ += "<hr><center>" + headers_["Server"] + "</center>\r\n";
+    body_ += "</body>\r\n";
+    body_ += "</html>\r\n";
     headers_["Content-Type"] = MimeTypes::getType(".html");
   }
-  headers_["Content-Length"] = std::to_string(body.length());
+  headers_["Content-Length"] = std::to_string(body_.length());
   if (status_code == 401)
     headers_["WWW-Authenticate"] = "Basic realm=\"Access to restricted area\"";
-  return body;
+  return status_code;
 }
 
 bool Response::checkAuth() {
@@ -83,23 +89,27 @@ void Response::build() {
 
   std::map<std::string, std::string, ft::comp> head = config_.getHeaders();
 
-  if (error_code_ > 1)
-    status_code_ = error_code_;
-  else if (!config_.methodAccepted(method)) {
-    status_code_ = 405;
-    headers_["Allow"] = methodList();
-  }
-  else if (config_.getClientMaxBodySize() > 0 && config_.getBody().length() > config_.getClientMaxBodySize()) {
-    status_code_ = 413;
-  }
-  else if (config_.getAuth() != "off" && !checkAuth())
-    status_code_ = 401;
-  else if (Response::methods_[method])
-    status_code_ = (this->*(Response::methods_[method]))();
+  while (redirect_) {
+    redirect_ = 0;
 
-  if (status_code_ >= 300) {
-    body_ = buildErrorPage(status_code_);
+    if (error_code_ > 1)
+      status_code_ = error_code_;
+    else if (!config_.methodAccepted(method)) {
+      status_code_ = 405;
+      headers_["Allow"] = methodList();
+    }
+    else if (config_.getClientMaxBodySize() > 0 && config_.getBody().length() > config_.getClientMaxBodySize()) {
+      status_code_ = 413;
+    }
+    else if (config_.getAuth() != "off" && !checkAuth())
+      status_code_ = 401;
+    else if (Response::methods_[method])
+      status_code_ = (this->*(Response::methods_[method]))();
+
+    if (status_code_ >= 300 && !body_.length())
+      status_code_ = buildErrorPage(status_code_);
   }
+
   createResponse();
 }
 
@@ -164,6 +174,8 @@ int Response::GET() {
     body_ = file.getContent();
   }
   headers_["Content-Length"] = std::to_string(body_.length());
+  if (status_code_ > 400)
+    return status_code_;
   return 200;
 }
 

@@ -37,6 +37,24 @@ void RequestConfig::setup() {
   }
 }
 
+bool RequestConfig::redirectLocation(std::string target) {
+  ServerConfig *location = nullptr;
+
+  if (request_.getStatus() > 2)
+    location = getLocationForRequest(server_, target);
+
+  if (location != location_) {
+    location_ = location;
+    target_ = target;
+    if (target_.find(location->uri_) != std::string::npos) {
+      target_.erase(0, location_->uri_.length());
+      target_ = ft::trim_left(target_, '/');
+    }
+    return true;
+  }
+  return false;
+}
+
 ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &servers) {
   std::vector<ServerConfig*> matching_servers;
 
@@ -102,6 +120,10 @@ bool RequestConfig::methodAccepted(std::string &method) {
 
 std::string &RequestConfig::getTarget() {
   return target_;
+}
+
+void RequestConfig::setTarget(std::string target) {
+  target_ = target;
 }
 
 std::string &RequestConfig::getHost() {

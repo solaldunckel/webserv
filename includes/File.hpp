@@ -14,6 +14,17 @@
 
 # include <vector>
 
+struct auto_listing {
+  std::string name_;
+  bool is_dir_;
+  std::string date_;
+  size_t size_;
+
+  auto_listing() : is_dir_(false) {};
+};
+
+bool sort_auto_listing(auto_listing i, auto_listing j);
+
 class File {
  public:
   File(std::string path);

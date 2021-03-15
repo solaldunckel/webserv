@@ -1,6 +1,6 @@
 #include "CGI.hpp"
 
-std::string const CGI_TMP = "__cgi_tmp__.txt";
+std::string const CGI_TMP = "/tmp/__cgi_tmp__";
 
 CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers) : file_(file), config_(config), req_headers_(req_headers) {
   char *cwd = getcwd(NULL, 0);
@@ -40,7 +40,8 @@ CGI::~CGI() {
 }
 
 void CGI::execute() {
-  file_path_ = cwd_ + file_.getPath().erase(0, 1);
+  file_path_ = cwd_ + "/" + file_.getPath();
+  std::cout << file_path_ << std::endl;
   chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
   setCGIEnv();
 
