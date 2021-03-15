@@ -10,18 +10,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(SRCS
   srcs/main.cpp
-  srcs/Config.cpp
-  srcs/Client.cpp
-  srcs/CGI.cpp
-  srcs/File.cpp
-  srcs/StatusCode.cpp
-  srcs/MimeTypes.cpp
-  srcs/Request.cpp
-  srcs/RequestConfig.cpp
-  srcs/Response.cpp
-  srcs/Server.cpp
-  srcs/ServerConfig.cpp
-  srcs/Utils.cpp
+  srcs/Config/Config.cpp
+  srcs/Config/RequestConfig.cpp
+  srcs/Config/ServerConfig.cpp
+  srcs/HTTP/CGI.cpp
+  srcs/HTTP/Client.cpp
+  srcs/HTTP/Request.cpp
+  srcs/HTTP/Response.cpp
+  srcs/HTTP/Server.cpp
+  srcs/Utils/File.cpp
+  srcs/Utils/MimeTypes.cpp
+  srcs/Utils/StatusCode.cpp
+  srcs/Utils/Utils.cpp
+)
+
+set(INCLUDES
+  includes/Config
+  includes/HTTP
+  includes/Utils
 )
 
 add_compile_options(-Wall -Werror -Wextra)
@@ -39,7 +45,7 @@ add_custom_target(fclean
 
 # add the executable
 add_executable(webserv ${SRCS})
-target_include_directories(webserv PUBLIC includes)
+target_include_directories(webserv PUBLIC ${INCLUDES})
 
 if (DEBUG)
   target_compile_definitions(webserv PUBLIC -DDEBUG)
