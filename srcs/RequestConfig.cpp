@@ -27,7 +27,6 @@ void RequestConfig::setup() {
   location_ = server;
 
   target_ = request_.target_;
-
   if (location) {
     location_ = location;
     if (request_.target_.find(location->uri_) != std::string::npos) {
@@ -61,7 +60,7 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
   // Match server based on request ip + port
   for (std::vector<ServerConfig>::iterator it = servers.begin(); it != servers.end(); it++) {
     for (std::vector<Listen>::iterator list = it->listens_.begin(); list != it->listens_.end(); list++) {
-      if (*list == host_port_ || (list->ip_ == "0.0.0.0" && list->port_ == host_port_.port_)) {
+      if ((list->ip_ == host_port_.ip_ || list->ip_ == "0.0.0.0") && list->port_ == host_port_.port_) {
         matching_servers.push_back(&(*it));
         break;
       }
@@ -79,8 +78,10 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
     std::vector<std::string> server_names = (*it)->getServerNames();
 
     for (std::vector<std::string>::iterator server_name = server_names.begin(); server_name != server_names.end(); server_name++) {
-      if (host == *server_name)
+      if (host == *server_name) {
+        std::cout << "MATCHED SERVER BY SERVER NAME : " << *server_name << std::endl;
         return *it;
+      }
     }
   }
 
@@ -94,16 +95,18 @@ ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::st
 
   for (std::vector<ServerConfig>::iterator it = server->locations_.begin(); it != server->locations_.end(); it++) {
     if (it->uri_ == target) {
-      #ifdef DEBUG
+      // #ifdef DEBUG
       std::cout << "MATCHING LOCATION : " << it->uri_ << std::endl;
-      #endif
+      // #endif
       return &(*it);
     }
   }
 
   if (target == "/")
     return nullptr;
-  return getLocationForRequest(server, target.substr(0, target.find_last_of('/')));
+  if (target.find_last_of('/') == target.length() - 1)
+    return getLocationForRequest(server, target.substr(0, target.find_last_of('/')));
+  return getLocationForRequest(server, target.substr(0, target.find_last_of('/') + 1));
 }
 
 bool RequestConfig::methodAccepted(std::string &method) {

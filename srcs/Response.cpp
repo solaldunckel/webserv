@@ -37,7 +37,7 @@ bool Response::isCGI(std::string extension) {
 int Response::buildErrorPage(int status_code) {
   if (!config_.getErrorPages()[status_code].empty()) {
     std::string path = config_.getErrorPages()[status_code];
-    if (config_.redirectLocation(config_.getErrorPages()[status_code])) {
+    if (config_.redirectLocation("/" + path)) {
       redirect_ = 1;
       return 404;
     }
@@ -47,6 +47,7 @@ int Response::buildErrorPage(int status_code) {
     if (file.open())
       body_ += file.getContent();
   } else {
+    std::cout << "YO" << std::endl;
     body_ += "<html>\r\n";
     body_ += "<head><title>" + std::to_string(status_code) + " " + status_[status_code] + "</title></head>\r\n";
     body_ += "<body>\r\n";
@@ -134,11 +135,11 @@ void Response::createResponse() {
 }
 
 int Response::GET() {
-  File file(config_.getRoot() + "/" + config_.getTarget());
+  File file(config_.getRoot() + config_.getTarget());
 
   if (file.is_directory()) {
     if (config_.getTarget().find_last_of("/") != config_.getTarget().length() - 1) {
-      headers_["Location"] = "http://" + config_.getHeader("Host") + config_.getUri() + "/" + config_.getTarget() + "/";
+      headers_["Location"] = config_.getUri() + config_.getTarget() + "/";
       std::cout << "LOC " << headers_["Location"] << std::endl;
       return 301;
     }
@@ -158,7 +159,7 @@ int Response::GET() {
 
     headers_["Last-Modified"] = file.last_modified();
   }
-
+  
   if (isCGI(file.getExtension())) {
     CGI cgi(file, config_, config_.getHeaders());
 
