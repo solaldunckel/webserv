@@ -1,34 +1,32 @@
 #include "CGI.hpp"
 
-std::string const CGI_TMP = "/tmp/__cgi_tmp__";
+std::string const CGI_TMP_PATH = "/tmp/webserv_cgi_tmp_";
 
 CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers) : file_(file), config_(config), req_headers_(req_headers) {
-  char *cwd = getcwd(NULL, 0);
-  cwd_ = cwd;
-  free(cwd);
-
-  env_ = nullptr;
-
+  init();
   req_body_ = file_.getContent();
-  extension_ = file_.getExtension();
-  cgi_exe_ = config.getCGI()[extension_];
-  cgi_path_ = cwd_ + "/" + config.getCGIBin() + "/" + cgi_exe_;
-  tmp_file_.set_path(CGI_TMP.c_str());
-  tmp_file_.open(true);
 }
 
 CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers, std::string &req_body) : file_(file), config_(config), req_headers_(req_headers) {
+  init();
+  req_body_ = req_body;
+}
+
+void CGI::init() {
   char *cwd = getcwd(NULL, 0);
   cwd_ = cwd;
   free(cwd);
 
   env_ = nullptr;
 
-  req_body_ = req_body;
   extension_ = file_.getExtension();
-  cgi_exe_ = config.getCGI()[extension_];
-  cgi_path_ = cwd_ + "/" + config.getCGIBin() + "/" + cgi_exe_;
-  tmp_file_.set_path(CGI_TMP.c_str());
+  cgi_exe_ = config_.getCGI()[extension_];
+  if (config_.getCGIBin()[0] == '/') {
+    cgi_path_ = config_.getCGIBin() + "/" + cgi_exe_;
+  } else {
+    cgi_path_ = cwd_ + "/" + config_.getCGIBin() + "/" + cgi_exe_;
+  }
+  tmp_file_.set_path(CGI_TMP_PATH.c_str());
   tmp_file_.open(true);
 }
 
@@ -39,7 +37,7 @@ CGI::~CGI() {
 }
 
 void CGI::execute() {
-  file_path_ = cwd_ + "/" + file_.getPath();
+  file_path_ = cwd_ + file_.getPath();
   std::cout << file_path_ << std::endl;
   chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
   setCGIEnv();
@@ -99,30 +97,38 @@ std::string &CGI::getBody() {
 }
 
 void CGI::setCGIEnv() {
-	cgi_env_["GATEWAY_INTERFACE"] = "CGI/1.1";
-	cgi_env_["SERVER_SOFTWARE"] = "WEBSERV/1.0";
-	cgi_env_["SERVER_PROTOCOL"] = config_.getProtocol();
-	cgi_env_["SERVER_PORT"] = std::to_string(config_.getPort());
-	cgi_env_["SCRIPT_NAME"] = cgi_path_;
-	cgi_env_["SERVER_NAME"] = config_.getHost();
-	cgi_env_["REMOTE_ADDR"] = config_.getClient().getAddr();
-	cgi_env_["REQUEST_METHOD"] = config_.getMethod();
-	cgi_env_["QUERY_STRING"] = config_.getQuery();
-	if (config_.getMethod() == "POST") {
+  if (config_.getMethod() == "POST") {
 		cgi_env_["CONTENT_TYPE"] = req_headers_["Content-Type"];
 		cgi_env_["CONTENT_LENGTH"] = std::to_string(req_body_.length());
 	}
-	cgi_env_["REQUEST_URI"] = file_path_;
-	cgi_env_["PATH_INFO"] = file_path_;
+	cgi_env_["GATEWAY_INTERFACE"] = "CGI/1.1";
+  cgi_env_["PATH_INFO"] = file_path_;
 	cgi_env_["PATH_TRANSLATED"] = file_path_;
+  cgi_env_["QUERY_STRING"] = config_.getQuery();
+  cgi_env_["REMOTE_ADDR"] = config_.getClient().getAddr();
+
+  if (config_.getAuth() != "off") {
+    cgi_env_["AUTH_TYPE"] = "Basic";
+    cgi_env_["REMOTE_IDENT"] = config_.getAuth().substr(0, config_.getAuth().find(':'));
+    cgi_env_["REMOTE_USER"] = config_.getAuth().substr(0, config_.getAuth().find(':'));
+  }
+
+  cgi_env_["REQUEST_METHOD"] = config_.getMethod();
+	cgi_env_["REQUEST_URI"] = file_path_;
+
+  cgi_env_["SCRIPT_NAME"] = cgi_path_;
+	cgi_env_["SERVER_NAME"] = config_.getHost();
+	cgi_env_["SERVER_PROTOCOL"] = config_.getProtocol();
+	cgi_env_["SERVER_PORT"] = std::to_string(config_.getPort());
+  cgi_env_["SERVER_SOFTWARE"] = "WEBSERV/1.0";
+
+	if (extension_ == ".php")
+		cgi_env_["REDIRECT_STATUS"] = "200";
 
   for (std::map<std::string, std::string, ft::comp>::iterator it = req_headers_.begin(); it != req_headers_.end(); it++) {
     if (!it->second.empty())
       cgi_env_["HTTP_" + it->first] = it->second;
   }
-
-	if (extension_ == ".php")
-		cgi_env_["REDIRECT_STATUS"] = "200";
 
 	if (!(env_ = (char **)malloc(sizeof(char *) * (cgi_env_.size() + 1))))
 		return;

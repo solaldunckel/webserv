@@ -16,6 +16,7 @@ class CGI {
   CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers, std::string &req_body);
   ~CGI();
 
+  void init();
   void execute();
   void setCGIEnv();
   void parseHeaders(std::map<std::string, std::string> &headers);

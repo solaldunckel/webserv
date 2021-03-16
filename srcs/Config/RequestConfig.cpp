@@ -31,7 +31,6 @@ void RequestConfig::setup() {
     location_ = location;
     if (request_.target_.find(location->uri_) != std::string::npos) {
       target_.erase(0, location_->uri_.length());
-      target_ = ft::trim_left(target_, '/');
     }
   }
 }
@@ -47,7 +46,6 @@ bool RequestConfig::redirectLocation(std::string target) {
     target_ = target;
     if (target_.find(location->uri_) != std::string::npos) {
       target_.erase(0, location_->uri_.length());
-      target_ = ft::trim_left(target_, '/');
     }
     return true;
   }
