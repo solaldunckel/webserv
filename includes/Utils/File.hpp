@@ -2,7 +2,6 @@
 # define FILE_HPP
 
 # include <iostream>
-# include <fstream>
 
 # include <fcntl.h>
 # include <sys/types.h>
@@ -26,14 +25,14 @@ bool sort_auto_listing(auto_listing i, auto_listing j);
 
 class File {
  public:
+  File();
   File(std::string path);
   ~File();
 
-  bool open();
+  bool open(bool create = false);
   void create(std::string &body);
   void unlink();
   void set_path(std::string path);
-  bool is_open();
   bool is_directory();
   std::string last_modified();
   bool exists();
@@ -44,9 +43,10 @@ class File {
   std::string getExtension();
   std::string getContent();
   std::string &getPath();
+  int &getFd();
 
  private:
-  std::fstream stream_;
+  int fd_;
   std::string path_;
 };
 

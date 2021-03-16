@@ -1,37 +1,36 @@
 #include "File.hpp"
 
-File::File(std::string path) : path_(path) {}
+File::File() : fd_(0) {}
+
+File::File(std::string path) : fd_(0), path_(path) {}
 
 File::~File() {
-  if (stream_.is_open())
-    stream_.close();
+  if (fd_ > 0)
+    close(fd_);
 }
 
 void File::set_path(std::string path) {
   path_ = path;
 }
 
-bool File::open() {
-  if (stream_.is_open())
-    stream_.close();
+bool File::open(bool create) {
+  if (fd_ > 0)
+    close(fd_);
 
-  stream_.open(path_, std::ios::binary | std::ios::in);
-  return stream_.is_open() && stream_.good();
+  if (create)
+    fd_ = ::open(path_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0666);
+  else
+    fd_ = ::open(path_.c_str(), O_RDONLY);
+  return fd_ > 0;
 }
 
 void File::create(std::string &body) {
-  stream_.open(path_, std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
-  stream_ << body;
+  fd_ = ::open(path_.c_str(), O_WRONLY | O_CREAT | O_TRUNC);
+  write(fd_, body.c_str(), body.length());
 }
 
 void File::unlink() {
   ::unlink(path_.c_str());
-}
-
-bool File::is_open() {
-  if (stream_.is_open() && stream_.good())
-    return true;
-  return false;
 }
 
 std::string set_width(size_t width, std::string str) {
@@ -159,12 +158,14 @@ std::string File::find_index(std::vector<std::string> &indexes) {
 }
 
 std::string File::getContent() {
-  char buf[512 + 1];
   std::string final;
+  char buf[4096 + 1];
+  int ret;
 
-  while (!stream_.eof()) {
-    stream_.read(buf, 512);
-    final += std::string(buf, stream_.gcount());
+  lseek(fd_, 0, SEEK_SET);
+  while ((ret = read(fd_, buf, 4096)) > 0) {
+    buf[ret] = '\0';
+    final.insert(final.length(), buf, ret);
   }
   return final;
 };
@@ -173,6 +174,10 @@ std::string File::getExtension() {
   if (path_.length() && path_.find_last_of('.') != std::string::npos)
     return path_.substr(path_.find_last_of('.'));
   return "";
+}
+
+int &File::getFd() {
+  return fd_;
 }
 
 std::string &File::getPath() {
