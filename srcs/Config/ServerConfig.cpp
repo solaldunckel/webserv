@@ -1,6 +1,6 @@
 #include "ServerConfig.hpp"
 
-ServerConfig::ServerConfig() : credentials_("off"), autoindex_(false), client_max_body_size_(0) {
+ServerConfig::ServerConfig() : credentials_("off"), autoindex_(false), client_max_body_size_(0), cgi_bin_("cgi-bin") {
   initDirectiveMap();
 }
 
@@ -13,6 +13,7 @@ ServerConfig	&ServerConfig::operator=(const ServerConfig &copy) {
   error_codes_ = copy.error_codes_;
   index_ = copy.index_;
   cgi_ = copy.cgi_;
+  cgi_bin_ = copy.cgi_bin_;
   autoindex_ = copy.autoindex_;
   credentials_ = copy.credentials_;
   return (*this);
@@ -32,6 +33,7 @@ void ServerConfig::initDirectiveMap() {
   ServerConfig::directive_["index"] = &ServerConfig::index;
   ServerConfig::directive_["upload"] = &ServerConfig::upload;
   ServerConfig::directive_["cgi"] = &ServerConfig::cgi;
+  ServerConfig::directive_["cgi_bin"] = &ServerConfig::cgi_bin;
 }
 
 void ServerConfig::server(std::vector<std::string>::iterator &it) {
@@ -144,6 +146,12 @@ void ServerConfig::upload(std::vector<std::string>::iterator &it) {
   upload_ = *it;
   if (*++it != ";")
     throw std::runtime_error("double value in 'upload'");
+};
+
+void ServerConfig::cgi_bin(std::vector<std::string>::iterator &it) {
+  cgi_bin_ = *it;
+  if (*++it != ";")
+    throw std::runtime_error("double value in 'cgi_bin'");
 };
 
 void ServerConfig::location(std::vector<std::string>::iterator &it) {

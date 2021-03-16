@@ -43,6 +43,7 @@ class ServerConfig {
   void root(std::vector<std::string>::iterator &it);
   void index(std::vector<std::string>::iterator &it);
   void cgi(std::vector<std::string>::iterator &it);
+  void cgi_bin(std::vector<std::string>::iterator &it);
   void autoindex(std::vector<std::string>::iterator &it);
   void upload(std::vector<std::string>::iterator &it);
 
@@ -67,6 +68,7 @@ class ServerConfig {
   std::map<int, std::string> error_codes_;
   std::vector<std::string> index_;
   std::map<std::string, std::string> cgi_;
+  std::string cgi_bin_;
 };
 
 #endif
