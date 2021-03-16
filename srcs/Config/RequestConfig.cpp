@@ -125,6 +125,10 @@ std::string &RequestConfig::getTarget() {
   return target_;
 }
 
+std::string &RequestConfig::getQuery() {
+  return request_.query_string_;
+}
+
 void RequestConfig::setTarget(std::string target) {
   target_ = target;
 }
@@ -155,6 +159,10 @@ std::string &RequestConfig::getUri() {
 
 std::map<std::string, std::string> &RequestConfig::getCGI() {
   return location_->cgi_;
+}
+
+std::string &RequestConfig::getCGIBin() {
+  return location_->cgi_bin_;
 }
 
 size_t &RequestConfig::getClientMaxBodySize() {

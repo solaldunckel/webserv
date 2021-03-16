@@ -28,6 +28,8 @@ class RequestConfig {
   std::string &getRoot();
   std::string &getUri();
   std::string &getTarget();
+  std::string &getQuery();
+  std::string &getCGIBin();
   void setTarget(std::string target);
   std::string &getBody();
   std::string &getAuth();

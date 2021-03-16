@@ -55,6 +55,7 @@ class Request {
 
   std::string method_;
   std::string target_;
+  std::string query_string_;
   std::string protocol_;
   std::string req_body_;
   std::map<std::string, std::string, ft::comp> headers_;

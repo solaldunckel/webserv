@@ -18,7 +18,6 @@ class CGI {
 
   void execute();
   void setCGIEnv();
-  void createBody();
   void parseHeaders(std::map<std::string, std::string> &headers);
   std::string &getBody();
 
@@ -28,12 +27,12 @@ class CGI {
   std::map<std::string, std::string, ft::comp> &req_headers_;
   std::string cgi_path_;
   std::string cgi_exe_;
-  std::string cgi_bin_;
   std::string extension_;
   std::string cwd_;
   std::string file_path_;
   std::string body_;
   std::string req_body_;
+  File tmp_file_;
   int tmp_fd_;
   std::map<std::string, std::string> cgi_env_;
   char **env_;

@@ -17,7 +17,8 @@ bool isValidDirective(std::string const &str) {
           str == "upload" ||
           str == "autoindex" ||
           str == "index" ||
-          str == "cgi");
+          str == "cgi" ||
+          str == "cgi_bin");
 }
 
 namespace ft {

@@ -147,7 +147,7 @@ int Response::GET() {
     if (index.length())
       file.set_path(config_.getRoot() + "/" + config_.getTarget() + "/" + index);
     else if (!config_.getAutoindex())
-      return 404;
+      return 403;
   }
 
   if (!file.is_directory()) {
@@ -159,7 +159,7 @@ int Response::GET() {
 
     headers_["Last-Modified"] = file.last_modified();
   }
-  
+
   if (isCGI(file.getExtension())) {
     CGI cgi(file, config_, config_.getHeaders());
 

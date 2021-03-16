@@ -52,6 +52,11 @@ int Request::method_line() {
     } else
       return 414;
 
+    if (target_.find('?') != std::string::npos) {
+      query_string_ = target_.substr(target_.find('?') + 1);
+      target_.erase(target_.find('?'));
+    }
+
     size_t end = buffer_.find("\r\n");
     tmp = buffer_.substr(0, end);
 

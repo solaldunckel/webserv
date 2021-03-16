@@ -12,9 +12,9 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
   req_body_ = file_.getContent();
   extension_ = file_.getExtension();
   cgi_exe_ = config.getCGI()[extension_];
-  cgi_bin_ = "/cgi-bin";
-  cgi_path_ = cwd_ + cgi_bin_ + "/" + cgi_exe_;
-  tmp_fd_ = open(CGI_TMP.c_str(), O_CREAT | O_RDWR, 0666);
+  cgi_path_ = cwd_ + "/" + config.getCGIBin() + "/" + cgi_exe_;
+  tmp_file_.set_path(CGI_TMP.c_str());
+  tmp_file_.open(true);
 }
 
 CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers, std::string &req_body) : file_(file), config_(config), req_headers_(req_headers) {
@@ -27,16 +27,15 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
   req_body_ = req_body;
   extension_ = file_.getExtension();
   cgi_exe_ = config.getCGI()[extension_];
-  cgi_bin_ = "/cgi-bin";
-  cgi_path_ = cwd_ + cgi_bin_ + "/" + cgi_exe_;
-  tmp_fd_ = open(CGI_TMP.c_str(), O_CREAT | O_RDWR, 0666);
+  cgi_path_ = cwd_ + "/" + config.getCGIBin() + "/" + cgi_exe_;
+  tmp_file_.set_path(CGI_TMP.c_str());
+  tmp_file_.open(true);
 }
 
 CGI::~CGI() {
   if (env_)
     ft::free_tab(env_);
-  close(tmp_fd_);
-  unlink(CGI_TMP.c_str());
+  tmp_file_.unlink();
 }
 
 void CGI::execute() {
@@ -57,7 +56,7 @@ void CGI::execute() {
   if (pid == 0) {
     close(pip[1]);
     dup2(pip[0], 0);
-    dup2(tmp_fd_, 1);
+    dup2(tmp_file_.getFd(), 1);
     close(pip[0]);
     execve(argv_[0], argv_, env_);
     exit(1);
@@ -75,20 +74,7 @@ void CGI::execute() {
   free(argv_[0]);
   free(argv_[1]);
   chdir(cwd_.c_str());
-  createBody();
-}
-
-void CGI::createBody() {
-  char buffer[4096 + 1];
-  int ret;
-
-  int fd = open(CGI_TMP.c_str(), O_RDWR, 0666);
-
-  while ((ret = read(fd, buffer, 4096)) > 0) {
-    buffer[ret] = '\0';
-    body_ += buffer;
-  }
-  close(fd);
+  body_ = tmp_file_.getContent();
 }
 
 void CGI::parseHeaders(std::map<std::string, std::string> &headers) {
@@ -121,7 +107,7 @@ void CGI::setCGIEnv() {
 	cgi_env_["SERVER_NAME"] = config_.getHost();
 	cgi_env_["REMOTE_ADDR"] = config_.getClient().getAddr();
 	cgi_env_["REQUEST_METHOD"] = config_.getMethod();
-	// cgi_env_["QUERY_STRING"] = request_.query;  // everything after ?
+	cgi_env_["QUERY_STRING"] = config_.getQuery();
 	if (config_.getMethod() == "POST") {
 		cgi_env_["CONTENT_TYPE"] = req_headers_["Content-Type"];
 		cgi_env_["CONTENT_LENGTH"] = std::to_string(req_body_.length());
