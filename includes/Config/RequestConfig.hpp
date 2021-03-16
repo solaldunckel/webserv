@@ -3,6 +3,7 @@
 
 # include "Client.hpp"
 # include "Request.hpp"
+# include "StringUtils.hpp"
 # include "Utils.hpp"
 
 class Client;

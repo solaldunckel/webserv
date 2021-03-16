@@ -4,21 +4,17 @@
 # include <iostream>
 # include <string>
 
-# include <fcntl.h>
-
-# include "Request.hpp"
-# include "Config.hpp"
+# include "RequestConfig.hpp"
 # include "StatusCode.hpp"
 # include "MimeTypes.hpp"
-# include "RequestConfig.hpp"
 # include "File.hpp"
 # include "CGI.hpp"
+# include "Base64.hpp"
 
 class RequestConfig;
 
 class Response {
  public:
-  // Constructors & Deconstructors
   Response(RequestConfig &config, int error_code = 0);
   ~Response();
 

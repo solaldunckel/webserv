@@ -11,16 +11,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(SRCS
   srcs/main.cpp
   srcs/Config/Config.cpp
-  srcs/Config/RequestConfig.cpp
   srcs/Config/ServerConfig.cpp
+  srcs/Config/RequestConfig.cpp
   srcs/HTTP/CGI.cpp
   srcs/HTTP/Client.cpp
   srcs/HTTP/Request.cpp
   srcs/HTTP/Response.cpp
   srcs/HTTP/Server.cpp
+  srcs/Utils/Base64.cpp
   srcs/Utils/File.cpp
   srcs/Utils/MimeTypes.cpp
   srcs/Utils/StatusCode.cpp
+  srcs/Utils/StringUtils.cpp
   srcs/Utils/Utils.cpp
 )
 

@@ -7,9 +7,10 @@
 # include "RequestConfig.hpp"
 # include "ServerConfig.hpp"
 # include "Response.hpp"
+
 # define TIMEOUT 60
 
-class Request;
+class RequestConfig;
 class Response;
 
 class Client {

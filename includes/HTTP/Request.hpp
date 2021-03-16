@@ -10,9 +10,9 @@
 
 # include "Client.hpp"
 # include "Config.hpp"
-# include "RequestConfig.hpp"
+// # include "RequestConfig.hpp"
 # include "Response.hpp"
-# include "Utils.hpp"
+# include "StringUtils.hpp"
 
 class Request {
  public:

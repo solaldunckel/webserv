@@ -4,7 +4,7 @@
 # include <map>
 # include <string>
 
-# include "Utils.hpp"
+# include "StringUtils.hpp"
 
 class MimeTypes {
  public:

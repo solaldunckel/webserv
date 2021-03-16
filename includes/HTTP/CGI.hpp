@@ -6,7 +6,7 @@
 
 # include "RequestConfig.hpp"
 # include "File.hpp"
-# include "Utils.hpp"
+# include "StringUtils.hpp"
 
 class RequestConfig;
 

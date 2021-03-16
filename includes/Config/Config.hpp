@@ -2,6 +2,7 @@
 # define CONFIG_HPP
 
 # include <iostream>
+# include <string>
 # include <fstream>
 # include <vector>
 # include <stack>
