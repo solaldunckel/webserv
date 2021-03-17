@@ -21,10 +21,10 @@ class RequestConfig {
   void setup();
 
   ServerConfig *getServerForRequest(std::vector<ServerConfig> &servers);
-  ServerConfig *findLongestLocationMatch(std::vector<ServerConfig> &matches, std::string target);
   ServerConfig *getLocationForRequest(ServerConfig *server, std::string &target);
   bool redirectLocation(std::string target);
 
+  ServerConfig *match_regexp(std::vector<ServerConfig*> &locations, std::string &target);
   bool methodAccepted(std::string &method);
 
   std::string &getMethod();

@@ -33,6 +33,7 @@ class ServerConfig {
 
   void server(std::vector<std::string>::iterator &it);
   void location(std::vector<std::string>::iterator &it);
+  void location_loop(std::vector<std::string>::iterator &it, std::vector<ServerConfig> &locations);
   void listen(std::vector<std::string>::iterator &it);
   void server_name(std::vector<std::string>::iterator &it);
   void limit_except(std::vector<std::string>::iterator &it);

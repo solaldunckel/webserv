@@ -41,14 +41,7 @@ void ServerConfig::server(std::vector<std::string>::iterator &it) {
   if (*it != "{")
     throw std::runtime_error("missing opening bracket in server block");
   while (*(++it) != "}") {
-    if (*it == "location") {
-      ServerConfig loc;
-
-      loc = *this;
-      loc.location(++it);
-      locations_.push_back(loc);
-    }
-    else if (ServerConfig::directive_[*it])
+    if (ServerConfig::directive_[*it])
       (this->*(ServerConfig::directive_[*it]))(++it);
     else
       throw std::runtime_error("invalid directive '" + *it + "' in 'server'");
@@ -162,7 +155,7 @@ bool is_loc_modifier(std::string &str) {
           str == "^~");
 }
 
-void ServerConfig::location(std::vector<std::string>::iterator &it) {
+void ServerConfig::location_loop(std::vector<std::string>::iterator &it, std::vector<ServerConfig> &locations) {
   if (is_loc_modifier(*it)) {
     if (*it == "=")
       modifier_ = EXACT;
@@ -178,13 +171,21 @@ void ServerConfig::location(std::vector<std::string>::iterator &it) {
     modifier_ = NONE;
   uri_ = *it++;
   if (*it != "{")
-    throw std::runtime_error("missing opening bracket in server block");
+    throw std::runtime_error("missing opening bracket in server block lul");
   while (*(++it) != "}") {
     if (ServerConfig::directive_[*it])
       (this->*(ServerConfig::directive_[*it]))(++it);
     else
       throw std::runtime_error("invalid directive '" + *it + "' in 'location'");
   }
+  locations.push_back(*this);;
+}
+
+void ServerConfig::location(std::vector<std::string>::iterator &it) {
+  ServerConfig loc;
+
+  loc = *this;
+  loc.location_loop(it, locations_);
 };
 
 void ServerConfig::cgi(std::vector<std::string>::iterator &it) {

@@ -37,10 +37,6 @@ bool Response::isCGI(std::string extension) {
 int Response::buildErrorPage(int status_code) {
   if (!config_.getErrorPages()[status_code].empty()) {
     std::string path = config_.getErrorPages()[status_code];
-    if (config_.redirectLocation("/" + path)) {
-      redirect_ = 1;
-      return 404;
-    }
 
     File file(config_.getRoot() + path);
 
@@ -90,26 +86,22 @@ void Response::build() {
 
   std::map<std::string, std::string, ft::comp> head = config_.getHeaders();
 
-  while (redirect_) {
-    redirect_ = 0;
-
-    if (error_code_ > 1)
-      status_code_ = error_code_;
-    else if (!config_.methodAccepted(method)) {
-      status_code_ = 405;
-      headers_["Allow"] = methodList();
-    }
-    else if (config_.getClientMaxBodySize() > 0 && config_.getBody().length() > config_.getClientMaxBodySize()) {
-      status_code_ = 413;
-    }
-    else if (config_.getAuth() != "off" && !checkAuth())
-      status_code_ = 401;
-    else if (Response::methods_[method])
-      status_code_ = (this->*(Response::methods_[method]))();
-
-    if (status_code_ >= 300 && !body_.length())
-      status_code_ = buildErrorPage(status_code_);
+  if (error_code_ > 1)
+    status_code_ = error_code_;
+  else if (!config_.methodAccepted(method)) {
+    status_code_ = 405;
+    headers_["Allow"] = methodList();
   }
+  else if (config_.getClientMaxBodySize() > 0 && config_.getBody().length() > config_.getClientMaxBodySize()) {
+    status_code_ = 413;
+  }
+  else if (config_.getAuth() != "off" && !checkAuth())
+    status_code_ = 401;
+  else if (Response::methods_[method])
+    status_code_ = (this->*(Response::methods_[method]))();
+
+  if (status_code_ >= 300 && !body_.length())
+    status_code_ = buildErrorPage(status_code_);
 
   createResponse();
 }
@@ -138,19 +130,14 @@ int Response::GET() {
   File file(config_.getRoot() + config_.getTarget());
 
   if (file.is_directory()) {
-    if (config_.getTarget().find_last_of("/") != config_.getTarget().length() - 1) {
-      headers_["Location"] = config_.getUri() + config_.getTarget() + "/";
-      std::cout << "LOC " << headers_["Location"] << std::endl;
-      return 301;
-    }
     std::string index = file.find_index(config_.getIndexes());
     if (index.length())
-      file.set_path(config_.getRoot() + "/" + config_.getTarget() + "/" + index);
+      file.set_path(config_.getRoot() + config_.getTarget() + "/" + index);
     else if (!config_.getAutoindex())
       return 404;
   }
 
-  std::cout << "PATH: " << file.getPath() << std::endl;
+  std::cout << file.getPath() << std::endl;
 
   if (!file.is_directory()) {
     if (!file.exists())
@@ -240,7 +227,7 @@ int Response::PUT() {
 }
 
 int Response::DELETE() {
-  File file(config_.getRoot() + "/" + config_.getTarget());
+  File file(config_.getRoot() + config_.getTarget());
 
   if (!file.exists())
     return 404;

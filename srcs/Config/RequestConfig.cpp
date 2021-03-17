@@ -23,14 +23,24 @@ void RequestConfig::setup() {
   if (request_.getStatus() > 2)
     location = getLocationForRequest(server, request_.target_);
 
+  // #ifdef DEBUG
+  if (location)
+    std::cout << "MATCHING LOCATION " << location->uri_ << std::endl;
+  else
+    std::cout << "NO MATCHING LOCATION" << std::endl;
+  // #endif
+
   server_ = server;
   location_ = server;
 
   target_ = request_.target_;
+
   if (location) {
     location_ = location;
     if (request_.target_.find(location->uri_) != std::string::npos) {
       target_.erase(0, location_->uri_.length());
+      if (target_.find("/") != 0)
+        target_ = "/" + target_;
     }
   }
 }
@@ -44,9 +54,8 @@ bool RequestConfig::redirectLocation(std::string target) {
   if (location != location_) {
     location_ = location;
     target_ = target;
-    if (target_.find(location->uri_) != std::string::npos) {
+    if (target_.find(location->uri_) != std::string::npos)
       target_.erase(0, location_->uri_.length());
-    }
     return true;
   }
   return false;
@@ -87,47 +96,17 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
   return matching_servers.front();
 }
 
-bool sort_by_uri_len(ServerConfig *lhs, ServerConfig *rhs) {
-  return (lhs->getUri().length() > rhs->getUri().length());
-}
-
-ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::string &target) {
-  ServerConfig *location = nullptr;
-
-  std::vector<ServerConfig*> prefix_matches;
-  std::vector<ServerConfig*> reg_locations;
-
-  for (std::vector<ServerConfig>::iterator it = server->locations_.begin(); it != server->locations_.end(); it++) {
-    if (it->modifier_ != 2 && it->modifier_ != 3) {
-      if (it->modifier_ == 1 && it->uri_ == target) {
-        std::cout << "MATCHING EXACT LOCATION : " << it->uri_ << std::endl;
-        location = &(*it);
-        break ;
-      }
-      if (target.find(it->uri_) == 0) {
-        prefix_matches.push_back(&(*it));
-      }
-    else
-      reg_locations.push_back(&(*it));
-    }
-  }
-
-  if (location)
-    return location;
-
-  std::sort(prefix_matches.begin(), prefix_matches.end(), sort_by_uri_len);
-  location = prefix_matches.front();
-  if (location->modifier_ == 4)
-    return location;
-
+ServerConfig *RequestConfig::match_regexp(std::vector<ServerConfig*> &locations, std::string &target) {
   regex_t test;
 
-  for (std::vector<ServerConfig*>::iterator it = reg_locations.begin(); it != reg_locations.end(); it++) {
-    int err = 1;
-    if ((*it)->modifier_ == 2)
-      err = regcomp(&test, (*it)->uri_.c_str(), REG_NOSUB | REG_EXTENDED);
-    else
-      err = regcomp(&test, (*it)->uri_.c_str(), REG_NOSUB | REG_EXTENDED | REG_ICASE);
+  for (std::vector<ServerConfig*>::iterator it = locations.begin(); it != locations.end(); it++) {
+    int flag = REG_NOSUB | REG_EXTENDED;
+
+    if ((*it)->modifier_ == 3)
+      flag |= REG_ICASE;
+
+    int err = regcomp(&test, (*it)->uri_.c_str(), flag);
+
     if (err == 0) {
       int match = regexec(&test, target.c_str(), 0, NULL, 0);
       regfree(&test);
@@ -135,28 +114,46 @@ ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::st
         return *it;
     }
   }
-  // location = findLongestLocationMatch(prefix_matches, target);
-  return location;
+  return nullptr;
 }
 
-ServerConfig *RequestConfig::findLongestLocationMatch(std::vector<ServerConfig> &matches, std::string target) {
-  if (!target.length())
-    target = "/";
+ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::string &target) {
+  ServerConfig *location = nullptr;
 
-  for (std::vector<ServerConfig>::iterator it = matches.begin(); it != matches.end(); it++) {
-    if (it->uri_ == target) {
-      // #ifdef DEBUG
-      std::cout << "MATCHING LOCATION : " << it->uri_ << std::endl;
-      // #endif
-      return &(*it);
+  std::vector<ServerConfig*> reg_locations;
+
+  for (std::vector<ServerConfig>::iterator it = server->locations_.begin(); it != server->locations_.end(); it++) {
+    if (it->modifier_ != 2 && it->modifier_ != 3) {
+      if (it->modifier_ == 1 && it->uri_ == target)
+        return &(*it);
+      else if (target.find(it->uri_) == 0) {
+        if (location && location->uri_.length() < it->uri_.length())
+          location = &(*it);
+        else if (!location)
+          location = &(*it);
+      }
+    }
+    else
+      reg_locations.push_back(&(*it));
+  }
+
+  if (location && location->modifier_ == 4)
+    return location;
+
+  if (!location->locations_.empty()) {
+    for (std::vector<ServerConfig>::iterator it = location->locations_.begin(); it != location->locations_.end(); it++) {
+      if (it->modifier_ == 2 || it->modifier_ == 3) {
+        reg_locations.insert(reg_locations.begin(), &(*it));
+      }
     }
   }
 
-  if (target == "/")
-    return nullptr;
-  if (target.find_last_of('/') == target.length() - 1)
-    return findLongestLocationMatch(matches, target.substr(0, target.find_last_of('/')));
-  return findLongestLocationMatch(matches, target.substr(0, target.find_last_of('/') + 1));
+  ServerConfig *reg = match_regexp(reg_locations, target);
+
+  if (reg)
+    return reg;
+
+  return location;
 }
 
 bool RequestConfig::methodAccepted(std::string &method) {
