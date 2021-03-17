@@ -137,8 +137,6 @@ void Response::createResponse() {
 int Response::GET() {
   File file(config_.getRoot() + config_.getTarget());
 
-  std::cout << "PATH: " << file.getPath() << std::endl;
-
   if (file.is_directory()) {
     if (config_.getTarget().find_last_of("/") != config_.getTarget().length() - 1) {
       headers_["Location"] = config_.getUri() + config_.getTarget() + "/";

@@ -1,6 +1,7 @@
 #include "ServerConfig.hpp"
 
 ServerConfig::ServerConfig() : credentials_("off"), autoindex_(false), client_max_body_size_(0), cgi_bin_("cgi-bin") {
+  modifier_ = NONE;
   initDirectiveMap();
 }
 
@@ -154,7 +155,27 @@ void ServerConfig::cgi_bin(std::vector<std::string>::iterator &it) {
     throw std::runtime_error("double value in 'cgi_bin'");
 };
 
+bool is_loc_modifier(std::string &str) {
+  return (str == "=" ||
+          str == "~" ||
+          str == "~*" ||
+          str == "^~");
+}
+
 void ServerConfig::location(std::vector<std::string>::iterator &it) {
+  if (is_loc_modifier(*it)) {
+    if (*it == "=")
+      modifier_ = EXACT;
+    else if (*it == "~")
+      modifier_ = CASE_SENSITIVE_REG;
+    else if (*it == "~*")
+      modifier_ = CASE_INSENSITIVE_REG;
+    else if (*it == "^~")
+      modifier_ = LONGEST;
+    it++;
+  }
+  else
+    modifier_ = NONE;
   uri_ = *it++;
   if (*it != "{")
     throw std::runtime_error("missing opening bracket in server block");
@@ -177,6 +198,10 @@ void ServerConfig::cgi(std::vector<std::string>::iterator &it) {
 /*
 ** Getter Functions
 */
+
+std::string &ServerConfig::getUri() {
+  return uri_;
+}
 
 std::vector<Listen> &ServerConfig::getListens() {
   return listens_;

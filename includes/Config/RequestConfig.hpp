@@ -1,6 +1,8 @@
 #ifndef REQUESTCONFIG_HPP
 # define REQUESTCONFIG_HPP
 
+# include <regex.h>
+
 # include "Client.hpp"
 # include "Request.hpp"
 # include "StringUtils.hpp"
@@ -19,7 +21,8 @@ class RequestConfig {
   void setup();
 
   ServerConfig *getServerForRequest(std::vector<ServerConfig> &servers);
-  ServerConfig *getLocationForRequest(ServerConfig *server, std::string target);
+  ServerConfig *findLongestLocationMatch(std::vector<ServerConfig> &matches, std::string target);
+  ServerConfig *getLocationForRequest(ServerConfig *server, std::string &target);
   bool redirectLocation(std::string target);
 
   bool methodAccepted(std::string &method);

@@ -87,11 +87,63 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
   return matching_servers.front();
 }
 
-ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::string target) {
+bool sort_by_uri_len(ServerConfig *lhs, ServerConfig *rhs) {
+  return (lhs->getUri().length() > rhs->getUri().length());
+}
+
+ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::string &target) {
+  ServerConfig *location = nullptr;
+
+  std::vector<ServerConfig*> prefix_matches;
+  std::vector<ServerConfig*> reg_locations;
+
+  for (std::vector<ServerConfig>::iterator it = server->locations_.begin(); it != server->locations_.end(); it++) {
+    if (it->modifier_ != 2 && it->modifier_ != 3) {
+      if (it->modifier_ == 1 && it->uri_ == target) {
+        std::cout << "MATCHING EXACT LOCATION : " << it->uri_ << std::endl;
+        location = &(*it);
+        break ;
+      }
+      if (target.find(it->uri_) == 0) {
+        prefix_matches.push_back(&(*it));
+      }
+    else
+      reg_locations.push_back(&(*it));
+    }
+  }
+
+  if (location)
+    return location;
+
+  std::sort(prefix_matches.begin(), prefix_matches.end(), sort_by_uri_len);
+  location = prefix_matches.front();
+  if (location->modifier_ == 4)
+    return location;
+
+  regex_t test;
+
+  for (std::vector<ServerConfig*>::iterator it = reg_locations.begin(); it != reg_locations.end(); it++) {
+    int err = 1;
+    if ((*it)->modifier_ == 2)
+      err = regcomp(&test, (*it)->uri_.c_str(), REG_NOSUB | REG_EXTENDED);
+    else
+      err = regcomp(&test, (*it)->uri_.c_str(), REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    if (err == 0) {
+      int match = regexec(&test, target.c_str(), 0, NULL, 0);
+      regfree(&test);
+      if (match == 0)
+        return *it;
+    }
+  }
+  // location = findLongestLocationMatch(prefix_matches, target);
+  return location;
+}
+
+ServerConfig *RequestConfig::findLongestLocationMatch(std::vector<ServerConfig> &matches, std::string target) {
   if (!target.length())
     target = "/";
 
-  for (std::vector<ServerConfig>::iterator it = server->locations_.begin(); it != server->locations_.end(); it++) {
+  for (std::vector<ServerConfig>::iterator it = matches.begin(); it != matches.end(); it++) {
     if (it->uri_ == target) {
       // #ifdef DEBUG
       std::cout << "MATCHING LOCATION : " << it->uri_ << std::endl;
@@ -103,8 +155,8 @@ ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::st
   if (target == "/")
     return nullptr;
   if (target.find_last_of('/') == target.length() - 1)
-    return getLocationForRequest(server, target.substr(0, target.find_last_of('/')));
-  return getLocationForRequest(server, target.substr(0, target.find_last_of('/') + 1));
+    return findLongestLocationMatch(matches, target.substr(0, target.find_last_of('/')));
+  return findLongestLocationMatch(matches, target.substr(0, target.find_last_of('/') + 1));
 }
 
 bool RequestConfig::methodAccepted(std::string &method) {

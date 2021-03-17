@@ -47,6 +47,7 @@ class ServerConfig {
   void autoindex(std::vector<std::string>::iterator &it);
   void upload(std::vector<std::string>::iterator &it);
 
+  std::string &getUri();
   std::vector<Listen> &getListens();
   std::vector<std::string> &getServerNames();
   std::vector<ServerConfig> &getLocations();
@@ -54,11 +55,20 @@ class ServerConfig {
   void print();
   void printLocation();
 
+  enum LocationModifier {
+    NONE,
+    EXACT,
+    CASE_SENSITIVE_REG,
+    CASE_INSENSITIVE_REG,
+    LONGEST,
+  };
+
  private:
   std::vector<Listen> listens_;
   std::vector<std::string> server_name_;
   std::vector<ServerConfig> locations_;
   std::string uri_;
+  LocationModifier modifier_;
   std::string credentials_;
   bool autoindex_;
   size_t client_max_body_size_;
