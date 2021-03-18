@@ -2,26 +2,45 @@
 
 File::File() : fd_(0) {}
 
-File::File(std::string path) : fd_(0), path_(path) {}
+File::File(std::string path) : fd_(0) {
+  set_path(path);
+}
 
 File::~File() {
-  if (fd_ > 0)
-    close(fd_);
+  close();
 }
 
 void File::set_path(std::string path) {
   path_ = path;
+
+  std::string::iterator it = path_.begin();
+  std::string::iterator tmp;
+
+  while (it != path_.end()) {
+    if (*it == '/' && *tmp == '/') {
+      it = path_.erase(it);
+      tmp = it;
+    }
+    else {
+      tmp = it;
+      it++;
+    }
+  }
 }
 
 bool File::open(bool create) {
-  if (fd_ > 0)
-    close(fd_);
+  close();
 
   if (create)
     fd_ = ::open(path_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0666);
   else
     fd_ = ::open(path_.c_str(), O_RDONLY);
   return fd_ > 0;
+}
+
+void File::close() {
+  if (fd_ > 0)
+    ::close(fd_);
 }
 
 void File::create(std::string &body) {
@@ -145,7 +164,7 @@ std::string File::find_index(std::vector<std::string> &indexes) {
       for (std::vector<std::string>::iterator it = indexes.begin(); it != indexes.end(); it++) {
         if (*it == ent->d_name) {
           closedir(dir);
-          return ent->d_name;
+          return "/" + std::string(ent->d_name);
         }
       }
     }

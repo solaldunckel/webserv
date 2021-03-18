@@ -46,6 +46,7 @@ class Response {
 
  private:
   RequestConfig &config_;
+  File file_;
   int error_code_;
   int redirect_;
   StatusCode status_;

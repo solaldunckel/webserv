@@ -17,8 +17,8 @@ class CGI {
   ~CGI();
 
   void init();
-  void execute();
-  void setCGIEnv();
+  int execute();
+  bool setCGIEnv();
   void parseHeaders(std::map<std::string, std::string> &headers);
   std::string &getBody();
 

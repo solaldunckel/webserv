@@ -105,7 +105,7 @@ int Server::readData(int fd, std::string &buffer) {
 
   if (ret >= 1) {
     // #ifdef DEBUG
-      req->print();
+      // req->print();
     // #endif
     clients_[fd]->setupResponse(servers_, ret);
   }

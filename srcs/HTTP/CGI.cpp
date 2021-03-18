@@ -31,48 +31,57 @@ void CGI::init() {
 }
 
 CGI::~CGI() {
+  free(argv_[0]);
+  free(argv_[1]);
   if (env_)
     ft::free_tab(env_);
   tmp_file_.unlink();
 }
 
-void CGI::execute() {
-  file_path_ = cwd_ + file_.getPath();
+int CGI::execute() {
+  file_path_ = cwd_ + "/" + file_.getPath();
   std::cout << file_path_ << std::endl;
   chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
-  setCGIEnv();
 
-  argv_[0] = ft::strdup(cgi_path_.c_str());
-  argv_[1] = ft::strdup(file_path_.c_str());
+  if (!setCGIEnv())
+    return 500;
+
+  if (!(argv_[0] = ft::strdup(cgi_path_.c_str())))
+    return 500;
+  if (!(argv_[1] = ft::strdup(file_path_.c_str())))
+    return 500;
   argv_[2] = nullptr;
 
   int pip[2];
-  pipe(pip);
+  if (pipe(pip) != 0)
+    return 500;
 
   pid_t pid = fork();
 
   if (pid == 0) {
     close(pip[1]);
-    dup2(pip[0], 0);
-    dup2(tmp_file_.getFd(), 1);
+    if (dup2(pip[0], 0) == -1)
+      return 500;
+    if (dup2(tmp_file_.getFd(), 1) == -1)
+      return 500;
     close(pip[0]);
     execve(argv_[0], argv_, env_);
     exit(1);
+    return 502;
   }
   else if (pid > 0) {
     close(pip[0]);
     write(pip[1], req_body_.c_str(), req_body_.length());
     close(pip[1]);
     if (waitpid(pid, NULL, 0) == -1)
-      perror("wait");
+      return 500;
     close(tmp_fd_);
   }
   else
-    perror("fork");
-  free(argv_[0]);
-  free(argv_[1]);
+    return 502;
   chdir(cwd_.c_str());
   body_ = tmp_file_.getContent();
+  return 200;
 }
 
 void CGI::parseHeaders(std::map<std::string, std::string> &headers) {
@@ -96,7 +105,7 @@ std::string &CGI::getBody() {
   return body_;
 }
 
-void CGI::setCGIEnv() {
+bool CGI::setCGIEnv() {
   if (config_.getMethod() == "POST") {
 		cgi_env_["CONTENT_TYPE"] = req_headers_["Content-Type"];
 		cgi_env_["CONTENT_LENGTH"] = std::to_string(req_body_.length());
@@ -131,14 +140,16 @@ void CGI::setCGIEnv() {
   }
 
 	if (!(env_ = (char **)malloc(sizeof(char *) * (cgi_env_.size() + 1))))
-		return;
+		return false;
 
 	int i = 0;
 
 	for (std::map<std::string, std::string>::iterator it = cgi_env_.begin(); it != cgi_env_.end(); it++) {
 		std::string tmp = it->first + "=" + it->second;
-		env_[i] = ft::strdup(tmp.c_str());
+		if (!(env_[i] = ft::strdup(tmp.c_str())))
+      return false;
 		i++;
 	}
 	env_[i] = NULL;
+  return true;
 }

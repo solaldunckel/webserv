@@ -30,6 +30,7 @@ class File {
   ~File();
 
   bool open(bool create = false);
+  void close();
   void create(std::string &body);
   void unlink();
   void set_path(std::string path);

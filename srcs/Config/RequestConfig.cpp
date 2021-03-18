@@ -37,11 +37,8 @@ void RequestConfig::setup() {
 
   if (location) {
     location_ = location;
-    if (request_.target_.find(location->uri_) != std::string::npos) {
+    if (request_.target_.find(location->uri_) != std::string::npos)
       target_.erase(0, location_->uri_.length());
-      if (target_.find("/") != 0)
-        target_ = "/" + target_;
-    }
   }
 }
 
@@ -140,7 +137,7 @@ ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::st
   if (location && location->modifier_ == 4)
     return location;
 
-  if (!location->locations_.empty()) {
+  if (location && !location->locations_.empty()) {
     for (std::vector<ServerConfig>::iterator it = location->locations_.begin(); it != location->locations_.end(); it++) {
       if (it->modifier_ == 2 || it->modifier_ == 3) {
         reg_locations.insert(reg_locations.begin(), &(*it));

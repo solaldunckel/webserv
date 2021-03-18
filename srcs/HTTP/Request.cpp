@@ -42,11 +42,11 @@ int Request::method_line() {
       method_ = tmp;
       buffer_.erase(0, method_.length() + 1);
     } else
-      return 400;
+      return 501;
 
     tmp = buffer_.substr(0, buffer_.find(' '));
 
-    if (tmp.length() < 10000) {
+    if (tmp.length() < 100000) {
       target_ = tmp;
       buffer_.erase(0, target_.length() + 1);
     } else
@@ -75,6 +75,7 @@ int Request::method_line() {
 int Request::headers() {
   size_t end, last;
   std::string header;
+  std::string value;
 
   while ((end = buffer_.find("\r\n")) != std::string::npos) {
     if (buffer_.find("\r\n") == 0) {
@@ -83,8 +84,15 @@ int Request::headers() {
       break;
     }
     if ((last = buffer_.find(':', 0)) != std::string::npos) {
+      if (buffer_[last - 1] == ' ')
+        return 400;
       header = buffer_.substr(0, last);
-      headers_[header] = ft::trim_left(buffer_.substr(last + 1, end - last - 1), ' ');
+      value = buffer_.substr(last + 1, end - last - 1);
+      if (headers_.count(header) && !headers_["Host"].empty())
+        return 400;
+      if (header.length() > 1000 || value.length() > 4000)
+        return 400;
+      headers_[header] = ft::trim_left(value, ' ');
     }
     buffer_.erase(0, end + 2);
   }
@@ -143,15 +151,18 @@ int Request::chunk() {
 }
 
 int Request::body() {
-  if (buffer_.length() + body_offset_ > length_)
-    return 400;
+  if (buffer_.length() >= length_) {
+    req_body_.insert(body_offset_, buffer_, 0, length_);
+    body_offset_ += buffer_.length();
+    buffer_.clear();
 
-  req_body_.insert(body_offset_, buffer_, 0, length_);
-  body_offset_ += buffer_.length();
-  buffer_.clear();
-
-  if (req_body_.length() == length_)
-    return 1;
+    if (req_body_.length() == length_)
+      return 1;
+    else
+      return 400;
+  }
+  // if (buffer_.length() + body_offset_ > length_)
+  //   return 400;
   return 0;
 }
 

@@ -38,10 +38,10 @@ int Response::buildErrorPage(int status_code) {
   if (!config_.getErrorPages()[status_code].empty()) {
     std::string path = config_.getErrorPages()[status_code];
 
-    File file(config_.getRoot() + path);
+    file_.set_path(config_.getRoot() + path);
 
-    if (file.open())
-      body_ += file.getContent();
+    if (file_.open())
+      body_ += file_.getContent();
   } else {
     std::cout << "YO" << std::endl;
     body_ += "<html>\r\n";
@@ -82,9 +82,9 @@ std::string Response::methodList() {
 }
 
 void Response::build() {
-  std::string method = config_.getMethod();
+  std::string &method = config_.getMethod();
 
-  std::map<std::string, std::string, ft::comp> head = config_.getHeaders();
+  file_.set_path(config_.getRoot() + config_.getTarget());
 
   if (error_code_ > 1)
     status_code_ = error_code_;
@@ -109,6 +109,7 @@ void Response::build() {
 void Response::createResponse() {
   if (config_.getMethod() == "HEAD")
     body_.clear();
+
   response_ = response_ + "HTTP/1.1" + " " + std::to_string(status_code_) + " " + status_[status_code_] + "\r\n";
 
   headers_["Date"] = ft::get_http_date();
@@ -127,67 +128,64 @@ void Response::createResponse() {
 }
 
 int Response::GET() {
-  File file(config_.getRoot() + config_.getTarget());
-
-  if (file.is_directory()) {
-    std::string index = file.find_index(config_.getIndexes());
+  if (file_.is_directory()) {
+    std::string index = file_.find_index(config_.getIndexes());
     if (index.length())
-      file.set_path(config_.getRoot() + config_.getTarget() + "/" + index);
+      file_.set_path(config_.getRoot() + config_.getTarget() + index);
     else if (!config_.getAutoindex())
       return 404;
   }
 
-  std::cout << file.getPath() << std::endl;
-
-  if (!file.is_directory()) {
-    if (!file.exists())
+  if (!file_.is_directory()) {
+    if (!file_.exists())
       return 404;
 
-    if (!file.open())
+    if (!file_.open())
       return 403;
 
-    headers_["Last-Modified"] = file.last_modified();
+    headers_["Last-Modified"] = file_.last_modified();
   }
 
-  if (isCGI(file.getExtension())) {
-    CGI cgi(file, config_, config_.getHeaders());
+  if (isCGI(file_.getExtension())) {
+    CGI cgi(file_, config_, config_.getHeaders());
 
-    cgi.execute();
+    if ((status_code_ = cgi.execute()) > 200)
+      return status_code_;
     cgi.parseHeaders(headers_);
     body_ = cgi.getBody();
-  } else if (config_.getAutoindex() && file.is_directory()) {
+    headers_["Content-Length"] = std::to_string(body_.length());
+  } else if (config_.getAutoindex() && file_.is_directory()) {
     headers_["Content-Type"] = MimeTypes::getType(".html");
-    body_ = file.autoIndex(config_.getTarget());
+    body_ = file_.autoIndex(config_.getTarget());
+    headers_["Content-Length"] = std::to_string(body_.length());
   }
   else {
-    headers_["Content-Type"] = MimeTypes::getType(file.getExtension());
-    body_ = file.getContent();
+    headers_["Content-Type"] = MimeTypes::getType(file_.getExtension());
+    body_ = file_.getContent();
+    headers_["Content-Length"] = std::to_string(body_.length());
   }
-  headers_["Content-Length"] = std::to_string(body_.length());
-  if (status_code_ > 400)
-    return status_code_;
   return 200;
 }
 
 int Response::POST() {
   int status_code = 200;
-  File file(config_.getRoot() + "/" + config_.getTarget());
 
-  if (isCGI(file.getExtension())) {
-    CGI cgi(file, config_, config_.getHeaders(), config_.getBody());
+  if (isCGI(file_.getExtension())) {
+    CGI cgi(file_, config_, config_.getHeaders(), config_.getBody());
 
-    cgi.execute();
+    if ((status_code_ = cgi.execute()) > 200)
+      return status_code_;
     cgi.parseHeaders(headers_);
     body_ = cgi.getBody();
     headers_["Content-Length"] = std::to_string(body_.length());
-  } else if (!file.exists()) {
-    file.create(config_.getBody());
+  } else if (!file_.exists()) {
+    file_.create(config_.getBody());
     headers_["Content-Length"] = "0";
     headers_["Content-Location"] = config_.getUri() + "/" + config_.getTarget();
     status_code = 201;
   }
   else {
-    file.create(config_.getBody());
+    file_.create(config_.getBody());
     headers_["Content-Location"] = config_.getUri() + "/" + config_.getTarget();
     status_code = 204;
   }
@@ -196,7 +194,6 @@ int Response::POST() {
 
 int Response::PUT() {
   int status_code = 204;
-  std::string path = config_.getRoot() + "/" + config_.getTarget();
 
   if (!config_.getUpload().empty()) {
     File dir(config_.getRoot() + "/" + config_.getUpload());
@@ -209,30 +206,26 @@ int Response::PUT() {
       if (mkdir(dir.getPath().c_str(), 0755))
         perror("/tmp/blah");
     }
-    path = config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget();
+    file_.set_path(config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget());
   }
 
-  File file(path);
-
-  if (!file.exists()) {
-    file.create(config_.getBody());
+  if (!file_.exists()) {
+    file_.create(config_.getBody());
     headers_["Content-Length"] = "0";
     status_code = 201;
   }
   else {
-    file.create(config_.getBody());
+    file_.create(config_.getBody());
   }
   headers_["Content-Location"] = config_.getUri() + "/" + config_.getTarget();
   return status_code;
 }
 
 int Response::DELETE() {
-  File file(config_.getRoot() + config_.getTarget());
-
-  if (!file.exists())
+  if (!file_.exists())
     return 404;
 
-  file.unlink();
+  file_.unlink();
 
   body_ += "<!DOCTYPE html>\n\
             <html>\n\
