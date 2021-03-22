@@ -120,7 +120,7 @@ void Response::createResponse() {
     response_ += it->first + ": " + it->second + "\r\n";
 
   // #ifdef DEBUG
-  std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
+  // std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
   // #endif
 
   response_ += "\r\n";

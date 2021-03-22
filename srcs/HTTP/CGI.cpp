@@ -26,7 +26,6 @@ void CGI::init() {
   } else {
     cgi_path_ = cwd_ + "/" + config_.getCGIBin() + "/" + cgi_exe_;
   }
-  std::cout << "TEST" << std::endl;
   tmp_file_.set_path(CGI_TMP_PATH.c_str());
   tmp_file_.open(true);
   
@@ -42,12 +41,11 @@ CGI::~CGI() {
 
 int CGI::execute() {
   file_path_ = cwd_ + "/" + file_.getPath();
-  
+
   chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
-  
+
   if (!setCGIEnv())
     return 500;
-  
   if (!(argv_[0] = ft::strdup(cgi_path_.c_str())))
     return 500;
   if (!(argv_[1] = ft::strdup(file_path_.c_str())))

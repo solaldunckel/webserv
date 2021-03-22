@@ -9,7 +9,7 @@ static void interruptHandler(int sig_int) {
 	Server::running_ = false;
 }
 
-Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
+Server::Server(std::vector<ServerConfig> &servers) : servers_(servers), handle_client_fd_(0) {
   FD_ZERO(&master_fds_);
   FD_ZERO(&read_fds_);
   FD_ZERO(&write_fds_);
@@ -17,9 +17,8 @@ Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
 }
 
 Server::~Server() {
-  for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); it++) {
+  for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); it++)
     it->second->clear();
-  }
 }
 
 void Server::setup() {
@@ -69,26 +68,22 @@ void Server::newConnection(int fd) {
 
   FD_CLR(fd, &read_fds_);
 
-  int clientFd = 0;
+  int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
 
-  while (clientFd != -1) {
-    clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
-
-    if (clientFd == -1) {
-      if (errno != EWOULDBLOCK)
-        strerror(errno);
-      break;
-    }
-    std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
-    fcntl(clientFd, F_SETFL, O_NONBLOCK);
-
-    std::string client_addr = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
-    clients_[clientFd] = new Client(clientFd, client_addr, running_server_[fd]);
-
-    FD_SET(clientFd, &master_fds_);
-    if (clientFd > max_fd_)
-      max_fd_ = clientFd;
+  if (clientFd == -1) {
+    strerror(errno);
+    return ;
   }
+
+  std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
+  fcntl(clientFd, F_SETFL, O_NONBLOCK);
+
+  std::string client_addr = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
+  clients_[clientFd] = new Client(clientFd, client_addr, running_server_[fd]);
+
+  FD_SET(clientFd, &master_fds_);
+  if (clientFd > max_fd_)
+    max_fd_ = clientFd;
 }
 
 void Server::clientDisconnect(int fd) {
@@ -117,38 +112,48 @@ void Server::clientDisconnect(int fd) {
 // }
 
 int Server::readData(int fd) {
-  Request *req = clients_[fd]->getRequest(true);
+  if (handle_client_fd_ && handle_client_fd_ != fd)
+    return 0;
+
+  Request *req = clients_[fd]->getRequest();
+
+  if (!req) {
+    req = clients_[fd]->getRequest(true);
+    handle_client_fd_ = fd;
+    // std::cout << "HANDLE : " << handle_client_fd_ << std::endl;
+  }
+
   char buf[BUF_SIZE];
 
   FD_CLR(fd, &read_fds_);
 
-  while (running_) {
-    int nbytes = recv(fd, buf, BUF_SIZE, 0);
+  int nbytes = recv(fd, buf, BUF_SIZE, 0);
 
-    if (nbytes <= 0) {
-      if (nbytes == 0 || errno != EWOULDBLOCK)
-        return -1;
-      break;
-    }
-
-    int ret = req->parse(buf, nbytes);
-
-    if (ret >= 1) {
-      // #ifdef DEBUG
-        // req->print();
-      // #endif
-      clients_[fd]->setupResponse(servers_, ret);
-      return 1;
-    }
+  if (nbytes == 0) {
+    handle_client_fd_ = 0;
+    return -1;
   }
 
+  if (nbytes < 0) {
+    strerror(errno);
+    return 0;
+  }
+
+  std::string buffer(buf, nbytes);
+  int ret = req->parse(buffer);
+
+  if (ret >= 1) {
+    handle_client_fd_ = 0;
+    // #ifdef DEBUG
+      // req->print();
+    // #endif
+    // std::cout << "HANDLE CLEARED" << std::endl;
+    clients_[fd]->setupResponse(servers_, ret);
+  }
   return 0;
 }
 
 void Server::writeData(int fd) {
-  if (!clients_.count(fd))
-    return;
-
   FD_CLR(fd, &write_fds_);
 
   Response *response = clients_[fd]->getResponse();
@@ -175,23 +180,23 @@ void Server::run() {
           newConnection(it->first);
       }
 
-      for (int fd = 0; fd <= max_fd_ && ret > 0; fd++) {
-        if (FD_ISSET(fd, &read_fds_)) {
-          if (readData(fd) == -1)
-            clientDisconnect(fd);
-          ret--;
+      std::map<int, Client*>::iterator it = clients_.begin();
+
+      while (it != clients_.end()) {
+        if (it->second->timeout())
+          it->second->setupResponse(servers_, 408);
+
+        if (FD_ISSET(it->first, &read_fds_) && readData(it->first) == -1) {
+          clientDisconnect(it->first);
+          it = clients_.begin();
+          continue;
         }
-        if (FD_ISSET(fd, &write_fds_)) {
-          writeData(fd);
-          ret--;
-        }
+
+        if (FD_ISSET(it->first, &write_fds_))
+          writeData(it->first);
+        it++;
       }
     } else if (ret == -1)
       strerror(errno);
-
-    for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); it++) {
-      if (it->second->timeout())
-        it->second->setupResponse(servers_, 408);
-    }
   }
 }
