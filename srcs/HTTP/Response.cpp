@@ -43,7 +43,6 @@ int Response::buildErrorPage(int status_code) {
     if (file_.open())
       body_ += file_.getContent();
   } else {
-    std::cout << "YO" << std::endl;
     body_ += "<html>\r\n";
     body_ += "<head><title>" + ft::to_string(status_code) + " " + status_[status_code] + "</title></head>\r\n";
     body_ += "<body>\r\n";
@@ -112,7 +111,14 @@ void Response::createResponse() {
   if (config_.getMethod() == "HEAD")
     body_.clear();
 
-  response_ = response_ + "HTTP/1.1" + " " + ft::to_string(status_code_) + " " + status_[status_code_] + "\r\n";
+  std::string status_code;
+
+  if (headers_.count("Status"))
+    status_code = headers_["Status"];
+  else
+    status_code = ft::to_string(status_code_);
+
+  response_ = response_ + "HTTP/1.1" + " " + status_code + " " + status_[status_code_] + "\r\n";
 
   headers_["Date"] = ft::get_http_date();
 
@@ -127,6 +133,8 @@ void Response::createResponse() {
 
   if (!body_.empty())
     response_ += body_;
+
+  std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
 }
 
 int Response::GET() {
@@ -172,6 +180,22 @@ int Response::GET() {
 int Response::POST() {
   int status_code = 200;
 
+  std::string path;
+  if (!config_.getUpload().empty()) {
+    File dir(config_.getRoot() + "/" + config_.getUpload());
+
+    if (dir.exists() && !dir.is_directory()) {
+      dir.unlink();
+    }
+
+    if (!dir.exists()) {
+      if (mkdir(dir.getPath().c_str(), 0755))
+        perror("/tmp/blah");
+    }
+    file_.set_path(config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget());
+    path = config_.getUri() + "/" + config_.getUpload() + config_.getTarget();
+  }
+
   if (isCGI(file_.getExtension())) {
     CGI cgi(file_, config_, config_.getHeaders(), config_.getBody());
 
@@ -183,13 +207,13 @@ int Response::POST() {
   } else if (!file_.exists()) {
     file_.create(config_.getBody());
     headers_["Content-Length"] = "0";
-    headers_["Content-Location"] = config_.getUri() + "/" + config_.getTarget();
+    headers_["Location"] = ft::unique_char(path);
     status_code = 201;
   }
   else {
-    file_.create(config_.getBody());
-    headers_["Content-Location"] = config_.getUri() + "/" + config_.getTarget();
-    status_code = 204;
+    file_.append(config_.getBody());
+    headers_["Location"] = ft::unique_char(path);
+    status_code = 200;
   }
   return status_code;
 }
@@ -219,7 +243,7 @@ int Response::PUT() {
   else {
     file_.create(config_.getBody());
   }
-  headers_["Content-Location"] = config_.getUri() + "/" + config_.getTarget();
+  headers_["Content-Location"] = ft::unique_char(config_.getUri() + "/" + config_.getTarget());
   return status_code;
 }
 

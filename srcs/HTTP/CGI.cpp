@@ -28,7 +28,6 @@ void CGI::init() {
   }
   tmp_file_.set_path(CGI_TMP_PATH.c_str());
   tmp_file_.open(true);
-  
 }
 
 CGI::~CGI() {
@@ -43,7 +42,7 @@ int CGI::execute() {
   file_path_ = cwd_ + "/" + file_.getPath();
 
   chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
-
+  std::cout << "CALLING CGI " << cgi_path_ << std::endl;
   if (!setCGIEnv())
     return 500;
   if (!(argv_[0] = ft::strdup(cgi_path_.c_str())))
@@ -80,6 +79,7 @@ int CGI::execute() {
     return 502;
   chdir(cwd_.c_str());
   body_ = tmp_file_.getContent();
+  std::cout << body_ << std::endl;
   return 200;
 }
 
@@ -97,6 +97,11 @@ void CGI::parseHeaders(std::map<std::string, std::string> &headers) {
       headers[header] = ft::trim_left(body_.substr(last + 1, end - last - 1), ' ');
     }
     body_.erase(0, end + 2);
+  }
+  if (headers.count("Content-Length")) {
+    size_t size = ft::stoi(headers["Content-Length"]);
+
+    body_.erase(size);
   }
 }
 
@@ -134,8 +139,11 @@ bool CGI::setCGIEnv() {
 		cgi_env_["REDIRECT_STATUS"] = "200";
 
   for (std::map<std::string, std::string, ft::comp>::iterator it = req_headers_.begin(); it != req_headers_.end(); it++) {
-    if (!it->second.empty())
-      cgi_env_["HTTP_" + it->first] = it->second;
+    if (!it->second.empty()) {
+      std::string header = "HTTP_" + ft::to_upper(it->first);
+      std::replace(header.begin(), header.end(), '-', '_');
+      cgi_env_[header] = it->second;
+    }
   }
 
 	if (!(env_ = (char **)malloc(sizeof(char *) * (cgi_env_.size() + 1))))

@@ -11,21 +11,7 @@ File::~File() {
 }
 
 void File::set_path(std::string path) {
-  path_ = path;
-
-  std::string::iterator it = path_.begin();
-  std::string::iterator tmp = it;
-
-  while (it != path_.end()) {
-    if (*it == '/' && tmp != it && *tmp == '/') {
-      it = path_.erase(it);
-      tmp = it;
-    }
-    else {
-      tmp = it;
-      it++;
-    }
-  }
+  path_ = ft::unique_char(path);
 }
 
 bool File::open(bool create) {
@@ -44,8 +30,16 @@ void File::close() {
 }
 
 void File::create(std::string &body) {
-  fd_ = ::open(path_.c_str(), O_WRONLY | O_CREAT | O_TRUNC);
+  close();
+  fd_ = ::open(path_.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
   write(fd_, body.c_str(), body.length());
+}
+
+void File::append(std::string &body) {
+  close();
+  fd_ = ::open(path_.c_str(), O_RDWR | O_APPEND, 755);
+  write(fd_, body.c_str(), body.length());
+  
 }
 
 void File::unlink() {

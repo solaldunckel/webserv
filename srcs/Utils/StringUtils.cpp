@@ -6,6 +6,11 @@ namespace ft {
     return s;
   }
 
+  std::string to_upper(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+    return s;
+  }
+
   std::string trim_left(std::string str, char c) {
     size_t startpos = str.find_first_not_of(c);
     if (startpos != std::string::npos)
@@ -47,6 +52,23 @@ namespace ft {
 
     newstr[i] = '\0';
     return newstr;
+  }
+
+  std::string unique_char(std::string str) {
+    std::string::iterator it = str.begin();
+    std::string::iterator tmp = it;
+
+    while (it != str.end()) {
+      if (*it == '/' && tmp != it && *tmp == '/') {
+        it = str.erase(it);
+        tmp = it;
+      }
+      else {
+        tmp = it;
+        it++;
+      }
+    }
+    return str;
   }
 
   int stoi(const std::string &str, std::size_t *pos, int base) {

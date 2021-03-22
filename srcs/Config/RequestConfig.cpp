@@ -30,6 +30,8 @@ void RequestConfig::setup() {
     std::cout << "NO MATCHING LOCATION" << std::endl;
   // #endif
 
+  // std::cout << "MATCHING LOCATION " << location->uri_ << std::endl;
+
   server_ = server;
   location_ = server;
 

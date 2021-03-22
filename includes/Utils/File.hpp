@@ -37,6 +37,7 @@ class File {
   bool open(bool create = false);
   void close();
   void create(std::string &body);
+  void append(std::string &body);
   void unlink();
   void set_path(std::string path);
   bool is_directory();

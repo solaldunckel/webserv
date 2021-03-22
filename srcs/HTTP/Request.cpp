@@ -45,11 +45,13 @@ int Request::parse(char buffer[], int nbytes) {
     ret = headers();
   if (status_ == PREBODY)
     ret = prebody();
+  
   if (status_ == BODY)
     ret = body();
   if (status_ == CHUNK)
     ret = chunk();
   if (status_ == COMPLETE || ret == 1) {
+    std::cout << "YO" << std::endl;
     status_ = COMPLETE;
     return ret;
   }
@@ -64,19 +66,19 @@ int Request::method_line() {
   if (buffer_.find("\r\n") != std::string::npos) {
     std::string tmp = buffer_.substr(0, buffer_.find(' '));
 
-    if (isValidMethod(tmp)) {
+    // if (isValidMethod(tmp)) {
       method_ = tmp;
       buffer_.erase(0, method_.length() + 1);
-    } else
-      return 501;
+    // } else
+    //   return 501;
 
     tmp = buffer_.substr(0, buffer_.find(' '));
 
-    if (tmp.length() < 100000) {
+    // if (tmp.length() < 100000) {
       target_ = tmp;
       buffer_.erase(0, target_.length() + 1);
-    } else
-      return 414;
+    // } else
+    //   return 414;
 
     if (target_.find('?') != std::string::npos) {
       query_string_ = target_.substr(target_.find('?') + 1);
@@ -86,11 +88,11 @@ int Request::method_line() {
     size_t end = buffer_.find("\r\n");
     tmp = buffer_.substr(0, end);
 
-    if (tmp == "HTTP/1.1") {
+    // if (tmp == "HTTP/1.1") {
       protocol_ = tmp;
       buffer_.erase(0, end + 2);
-    } else
-      return 505;
+    // } else
+    //   return 505;
 
     status_ = HEADERS;
   }
@@ -110,14 +112,14 @@ int Request::headers() {
       break;
     }
     if ((last = buffer_.find(':', 0)) != std::string::npos) {
-      if (buffer_[last - 1] == ' ')
-        return 400;
+      // if (buffer_[last - 1] == ' ')
+      //   return 400;
       header = buffer_.substr(0, last);
       value = buffer_.substr(last + 1, end - last - 1);
-      if (headers_.count(header) && !headers_["Host"].empty())
-        return 400;
-      if (header.length() > 1000 || value.length() > 4000)
-        return 400;
+      // if (headers_.count(header) && !headers_["Host"].empty())
+      //   return 400;
+      // if (header.length() > 1000 || value.length() > 4000)
+      //   return 400;
       headers_[header] = ft::trim_left(value, ' ');
     }
     buffer_.erase(0, end + 2);
@@ -148,8 +150,9 @@ int Request::prebody() {
     }
     status_ = BODY;
   }
-  else
-    return 400;
+  else {
+    return 1;
+  }
   return 0;
 }
 
