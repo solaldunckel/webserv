@@ -13,6 +13,7 @@
 # include <fcntl.h>
 # include <sys/select.h>
 # include <signal.h>
+# include <string.h>
 
 # include "Client.hpp"
 # include "ServerConfig.hpp"
@@ -21,7 +22,7 @@
 # include "Utils.hpp"
 
 # define MAX_CONNECTION 128
-# define BUF_SIZE 4096
+# define BUF_SIZE 65000
 
 class webserv_exception : virtual public std::exception {
  public:
@@ -29,7 +30,7 @@ class webserv_exception : virtual public std::exception {
     error_msg_ = msg;
     error_msg_.replace(error_msg_.find('%'), 2, arg);
     if (errno_) {
-      error_msg_ = error_msg_ + " (" + std::to_string(errno_) + ": " + strerror(errno_) + ")";
+      error_msg_ = error_msg_ + " (" + ft::to_string(errno_) + ": " + strerror(errno_) + ")";
     }
   }
   virtual ~webserv_exception() throw () {}
@@ -52,10 +53,11 @@ class Server {
   void setup();
   void run();
 
-  int readData(int fd, std::string &buffer);
+  // int readData(int fd, std::string &buffer);
+  int readData(int fd);
   void writeData(int fd);
   void newConnection(int fd);
-  void clientDisconnect(int fd, int nbytes);
+  void clientDisconnect(int fd);
 
   static bool running_;
 

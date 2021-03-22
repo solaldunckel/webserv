@@ -18,7 +18,7 @@ RequestConfig::~RequestConfig() {
 
 void RequestConfig::setup() {
   ServerConfig *server = getServerForRequest(servers_);
-  ServerConfig *location = nullptr;
+  ServerConfig *location = NULL;
 
   if (request_.getStatus() > 2)
     location = getLocationForRequest(server, request_.target_);
@@ -43,7 +43,7 @@ void RequestConfig::setup() {
 }
 
 bool RequestConfig::redirectLocation(std::string target) {
-  ServerConfig *location = nullptr;
+  ServerConfig *location = NULL;
 
   if (request_.getStatus() > 2)
     location = getLocationForRequest(server_, target);
@@ -111,11 +111,11 @@ ServerConfig *RequestConfig::match_regexp(std::vector<ServerConfig*> &locations,
         return *it;
     }
   }
-  return nullptr;
+  return NULL;
 }
 
 ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::string &target) {
-  ServerConfig *location = nullptr;
+  ServerConfig *location = NULL;
 
   std::vector<ServerConfig*> reg_locations;
 

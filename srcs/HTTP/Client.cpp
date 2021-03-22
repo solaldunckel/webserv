@@ -1,9 +1,9 @@
 #include "Client.hpp"
 
 Client::Client(int fd, std::string &addr, Listen &host_port) : fd_(fd), addr_(addr), host_port_(host_port) {
-  request_ = nullptr;
-  config_ = nullptr;
-  response_ = nullptr;
+  request_ = NULL;
+  config_ = NULL;
+  response_ = NULL;
 }
 
 Client::~Client() {

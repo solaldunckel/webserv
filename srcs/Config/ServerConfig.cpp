@@ -67,13 +67,13 @@ void ServerConfig::listen(std::vector<std::string>::iterator &it) {
       std::cout << "Invalid port" << std::endl;
     }
 
-    port = std::stoi(port_str);
+    port = ft::stoi(port_str);
   }
   else if (str.find_first_not_of("0123456789") != std::string::npos) {
     ip = str;
   }
   else
-    port = std::stoi(str);
+    port = ft::stoi(str);
 
   listens_.push_back(Listen(ip, port));
 
@@ -84,7 +84,7 @@ void ServerConfig::listen(std::vector<std::string>::iterator &it) {
 void ServerConfig::client_max_body_size(std::vector<std::string>::iterator &it) {
   if (it->find_first_not_of("0123456789") != std::string::npos)
       throw std::runtime_error("unexpected symbols in client_max_body_size");
-  client_max_body_size_ = std::stoi(*it);
+  client_max_body_size_ = ft::stoi(*it);
   if (*++it != ";")
     throw std::runtime_error("double value in 'client_max_body_size_'");
 };
@@ -93,7 +93,7 @@ void ServerConfig::error_page(std::vector<std::string>::iterator &it) {
   std::vector<int> codes;
 
   while (it->find_first_not_of("0123456789") == std::string::npos) {
-    codes.push_back(std::stoi(*it++));
+    codes.push_back(ft::stoi(*it++));
   }
   for (std::vector<int>::iterator it2 = codes.begin(); it2 != codes.end(); it2++) {
     error_codes_[*it2] = *it;

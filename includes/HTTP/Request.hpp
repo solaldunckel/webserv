@@ -22,6 +22,7 @@ class Request {
   ~Request();
 
   int parse(std::string &buffer);
+  int parse(char buffer[], int nbytes);
   int method_line();
   int headers();
   int prebody();

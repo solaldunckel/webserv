@@ -8,11 +8,12 @@
 # include <stack>
 
 # include "ServerConfig.hpp"
+# include "StringUtils.hpp"
 # include "Utils.hpp"
 
 class Config {
  public:
-  Config(std::string const &path);
+  Config(std::string &path);
   ~Config();
 
   void tokenize();

@@ -14,10 +14,10 @@ void File::set_path(std::string path) {
   path_ = path;
 
   std::string::iterator it = path_.begin();
-  std::string::iterator tmp;
+  std::string::iterator tmp = it;
 
   while (it != path_.end()) {
-    if (*it == '/' && *tmp == '/') {
+    if (*it == '/' && tmp != it && *tmp == '/') {
       it = path_.erase(it);
       tmp = it;
     }
@@ -122,7 +122,7 @@ std::string File::autoIndex(std::string &target) {
       if (it->is_dir_)
         body += set_width(20, "-");
       else
-        body += set_width(20, std::to_string(it->size_));
+        body += set_width(20, ft::to_string(it->size_));
     }
     body += "\r\n";
   }

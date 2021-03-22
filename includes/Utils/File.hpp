@@ -9,8 +9,13 @@
 # include <unistd.h>
 # include <dirent.h>
 # include <time.h>
+# include <string.h>
+# include <errno.h>
 
+# include <algorithm>
 # include <vector>
+
+# include "StringUtils.hpp"
 
 struct auto_listing {
   std::string name_;

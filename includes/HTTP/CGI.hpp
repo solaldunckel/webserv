@@ -4,6 +4,9 @@
 # include <iostream>
 # include <map>
 
+# include <sys/types.h>
+# include <sys/wait.h>
+
 # include "RequestConfig.hpp"
 # include "File.hpp"
 # include "StringUtils.hpp"

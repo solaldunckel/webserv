@@ -17,7 +17,7 @@ void CGI::init() {
   cwd_ = cwd;
   free(cwd);
 
-  env_ = nullptr;
+  env_ = NULL;
 
   extension_ = file_.getExtension();
   cgi_exe_ = config_.getCGI()[extension_];
@@ -26,8 +26,10 @@ void CGI::init() {
   } else {
     cgi_path_ = cwd_ + "/" + config_.getCGIBin() + "/" + cgi_exe_;
   }
+  std::cout << "TEST" << std::endl;
   tmp_file_.set_path(CGI_TMP_PATH.c_str());
   tmp_file_.open(true);
+  
 }
 
 CGI::~CGI() {
@@ -40,17 +42,17 @@ CGI::~CGI() {
 
 int CGI::execute() {
   file_path_ = cwd_ + "/" + file_.getPath();
-  std::cout << file_path_ << std::endl;
+  
   chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
-
+  
   if (!setCGIEnv())
     return 500;
-
+  
   if (!(argv_[0] = ft::strdup(cgi_path_.c_str())))
     return 500;
   if (!(argv_[1] = ft::strdup(file_path_.c_str())))
     return 500;
-  argv_[2] = nullptr;
+  argv_[2] = NULL;
 
   int pip[2];
   if (pipe(pip) != 0)
@@ -66,7 +68,6 @@ int CGI::execute() {
       return 500;
     close(pip[0]);
     execve(argv_[0], argv_, env_);
-    exit(1);
     return 502;
   }
   else if (pid > 0) {
@@ -108,7 +109,7 @@ std::string &CGI::getBody() {
 bool CGI::setCGIEnv() {
   if (config_.getMethod() == "POST") {
 		cgi_env_["CONTENT_TYPE"] = req_headers_["Content-Type"];
-		cgi_env_["CONTENT_LENGTH"] = std::to_string(req_body_.length());
+		cgi_env_["CONTENT_LENGTH"] = ft::to_string(req_body_.length());
 	}
 	cgi_env_["GATEWAY_INTERFACE"] = "CGI/1.1";
   cgi_env_["PATH_INFO"] = file_path_;
@@ -128,7 +129,7 @@ bool CGI::setCGIEnv() {
   cgi_env_["SCRIPT_NAME"] = cgi_path_;
 	cgi_env_["SERVER_NAME"] = config_.getHost();
 	cgi_env_["SERVER_PROTOCOL"] = config_.getProtocol();
-	cgi_env_["SERVER_PORT"] = std::to_string(config_.getPort());
+	cgi_env_["SERVER_PORT"] = ft::to_string(config_.getPort());
   cgi_env_["SERVER_SOFTWARE"] = "WEBSERV/1.0";
 
 	if (extension_ == ".php")

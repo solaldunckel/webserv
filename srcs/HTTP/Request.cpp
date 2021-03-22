@@ -12,6 +12,32 @@ Request::~Request() {}
 int Request::parse(std::string &buffer) {
   size_t ret = 0;
   buffer_ += buffer;
+  buffer.clear();
+
+  if (status_ == FIRST_LINE)
+    ret = method_line();
+  if (status_ == HEADERS)
+    ret = headers();
+  if (status_ == PREBODY)
+    ret = prebody();
+  if (status_ == BODY)
+    ret = body();
+  if (status_ == CHUNK)
+    ret = chunk();
+  if (status_ == COMPLETE || ret == 1) {
+    status_ = COMPLETE;
+    return ret;
+  }
+  else if (status_ == ERROR || ret > 1) {
+    status_ = ERROR;
+    return ret;
+  }
+  return ret;
+}
+
+int Request::parse(char buffer[], int nbytes) {
+  size_t ret = 0;
+  buffer_.insert(buffer_.length(), buffer, nbytes);
 
   if (status_ == FIRST_LINE)
     ret = method_line();
@@ -115,7 +141,7 @@ int Request::prebody() {
     if (headers_["Content-Length"].find_first_not_of("0123456789") != std::string::npos)
       return 400;
     try {
-      length_ = std::stoi(headers_["Content-Length"]);
+      length_ = ft::stoi(headers_["Content-Length"]);
     }
     catch (std::exception &e) {
       return 501;
@@ -137,10 +163,8 @@ int Request::chunk() {
       buffer_.erase(0, end + 2);
       chunk_status_ = CHUNK_BODY;
     } else if (chunk_status_ == CHUNK_BODY) {
-      if (chunk_size_ == 0) {
-        status_ = COMPLETE;
+      if (chunk_size_ == 0)
         return 1;
-      }
       req_body_ += buffer_.substr(0, end);
       buffer_.erase(0, end + 2);
       chunk_size_ = 0;
@@ -161,17 +185,15 @@ int Request::body() {
     else
       return 400;
   }
-  // if (buffer_.length() + body_offset_ > length_)
-  //   return 400;
   return 0;
 }
 
 bool Request::timeout() {
   if (status_ != COMPLETE) {
     status_ = ERROR;
-    return (true);
+    return true;
   }
-  return (false);
+  return false;
 }
 
 int Request::getStatus() {

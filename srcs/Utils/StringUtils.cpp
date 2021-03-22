@@ -32,11 +32,11 @@ namespace ft {
 
   char *strdup(const char *str) {
     if (!str)
-      return nullptr;
+      return NULL;
     char *newstr = (char*)malloc(sizeof(char) * ft::strlen(str) + 1);
 
     if (!newstr)
-      return nullptr;
+      return NULL;
 
     size_t i = 0;
 

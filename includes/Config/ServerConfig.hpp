@@ -6,6 +6,10 @@
 # include <vector>
 # include <map>
 
+# include <stdint.h>
+
+# include <StringUtils.hpp>
+
 struct Listen {
   std::string ip_;
   uint32_t port_;

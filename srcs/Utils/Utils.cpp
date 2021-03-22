@@ -34,8 +34,8 @@ namespace ft {
     const u_char *src = (const u_char*)s;
     std::ostringstream oss;
 
-    oss << std::to_string(src[0]) << '.' << std::to_string(src[1]) << '.' <<
-      std::to_string(src[2]) << '.' << std::to_string(src[3]);
+    oss << ft::to_string(src[0]) << '.' << ft::to_string(src[1]) << '.' <<
+      ft::to_string(src[2]) << '.' << ft::to_string(src[3]);
     return oss.str();
   }
 
@@ -48,7 +48,7 @@ namespace ft {
 
     while (tab[i]) {
       free(tab[i]);
-      tab[i] = nullptr;
+      tab[i] = NULL;
       i++;
     }
     free(tab);

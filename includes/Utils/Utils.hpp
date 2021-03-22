@@ -11,6 +11,8 @@
 # include <sys/time.h>
 # include <time.h>
 
+# include "StringUtils.hpp"
+
 bool isValidMethod(std::string const &str);
 bool isValidDirective(std::string const &str);
 
@@ -25,7 +27,7 @@ namespace ft {
   template<typename T>
   void delete_(T *&ptr) {
     delete ptr;
-    ptr = nullptr;
+    ptr = NULL;
   }
 };
 

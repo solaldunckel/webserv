@@ -45,17 +45,19 @@ int Response::buildErrorPage(int status_code) {
   } else {
     std::cout << "YO" << std::endl;
     body_ += "<html>\r\n";
-    body_ += "<head><title>" + std::to_string(status_code) + " " + status_[status_code] + "</title></head>\r\n";
+    body_ += "<head><title>" + ft::to_string(status_code) + " " + status_[status_code] + "</title></head>\r\n";
     body_ += "<body>\r\n";
-    body_ += "<center><h1>" + std::to_string(status_code) + " " + status_[status_code] + "</h1></center>\r\n";
+    body_ += "<center><h1>" + ft::to_string(status_code) + " " + status_[status_code] + "</h1></center>\r\n";
     body_ += "<hr><center>" + headers_["Server"] + "</center>\r\n";
     body_ += "</body>\r\n";
     body_ += "</html>\r\n";
     headers_["Content-Type"] = MimeTypes::getType(".html");
   }
-  headers_["Content-Length"] = std::to_string(body_.length());
+  headers_["Content-Length"] = ft::to_string(body_.length());
   if (status_code == 401)
     headers_["WWW-Authenticate"] = "Basic realm=\"Access to restricted area\"";
+  if (status_code == 408)
+    headers_["Connection"] = "close";
   return status_code;
 }
 
@@ -110,7 +112,7 @@ void Response::createResponse() {
   if (config_.getMethod() == "HEAD")
     body_.clear();
 
-  response_ = response_ + "HTTP/1.1" + " " + std::to_string(status_code_) + " " + status_[status_code_] + "\r\n";
+  response_ = response_ + "HTTP/1.1" + " " + ft::to_string(status_code_) + " " + status_[status_code_] + "\r\n";
 
   headers_["Date"] = ft::get_http_date();
 
@@ -131,7 +133,7 @@ int Response::GET() {
   if (file_.is_directory()) {
     std::string index = file_.find_index(config_.getIndexes());
     if (index.length())
-      file_.set_path(config_.getRoot() + config_.getTarget() + index);
+      file_.set_path(config_.getRoot() + "/" + config_.getTarget() + index);
     else if (!config_.getAutoindex())
       return 404;
   }
@@ -153,16 +155,16 @@ int Response::GET() {
       return status_code_;
     cgi.parseHeaders(headers_);
     body_ = cgi.getBody();
-    headers_["Content-Length"] = std::to_string(body_.length());
+    headers_["Content-Length"] = ft::to_string(body_.length());
   } else if (config_.getAutoindex() && file_.is_directory()) {
     headers_["Content-Type"] = MimeTypes::getType(".html");
     body_ = file_.autoIndex(config_.getTarget());
-    headers_["Content-Length"] = std::to_string(body_.length());
+    headers_["Content-Length"] = ft::to_string(body_.length());
   }
   else {
     headers_["Content-Type"] = MimeTypes::getType(file_.getExtension());
     body_ = file_.getContent();
-    headers_["Content-Length"] = std::to_string(body_.length());
+    headers_["Content-Length"] = ft::to_string(body_.length());
   }
   return 200;
 }
@@ -177,7 +179,7 @@ int Response::POST() {
       return status_code_;
     cgi.parseHeaders(headers_);
     body_ = cgi.getBody();
-    headers_["Content-Length"] = std::to_string(body_.length());
+    headers_["Content-Length"] = ft::to_string(body_.length());
   } else if (!file_.exists()) {
     file_.create(config_.getBody());
     headers_["Content-Length"] = "0";
@@ -234,7 +236,7 @@ int Response::DELETE() {
             </body>\n\
             </html>";
   headers_["Content-Type"] = MimeTypes::getType(".html");
-  headers_["Content-Length"] = std::to_string(body_.length());
+  headers_["Content-Length"] = ft::to_string(body_.length());
   return 200;
 }
 

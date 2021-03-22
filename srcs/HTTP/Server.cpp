@@ -45,7 +45,7 @@ void Server::setup() {
         setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
         if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
-          throw webserv_exception("bind() to %s failed", errno, list->ip_ + ":" + std::to_string(list->port_));
+          throw webserv_exception("bind() to %s failed", errno, list->ip_ + ":" + ft::to_string(list->port_));
 
         if (listen(server_fd, MAX_CONNECTION) < 0)
           throw webserv_exception("listen() failed", errno);
@@ -67,13 +67,18 @@ void Server::newConnection(int fd) {
   struct sockaddr_storage their_addr;
   socklen_t addr_size = sizeof(their_addr);
 
-  int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
-
   FD_CLR(fd, &read_fds_);
 
-  if (clientFd == -1)
-    strerror(errno);
-  else {
+  int clientFd = 0;
+
+  while (clientFd != -1) {
+    clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
+
+    if (clientFd == -1) {
+      if (errno != EWOULDBLOCK)
+        strerror(errno);
+      break;
+    }
     std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
     fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
@@ -86,35 +91,65 @@ void Server::newConnection(int fd) {
   }
 }
 
-void Server::clientDisconnect(int fd, int nbytes) {
-  if (nbytes == 0)
-    std::cout << "[Server] Connection closed (" << fd << ")" << std::endl;
-  else
-    strerror(fd);
+void Server::clientDisconnect(int fd) {
+  std::cout << "[Server] Connection closed (" << fd << ")" << std::endl;
 
   delete clients_[fd];
   clients_.erase(fd);
 
   FD_CLR(fd, &master_fds_);
+  if (fd == max_fd_)
+    max_fd_--;
 }
 
-int Server::readData(int fd, std::string &buffer) {
+// int Server::readData(int fd, std::string &buffer) {
+//   Request *req = clients_[fd]->getRequest(true);
+
+//   int ret = req->parse(buffer);
+
+//   if (ret >= 1) {
+//     // #ifdef DEBUG
+//       // req->print();
+//     // #endif
+//     clients_[fd]->setupResponse(servers_, ret);
+//   }
+//   return 1;
+// }
+
+int Server::readData(int fd) {
   Request *req = clients_[fd]->getRequest(true);
+  char buf[BUF_SIZE];
 
-  int ret = req->parse(buffer);
+  FD_CLR(fd, &read_fds_);
 
-  if (ret >= 1) {
-    // #ifdef DEBUG
-      // req->print();
-    // #endif
-    clients_[fd]->setupResponse(servers_, ret);
+  while (running_) {
+    int nbytes = recv(fd, buf, BUF_SIZE, 0);
+
+    if (nbytes <= 0) {
+      if (nbytes == 0 || errno != EWOULDBLOCK)
+        return -1;
+      break;
+    }
+
+    int ret = req->parse(buf, nbytes);
+
+    if (ret >= 1) {
+      // #ifdef DEBUG
+        // req->print();
+      // #endif
+      clients_[fd]->setupResponse(servers_, ret);
+      return 1;
+    }
   }
-  return 1;
+
+  return 0;
 }
 
 void Server::writeData(int fd) {
   if (!clients_.count(fd))
     return;
+
+  FD_CLR(fd, &write_fds_);
 
   Response *response = clients_[fd]->getResponse();
 
@@ -123,37 +158,36 @@ void Server::writeData(int fd) {
 }
 
 void Server::run() {
+  int ret = 0;
   signal(SIGINT, interruptHandler);
   running_ = true;
   std::cout << "[Server] Starting." << std::endl;
 
   while (running_) {
-    read_fds_ = master_fds_;
-    write_fds_ = master_fds_;
+    FD_COPY(&master_fds_, &read_fds_);
+    FD_COPY(&master_fds_, &write_fds_);
 
-    if (select(max_fd_ + 1, &read_fds_, &write_fds_, NULL, NULL) == -1)
-      strerror(errno);
+    ret = select(max_fd_ + 1, &read_fds_, &write_fds_, NULL, NULL);
 
-    for (std::map<int, Listen>::iterator it = running_server_.begin(); it != running_server_.end(); it++) {
-      if (FD_ISSET(it->first, &read_fds_))
-        newConnection(it->first);
-    }
+    if (ret > 0) {
+      for (std::map<int, Listen>::iterator it = running_server_.begin(); it != running_server_.end(); it++) {
+        if (FD_ISSET(it->first, &read_fds_))
+          newConnection(it->first);
+      }
 
-    for (int fd = 0; fd <= max_fd_; fd++) {
-      if (FD_ISSET(fd, &read_fds_)) {
-        char buf[BUF_SIZE];
-        int nbytes = recv(fd, buf, BUF_SIZE, 0);
-
-        if (nbytes <= 0) {
-          clientDisconnect(fd, nbytes);
-        } else {
-          std::string buffer(buf, nbytes);
-          readData(fd, buffer);
+      for (int fd = 0; fd <= max_fd_ && ret > 0; fd++) {
+        if (FD_ISSET(fd, &read_fds_)) {
+          if (readData(fd) == -1)
+            clientDisconnect(fd);
+          ret--;
+        }
+        if (FD_ISSET(fd, &write_fds_)) {
+          writeData(fd);
+          ret--;
         }
       }
-      if (FD_ISSET(fd, &write_fds_))
-        writeData(fd);
-    }
+    } else if (ret == -1)
+      strerror(errno);
 
     for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); it++) {
       if (it->second->timeout())
