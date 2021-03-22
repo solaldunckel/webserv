@@ -25,6 +25,33 @@ void Response::initMethodMap() {
   Response::methods_["DELETE"] = &Response::DELETE;
 }
 
+void Response::localization(){
+  std::string path = file_.getPath();
+  std::string all = config_.getHeader("Accept-Language");
+  int q = 10;
+  int max = 0;
+  std::string tmp;
+
+  std::cout << path << std::endl;
+  while(1){
+    std::string str = all.substr(0, all.find_first_of(" ,;-\0"));
+    if (str.find("*") == std::string::npos)
+      tmp = path.substr(0, path.find_last_of('.')) + "." + str + path.substr(path.find_last_of('.'));
+    else
+      tmp = path;
+    if(file_.exist(tmp) && (q > max)){
+      file_.set_path(tmp);
+      headers_["Language-Content"] = str;
+      max = q;
+    }
+    q = ft::stoi(all.substr(all.find_first_of(".") + 1, 1));
+    if (all.find(",") == std::string::npos)
+      break ;
+    all = all.substr(all.find_first_of(" ,;-"));
+    all = all.substr(all.find_first_of("abcdefghijklmnoprstuvwxyz*"));
+  }
+}
+
 bool Response::isCGI(std::string extension) {
   std::map<std::string, std::string> &cgi = config_.getCGI();
   for (std::map<std::string, std::string>::iterator it = cgi.begin(); it != cgi.end(); it++) {
@@ -149,7 +176,8 @@ int Response::GET() {
   if (!file_.is_directory()) {
     if (!file_.exists())
       return 404;
-
+    if (!config_.getHeader("Accept-Language").empty())
+      localization();
     if (!file_.open())
       return 403;
 

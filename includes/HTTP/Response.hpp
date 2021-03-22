@@ -27,6 +27,7 @@ class Response {
   void build();
   void createResponse();
   bool checkAuth();
+  void localization();
   std::string methodList();
 
   enum Status {

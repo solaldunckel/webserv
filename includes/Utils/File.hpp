@@ -43,6 +43,7 @@ class File {
   bool is_directory();
   std::string last_modified();
   bool exists();
+  bool exist(std::string path);
 
   std::string find_index(std::vector<std::string> &indexes);
 

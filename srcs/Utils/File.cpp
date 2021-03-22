@@ -39,7 +39,7 @@ void File::append(std::string &body) {
   close();
   fd_ = ::open(path_.c_str(), O_RDWR | O_APPEND, 755);
   write(fd_, body.c_str(), body.length());
-  
+
 }
 
 void File::unlink() {
@@ -136,6 +136,11 @@ bool File::is_directory() {
 bool File::exists() {
   struct stat statbuf;
   return stat(path_.c_str(), &statbuf) == 0;
+}
+
+bool File::exist(std::string path) {
+  struct stat statbuf;
+  return stat(path.c_str(), &statbuf) == 0;
 }
 
 std::string File::last_modified() {
