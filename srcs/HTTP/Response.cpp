@@ -33,13 +33,14 @@ void Response::localization(){
   std::string tmp;
 
   std::cout << path << std::endl;
-  while(1){
+  while (1) {
     std::string str = all.substr(0, all.find_first_of(" ,;-\0"));
+
     if (str.find("*") == std::string::npos)
       tmp = path.substr(0, path.find_last_of('.')) + "." + str + path.substr(path.find_last_of('.'));
     else
       tmp = path;
-    if(file_.exist(tmp) && (q > max)){
+    if (file_.exist(tmp) && (q > max)) {
       file_.set_path(tmp);
       headers_["Language-Content"] = str;
       max = q;
@@ -143,9 +144,9 @@ void Response::createResponse() {
   if (headers_.count("Status"))
     status_code = headers_["Status"];
   else
-    status_code = ft::to_string(status_code_);
+    status_code = ft::to_string(status_code_) + " " + status_[status_code_];
 
-  response_ = response_ + "HTTP/1.1" + " " + status_code + " " + status_[status_code_] + "\r\n";
+  response_ = response_ + "HTTP/1.1" + " " + status_code + "\r\n";
 
   headers_["Date"] = ft::get_http_date();
 
@@ -153,7 +154,7 @@ void Response::createResponse() {
     response_ += it->first + ": " + it->second + "\r\n";
 
   // #ifdef DEBUG
-  // std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
+  std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
   // #endif
 
   response_ += "\r\n";
@@ -161,7 +162,7 @@ void Response::createResponse() {
   if (!body_.empty())
     response_ += body_;
 
-  std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
+  // std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
 }
 
 int Response::GET() {
@@ -205,6 +206,30 @@ int Response::GET() {
   return 200;
 }
 
+// OLD POST
+// int status_code = 200;
+
+//   if (isCGI(file_.getExtension())) {
+//     CGI cgi(file_, config_, config_.getHeaders(), config_.getBody());
+
+//     if ((status_code_ = cgi.execute()) > 200)
+//       return status_code_;
+//     cgi.parseHeaders(headers_);
+//     body_ = cgi.getBody();
+//     headers_["Content-Length"] = ft::to_string(body_.length());
+//   } else if (!file_.exists()) {
+//     file_.create(config_.getBody());
+//     headers_["Content-Length"] = "0";
+//     headers_["Content-Location"] = config_.getUri() + "/" + config_.getTarget();
+//     status_code = 201;
+//   }
+//   else {
+//     file_.create(config_.getBody());
+//     headers_["Content-Location"] = config_.getUri() + "/" + config_.getTarget();
+//     status_code = 204;
+//   }
+//   return status_code;
+
 int Response::POST() {
   int status_code = 200;
 
@@ -233,15 +258,17 @@ int Response::POST() {
     body_ = cgi.getBody();
     headers_["Content-Length"] = ft::to_string(body_.length());
   } else if (!file_.exists()) {
+    path = config_.getUri() + "/" + config_.getTarget();
     file_.create(config_.getBody());
     headers_["Content-Length"] = "0";
     headers_["Location"] = ft::unique_char(path);
     status_code = 201;
   }
   else {
+    path = config_.getUri() + "/" + config_.getTarget();
     file_.append(config_.getBody());
     headers_["Location"] = ft::unique_char(path);
-    status_code = 200;
+    status_code = 204;
   }
   return status_code;
 }

@@ -112,8 +112,8 @@ void Server::clientDisconnect(int fd) {
 // }
 
 int Server::readData(int fd) {
-  if (handle_client_fd_ && handle_client_fd_ != fd)
-    return 0;
+  // if (handle_client_fd_ && handle_client_fd_ != fd)
+  //   return 0;
 
   Request *req = clients_[fd]->getRequest();
 

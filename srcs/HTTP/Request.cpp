@@ -35,33 +35,6 @@ int Request::parse(std::string &buffer) {
   return ret;
 }
 
-int Request::parse(char buffer[], int nbytes) {
-  size_t ret = 0;
-  buffer_.insert(buffer_.length(), buffer, nbytes);
-
-  if (status_ == FIRST_LINE)
-    ret = method_line();
-  if (status_ == HEADERS)
-    ret = headers();
-  if (status_ == PREBODY)
-    ret = prebody();
-  
-  if (status_ == BODY)
-    ret = body();
-  if (status_ == CHUNK)
-    ret = chunk();
-  if (status_ == COMPLETE || ret == 1) {
-    std::cout << "YO" << std::endl;
-    status_ = COMPLETE;
-    return ret;
-  }
-  else if (status_ == ERROR || ret > 1) {
-    status_ = ERROR;
-    return ret;
-  }
-  return ret;
-}
-
 int Request::method_line() {
   if (buffer_.find("\r\n") != std::string::npos) {
     std::string tmp = buffer_.substr(0, buffer_.find(' '));
