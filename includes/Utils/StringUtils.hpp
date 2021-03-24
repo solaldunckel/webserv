@@ -4,7 +4,7 @@
 # include <string>
 # include <sstream>
 # include <algorithm>
-
+# include <iostream>
 # include <stdlib.h>
 
 namespace ft {

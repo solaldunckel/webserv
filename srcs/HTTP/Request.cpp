@@ -26,10 +26,12 @@ int Request::parse(std::string &buffer) {
     ret = chunk();
   if (status_ == COMPLETE || ret == 1) {
     status_ = COMPLETE;
+    std::cout << "COMPLETE" << std::endl;
     return ret;
   }
   else if (status_ == ERROR || ret > 1) {
     status_ = ERROR;
+    std::cout << "ERROR" << std::endl;
     return ret;
   }
   return ret;
@@ -85,12 +87,12 @@ int Request::headers() {
       break;
     }
     if ((last = buffer_.find(':', 0)) != std::string::npos) {
-      // if (buffer_[last - 1] == ' ')
-      //   return 400;
+      if (buffer_[last - 1] == ' ' || last == 0)
+        return 400;
       header = buffer_.substr(0, last);
       value = buffer_.substr(last + 1, end - last - 1);
-      // if (headers_.count(header) && !headers_["Host"].empty())
-      //   return 400;
+      if (header == "Host" && headers_.count(header))
+        return 400;
       // if (header.length() > 1000 || value.length() > 4000)
       //   return 400;
       headers_[header] = ft::trim_left(value, ' ');
@@ -106,9 +108,6 @@ int Request::prebody() {
   if (headers_["Host"].empty())
     return 400;
 
-  if (method_ != "POST" && method_ != "PUT")
-    return 1;
-
   if (!headers_["Transfer-Encoding"].empty() && headers_["Transfer-Encoding"] == "chunked") {
     status_ = CHUNK;
     chunk_status_ = CHUNK_SIZE;
@@ -117,15 +116,21 @@ int Request::prebody() {
       return 400;
     try {
       length_ = ft::stoi(headers_["Content-Length"]);
+      std::cout << length_ << std::endl;
+      if (length_ < 0)
+        throw std::invalid_argument("negative content-length");
     }
     catch (std::exception &e) {
-      return 501;
+      std::cout << "EXCEPTION" << std::endl;
+      return 400;
     }
     status_ = BODY;
   }
   else {
     return 1;
   }
+  if (method_ != "POST" && method_ != "PUT")
+    return 1;
   return 0;
 }
 

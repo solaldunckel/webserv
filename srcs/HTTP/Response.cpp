@@ -298,7 +298,7 @@ int Response::PUT() {
   else {
     file_.create(config_.getBody());
   }
-  headers_["Content-Location"] = ft::unique_char(config_.getUri() + "/" + config_.getTarget());
+  headers_["Location"] = ft::unique_char(config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget());
   return status_code;
 }
 

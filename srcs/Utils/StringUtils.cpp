@@ -56,19 +56,32 @@ namespace ft {
 
   std::string unique_char(std::string str) {
     std::string::iterator it = str.begin();
-    std::string::iterator tmp = it;
+    // std::string::iterator tmp = it;
+    std::cout << str << std::endl;
 
     while (it != str.end()) {
-      if (*it == '/' && tmp != it && *tmp == '/') {
-        it = str.erase(it);
-        tmp = it;
-      }
-      else {
-        tmp = it;
+      if (*it == '/') {
         it++;
+        while (it != str.end() && *it == '/') {
+          it = str.erase(it);
+        }
       }
+      else
+        it++;
     }
     return str;
+
+    // while (it != str.end()) {
+    //   if (*it == '/' && tmp != it && *tmp == '/') {
+    //     it = str.erase(it);
+    //     tmp = it;
+    //   }
+    //   else {
+    //     tmp = it;
+    //     it++;
+    //   }
+    // }
+    // return str;
   }
 
   int stoi(const std::string &str, std::size_t *pos, int base) {
@@ -86,14 +99,20 @@ namespace ft {
     if (str[i] == '+' || str[i] == '-')
       ++i;
 
-    int result = 0;
+    long result = 0;
+
+    std::cout << str << std::endl;
 
     while (str[i]) {
+      std::cout << "LOOP" << std::endl;
       if (our_base.find(str[i]) == std::string::npos)
         throw std::invalid_argument("invalid input string");
       result = result * base + our_base.find(str[i]);
+      if (result > std::numeric_limits<int>::max())
+        throw std::invalid_argument("overflow");
       i++;
     }
+    std::cout << "OVER" << std::endl;
     return negate ? result : -result;
   }
 }

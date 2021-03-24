@@ -144,9 +144,9 @@ int Server::readData(int fd) {
 
   if (ret >= 1) {
     handle_client_fd_ = 0;
-    #ifdef DEBUG
+    // #ifdef DEBUG
       req->print();
-    #endif
+    // #endif
     // std::cout << "HANDLE CLEARED" << std::endl;
     clients_[fd]->setupResponse(servers_, ret);
   }
