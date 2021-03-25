@@ -23,14 +23,12 @@ void RequestConfig::setup() {
   if (request_.getStatus() > 2)
     location = getLocationForRequest(server, request_.target_);
 
-  // #ifdef DEBUG
+  #ifdef DEBUG
   if (location)
     std::cout << "MATCHING LOCATION " << location->uri_ << std::endl;
   else
     std::cout << "NO MATCHING LOCATION" << std::endl;
-  // #endif
-
-  // std::cout << "MATCHING LOCATION " << location->uri_ << std::endl;
+  #endif
 
   server_ = server;
   location_ = server;
@@ -147,10 +145,14 @@ ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::st
     }
   }
 
+  #ifdef BONUS
+
   ServerConfig *reg = match_regexp(reg_locations, target);
 
   if (reg)
     return reg;
+
+  #endif
 
   return location;
 }

@@ -12,12 +12,9 @@ Client::~Client() {
 }
 
 void Client::clear() {
-  if (request_)
-    ft::delete_(request_);
-  if (config_)
-    ft::delete_(config_);
-  if (response_)
-    ft::delete_(response_);
+  ft::delete_(request_);
+  ft::delete_(config_);
+  ft::delete_(response_);
 }
 
 void Client::setupConfig(std::vector<ServerConfig> &servers) {
@@ -30,8 +27,7 @@ void Client::setupResponse(std::vector<ServerConfig> &servers, int error_code) {
 
   response_ = new Response(*config_, error_code);
 
-  if (request_)
-    ft::delete_(request_);
+  ft::delete_(request_);
 }
 
 bool Client::timeout() {

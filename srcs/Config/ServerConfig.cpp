@@ -159,19 +159,23 @@ void ServerConfig::location_loop(std::vector<std::string>::iterator &it, std::ve
   if (is_loc_modifier(*it)) {
     if (*it == "=")
       modifier_ = EXACT;
+    #ifdef BONUS
     else if (*it == "~")
       modifier_ = CASE_SENSITIVE_REG;
     else if (*it == "~*")
       modifier_ = CASE_INSENSITIVE_REG;
     else if (*it == "^~")
       modifier_ = LONGEST;
+    #endif
+    else
+      throw std::runtime_error("unknown modifier in location");
     it++;
   }
   else
     modifier_ = NONE;
   uri_ = *it++;
   if (*it != "{")
-    throw std::runtime_error("missing opening bracket in server block lul");
+    throw std::runtime_error("missing opening bracket in server block");
   while (*(++it) != "}") {
     if (ServerConfig::directive_[*it])
       (this->*(ServerConfig::directive_[*it]))(++it);

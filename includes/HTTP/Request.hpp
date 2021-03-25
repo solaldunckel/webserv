@@ -66,6 +66,7 @@ class Request {
   int chunk_size_;
   struct timeval start_timer_;
   size_t length_;
+
   Status status_;
   ChunkStatus chunk_status_;
 };

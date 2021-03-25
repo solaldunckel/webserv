@@ -26,8 +26,10 @@ namespace ft {
 
   template<typename T>
   void delete_(T *&ptr) {
-    delete ptr;
-    ptr = NULL;
+    if (ptr) {
+      delete ptr;
+      ptr = NULL;
+    }
   }
 };
 

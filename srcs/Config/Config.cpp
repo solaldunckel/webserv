@@ -1,9 +1,8 @@
 #include "Config.hpp"
 
 Config::Config(std::string &path) : file_(path.c_str()) {
-  if (!file_.is_open() || !file_.good()) {
+  if (!file_.is_open() || !file_.good())
     throw std::runtime_error("could not open config file");
-  }
 }
 
 Config::~Config() {}

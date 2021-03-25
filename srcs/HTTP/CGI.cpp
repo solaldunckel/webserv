@@ -79,7 +79,6 @@ int CGI::execute() {
     return 502;
   chdir(cwd_.c_str());
   body_ = tmp_file_.getContent();
-  // std::cout << body_ << std::endl;
   return 200;
 }
 

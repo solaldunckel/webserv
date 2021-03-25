@@ -33,7 +33,7 @@ void Response::localization(){
   std::string tmp;
 
   std::cout << path << std::endl;
-  headers_["Language-Content"] = "fr";
+  headers_["Content-Language"] = "fr";
   while (1) {
     std::string str = all.substr(0, all.find_first_of(" ,;-\0"));
 
@@ -48,10 +48,11 @@ void Response::localization(){
     if (file_.exist(tmp) && (q > max)) {
       file_.set_path(tmp);
       if(str[0] != '*')
-        headers_["Language-Content"] = str;
+        headers_["Content-Language"] = str;
       max = q;
     }
-    q = ft::stoi(all.substr(all.find_first_of(".") + 1, 1));
+    if (all.find(".") != std::string::npos)
+      q = ft::stoi(all.substr(all.find_first_of(".") + 1, 1));
     if (all.find(",") == std::string::npos)
       break ;
     all = all.substr(all.find_first_of(" ,;-"));
@@ -61,7 +62,7 @@ void Response::localization(){
 
 std::string Response::accept_charset(){
   std::string path = file_.getPath();
-  std::string all = config_.getHeader("Accept-Language");
+  std::string all = config_.getHeader("Accept-Charset");
   int q = 10;
   int max = 0;
   std::string tmp;
@@ -75,8 +76,10 @@ std::string Response::accept_charset(){
     if (str.find("*") == std::string::npos){
       if (path.find(".") == std::string::npos)
         tmp = path + "." + str;
-      else
+      else {
         tmp = path.substr(0, path.find_last_of('.')) + "." + str + path.substr(path.find_last_of('.'));
+        std::cout << "HAVA : " << tmp << std::endl;
+      }
     }
     else
       tmp = path;
@@ -86,7 +89,8 @@ std::string Response::accept_charset(){
          ret = str;
       max = q;
     }
-    q = ft::stoi(all.substr(all.find_first_of(".") + 1, 1));
+    if (all.find(".") != std::string::npos)
+      q = ft::stoi(all.substr(all.find_first_of(".") + 1, 1));
     if (all.find(",") == std::string::npos)
       break ;
     all = all.substr(all.find_first_of(" ,;"));
@@ -256,30 +260,6 @@ int Response::GET() {
   return 200;
 }
 
-// OLD POST
-// int status_code = 200;
-
-//   if (isCGI(file_.getExtension())) {
-//     CGI cgi(file_, config_, config_.getHeaders(), config_.getBody());
-
-//     if ((status_code_ = cgi.execute()) > 200)
-//       return status_code_;
-//     cgi.parseHeaders(headers_);
-//     body_ = cgi.getBody();
-//     headers_["Content-Length"] = ft::to_string(body_.length());
-//   } else if (!file_.exists()) {
-//     file_.create(config_.getBody());
-//     headers_["Content-Length"] = "0";
-//     headers_["Content-Location"] = config_.getUri() + "/" + config_.getTarget();
-//     status_code = 201;
-//   }
-//   else {
-//     file_.create(config_.getBody());
-//     headers_["Content-Location"] = config_.getUri() + "/" + config_.getTarget();
-//     status_code = 204;
-//   }
-//   return status_code;
-
 int Response::POST() {
   int status_code = 200;
 
@@ -308,14 +288,14 @@ int Response::POST() {
     body_ = cgi.getBody();
     headers_["Content-Length"] = ft::to_string(body_.length());
   } else if (!file_.exists()) {
-    path = config_.getUri() + "/" + config_.getTarget();
+    path = config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget();
     file_.create(config_.getBody());
     headers_["Content-Length"] = "0";
     headers_["Location"] = ft::unique_char(path);
     status_code = 201;
   }
   else {
-    path = config_.getUri() + "/" + config_.getTarget();
+    path = config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget();
     file_.append(config_.getBody());
     headers_["Location"] = ft::unique_char(path);
     status_code = 204;
