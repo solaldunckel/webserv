@@ -11,6 +11,7 @@ Request::~Request() {}
 
 int Request::parse(std::string &buffer) {
   size_t ret = 0;
+
   buffer_ += buffer;
   buffer.clear();
 
@@ -26,12 +27,10 @@ int Request::parse(std::string &buffer) {
     ret = chunk();
   if (status_ == COMPLETE || ret == 1) {
     status_ = COMPLETE;
-    std::cout << "COMPLETE" << std::endl;
     return ret;
   }
   else if (status_ == ERROR || ret > 1) {
     status_ = ERROR;
-    std::cout << "ERROR" << std::endl;
     return ret;
   }
   return ret;
@@ -41,33 +40,39 @@ int Request::method_line() {
   if (buffer_.find("\r\n") != std::string::npos) {
     std::string tmp = buffer_.substr(0, buffer_.find(' '));
 
-    // if (isValidMethod(tmp)) {
+    if (isValidMethod(tmp)) {
       method_ = tmp;
       buffer_.erase(0, method_.length() + 1);
-    // } else
-    //   return 501;
+    } else
+      return 501;
+
+    if (buffer_.find(' ') == 0)
+      return 400;
 
     tmp = buffer_.substr(0, buffer_.find(' '));
 
-    // if (tmp.length() < 100000) {
+    if (tmp.length() < 100000) {
       target_ = tmp;
       buffer_.erase(0, target_.length() + 1);
-    // } else
-    //   return 414;
+    } else
+      return 414;
 
     if (target_.find('?') != std::string::npos) {
       query_string_ = target_.substr(target_.find('?') + 1);
       target_.erase(target_.find('?'));
     }
 
+    if (buffer_.find(' ') == 0)
+      return 400;
+
     size_t end = buffer_.find("\r\n");
     tmp = buffer_.substr(0, end);
 
-    // if (tmp == "HTTP/1.1") {
+    if (tmp == "HTTP/1.1") {
       protocol_ = tmp;
       buffer_.erase(0, end + 2);
-    // } else
-    //   return 505;
+    } else
+      return 505;
 
     status_ = HEADERS;
   }
@@ -97,6 +102,8 @@ int Request::headers() {
       //   return 400;
       headers_[header] = ft::trim_left(value, ' ');
     }
+    else
+      return 400;
     buffer_.erase(0, end + 2);
   }
   return 0;
@@ -106,6 +113,9 @@ int Request::prebody() {
   body_offset_ = 0;
 
   if (headers_["Host"].empty())
+    return 400;
+
+  if (headers_["Host"].find("@") != std::string::npos)
     return 400;
 
   if (!headers_["Transfer-Encoding"].empty() && headers_["Transfer-Encoding"] == "chunked") {
@@ -134,6 +144,28 @@ int Request::prebody() {
   return 0;
 }
 
+int Request::chunk_trailer() {
+  size_t end, last;
+  std::string header;
+  std::string value;
+
+  while ((end = buffer_.find("\r\n")) != std::string::npos) {
+    if (buffer_.find("\r\n") == 0) {
+      buffer_.erase(0, end + 2);
+      break;
+    }
+    if ((last = buffer_.find(':', 0)) != std::string::npos) {
+      header = buffer_.substr(0, last);
+      value = buffer_.substr(last + 1, end - last - 1);
+      headers_[header] = ft::trim_left(value, ' ');
+    }
+    else
+      return 400;
+    buffer_.erase(0, end + 2);
+  }
+  return 1;
+}
+
 int Request::chunk() {
   size_t end;
 
@@ -144,8 +176,11 @@ int Request::chunk() {
       buffer_.erase(0, end + 2);
       chunk_status_ = CHUNK_BODY;
     } else if (chunk_status_ == CHUNK_BODY) {
-      if (chunk_size_ == 0)
+      if (chunk_size_ == 0) {
+        if (!buffer_.empty())
+          return chunk_trailer();
         return 1;
+      }
       req_body_ += buffer_.substr(0, end);
       buffer_.erase(0, end + 2);
       chunk_size_ = 0;

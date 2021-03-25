@@ -28,6 +28,7 @@ class Request {
   int prebody();
   int body();
   int chunk();
+  int chunk_trailer();
 
   bool timeout();
   time_t get_timer_in_sec();

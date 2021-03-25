@@ -183,14 +183,15 @@ void Server::run() {
       std::map<int, Client*>::iterator it = clients_.begin();
 
       while (it != clients_.end()) {
-        if (it->second->timeout())
-          it->second->setupResponse(servers_, 408);
 
         if (FD_ISSET(it->first, &read_fds_) && readData(it->first) == -1) {
           clientDisconnect(it->first);
           it = clients_.begin();
           continue;
         }
+
+        if (it->second->timeout())
+          it->second->setupResponse(servers_, 408);
 
         if (FD_ISSET(it->first, &write_fds_))
           writeData(it->first);
