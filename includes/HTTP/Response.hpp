@@ -28,6 +28,7 @@ class Response {
   void createResponse();
   bool checkAuth();
   void localization();
+  std::string accept_charset();
   std::string methodList();
 
   enum Status {

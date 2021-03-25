@@ -33,25 +33,68 @@ void Response::localization(){
   std::string tmp;
 
   std::cout << path << std::endl;
+  headers_["Language-Content"] = "fr";
   while (1) {
     std::string str = all.substr(0, all.find_first_of(" ,;-\0"));
 
-    if (str.find("*") == std::string::npos)
-      tmp = path.substr(0, path.find_last_of('.')) + "." + str + path.substr(path.find_last_of('.'));
+    if (str.find("*") == std::string::npos){
+      if (path.find(".") == std::string::npos)
+        tmp = path + "." + str;
+      else
+        tmp = path.substr(0, path.find_last_of('.')) + "." + str + path.substr(path.find_last_of('.'));
+    }
     else
       tmp = path;
     if (file_.exist(tmp) && (q > max)) {
       file_.set_path(tmp);
-      headers_["Language-Content"] = str;
+      if(str[0] != '*')
+        headers_["Language-Content"] = str;
       max = q;
     }
     q = ft::stoi(all.substr(all.find_first_of(".") + 1, 1));
     if (all.find(",") == std::string::npos)
       break ;
     all = all.substr(all.find_first_of(" ,;-"));
-    all = all.substr(all.find_first_of("abcdefghijklmnoprstuvwxyz*"));
+    all = all.substr(all.find_first_of("abcdefghijklmnoprstuvwxyzABCDEFGHIJKLMNOPRSTUVWXYZ*"));
   }
 }
+
+std::string Response::accept_charset(){
+  std::string path = file_.getPath();
+  std::string all = config_.getHeader("Accept-Language");
+  int q = 10;
+  int max = 0;
+  std::string tmp;
+  std::string ret;
+
+  std::cout << path << std::endl;
+  ret = "";
+  while (1) {
+    std::string str = all.substr(0, all.find_first_of(" ,;\0"));
+
+    if (str.find("*") == std::string::npos){
+      if (path.find(".") == std::string::npos)
+        tmp = path + "." + str;
+      else
+        tmp = path.substr(0, path.find_last_of('.')) + "." + str + path.substr(path.find_last_of('.'));
+    }
+    else
+      tmp = path;
+    if (file_.exist(tmp) && (q > max)) {
+      file_.set_path(tmp);
+      if(str[0] != '*')
+         ret = str;
+      max = q;
+    }
+    q = ft::stoi(all.substr(all.find_first_of(".") + 1, 1));
+    if (all.find(",") == std::string::npos)
+      break ;
+    all = all.substr(all.find_first_of(" ,;"));
+    all = all.substr(all.find_first_of("abcdefghijklmnoprstuvwxyz*"));
+  }
+  return (ret);
+}
+
 
 bool Response::isCGI(std::string extension) {
   std::map<std::string, std::string> &cgi = config_.getCGI();
@@ -166,6 +209,7 @@ void Response::createResponse() {
 }
 
 int Response::GET() {
+  std::string charset;
   if (file_.is_directory()) {
     std::string index = file_.find_index(config_.getIndexes());
     if (index.length())
@@ -179,6 +223,8 @@ int Response::GET() {
       return 404;
     if (!config_.getHeader("Accept-Language").empty())
       localization();
+    if (!config_.getHeader("Accept-Charset").empty())
+      charset = accept_charset();
     if (!file_.open())
       return 403;
 
@@ -195,11 +241,15 @@ int Response::GET() {
     headers_["Content-Length"] = ft::to_string(body_.length());
   } else if (config_.getAutoindex() && file_.is_directory()) {
     headers_["Content-Type"] = MimeTypes::getType(".html");
+    if (charset[0])
+      headers_["Content-Type"] += "; charset=" + charset;
     body_ = file_.autoIndex(config_.getTarget());
     headers_["Content-Length"] = ft::to_string(body_.length());
   }
   else {
     headers_["Content-Type"] = MimeTypes::getType(file_.getExtension());
+    if (charset[0])
+      headers_["Content-Type"] += "; charset=" + charset;
     body_ = file_.getContent();
     headers_["Content-Length"] = ft::to_string(body_.length());
   }
