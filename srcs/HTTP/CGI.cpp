@@ -9,7 +9,10 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
 
 CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers, std::string &req_body) : file_(file), config_(config), req_headers_(req_headers) {
   init();
-  req_body_ = req_body;
+  if (req_body.empty())
+    req_body_ = file_.getContent();
+  else
+    req_body_ = req_body;
 }
 
 void CGI::init() {
@@ -40,7 +43,7 @@ CGI::~CGI() {
 
 int CGI::execute() {
   file_path_ = cwd_ + "/" + file_.getPath();
-
+  
   chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
   std::cout << "CALLING CGI " << cgi_path_ << std::endl;
   if (!setCGIEnv())
@@ -56,7 +59,7 @@ int CGI::execute() {
     return 500;
 
   pid_t pid = fork();
-
+  
   if (pid == 0) {
     close(pip[1]);
     if (dup2(pip[0], 0) == -1)
@@ -78,6 +81,7 @@ int CGI::execute() {
   else
     return 502;
   chdir(cwd_.c_str());
+  
   body_ = tmp_file_.getContent();
   return 200;
 }

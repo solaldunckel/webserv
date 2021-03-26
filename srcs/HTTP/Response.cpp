@@ -188,29 +188,31 @@ int Response::handleMethods() {
   std::string &method = config_.getMethod();
   std::string charset;
 
-  if (file_.is_directory()) {
-    std::string index = file_.find_index(config_.getIndexes());
-    if (index.length())
-      file_.set_path(config_.getRoot() + "/" + config_.getTarget() + "/" + index);
-    else if (!config_.getAutoindex())
-      return 404;
-  }
+  if (method == "GET" || method == "HEAD") {
+    if (file_.is_directory()) {
+      std::string index = file_.find_index(config_.getIndexes());
+      if (index.length())
+        file_.set_path(config_.getRoot() + "/" + config_.getTarget() + "/" + index);
+      else if (!config_.getAutoindex())
+        return 404;
+    }
 
-  if (!file_.is_directory()) {
-    if (!file_.exists())
-      return 404;
-    if (!config_.getHeader("Accept-Language").empty())
-      localization();
-    if (!config_.getHeader("Accept-Charset").empty())
-      charset = accept_charset();
-    if (!file_.open())
-      return 403;
+    if (!file_.is_directory()) {
+      if (!file_.exists())
+        return 404;
+      if (!config_.getHeader("Accept-Language").empty())
+        localization();
+      if (!config_.getHeader("Accept-Charset").empty())
+        charset = accept_charset();
+      if (!file_.open())
+        return 403;
 
-    headers_["Last-Modified"] = file_.last_modified();
+      headers_["Last-Modified"] = file_.last_modified();
+    }
   }
 
   if (isCGI(file_.getMimeExtension())) {
-    CGI cgi(file_, config_, config_.getHeaders());
+    CGI cgi(file_, config_, config_.getHeaders(), config_.getBody());
 
     if ((status_code_ = cgi.execute()) > 400)
       return status_code_;
@@ -292,15 +294,7 @@ int Response::POST() {
     path = config_.getUri() + "/" + config_.getUpload() + config_.getTarget();
   }
 
-  if (isCGI(file_.getMimeExtension())) {
-    CGI cgi(file_, config_, config_.getHeaders(), config_.getBody());
-
-    if ((status_code_ = cgi.execute()) > 200)
-      return status_code_;
-    cgi.parseHeaders(headers_);
-    body_ = cgi.getBody();
-    headers_["Content-Length"] = ft::to_string(body_.length());
-  } else if (!file_.exists()) {
+  if (!file_.exists()) {
     path = config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget();
     file_.create(config_.getBody());
     headers_["Content-Length"] = "0";
