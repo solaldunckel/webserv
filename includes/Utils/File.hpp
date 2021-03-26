@@ -46,15 +46,22 @@ class File {
   bool exist(std::string path);
 
   std::string find_index(std::vector<std::string> &indexes);
+  void parse_match();
 
   std::string autoIndex(std::string &target);
-  std::string getExtension();
+  std::string &getMimeExtension();
+  void parseExtensions();
   std::string getContent();
   std::string &getPath();
+  std::vector<std::string> &getMatches();
   int &getFd();
 
  private:
   int fd_;
+  std::string file_name_;
+  std::string file_name_full_;
+  std::string mime_ext_;
+  std::vector<std::string> matches_;
   std::string path_;
 };
 

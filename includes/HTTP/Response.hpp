@@ -25,6 +25,7 @@ class Response {
   int buildErrorPage(int status_code);
   bool isCGI(std::string extension);
   void build();
+  int handleMethods();
   void createResponse();
   bool checkAuth();
   void localization();

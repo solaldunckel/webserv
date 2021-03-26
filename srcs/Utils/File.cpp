@@ -12,6 +12,7 @@ File::~File() {
 
 void File::set_path(std::string path) {
   path_ = ft::unique_char(path);
+  parseExtensions();
 }
 
 bool File::open(bool create) {
@@ -188,14 +189,54 @@ std::string File::getContent() {
   return final;
 };
 
-std::string File::getExtension() {
-  if (path_.length() && path_.find_last_of('.') != std::string::npos)
-    return path_.substr(path_.find_last_of('.'));
-  return "";
+std::string &File::getMimeExtension() {
+  return mime_ext_;
+}
+
+void File::parse_match() {
+  DIR *dir;
+  struct dirent *ent;
+
+  std::string path = path_.substr(0, path_.find_last_of("/"));
+  if (!matches_.empty())
+    matches_.clear();
+  if ((dir = opendir(path.c_str()))) {
+    while ((ent = readdir(dir))) {
+      std::string name(ent->d_name);
+      if (file_name_full_ != name && !name.find(file_name_)
+        && name.find(mime_ext_) != std::string::npos) {
+        matches_.push_back(ent->d_name);
+      }
+    }
+    closedir(dir);
+  } else {
+    strerror(errno);
+  }
+}
+
+void File::parseExtensions() {
+  std::string file = path_.substr(path_.find_last_of("/") + 1);
+
+  if (file.empty())
+    return;
+
+  file_name_full_ = file;
+
+  file_name_ = file.substr(0, file.find("."));
+  file.erase(0, file.find("."));
+
+  if (file.find_last_of(".") != std::string::npos) {
+    mime_ext_ = file.substr(file.find_last_of("."));
+    file.erase(file.find_last_of("."));
+  }
 }
 
 int &File::getFd() {
   return fd_;
+}
+
+std::vector<std::string> &File::getMatches() {
+  return matches_;
 }
 
 std::string &File::getPath() {

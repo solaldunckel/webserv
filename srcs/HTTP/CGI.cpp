@@ -19,7 +19,7 @@ void CGI::init() {
 
   env_ = NULL;
 
-  extension_ = file_.getExtension();
+  extension_ = file_.getMimeExtension();
   cgi_exe_ = config_.getCGI()[extension_];
   if (config_.getCGIBin()[0] == '/') {
     cgi_path_ = config_.getCGIBin() + "/" + cgi_exe_;

@@ -26,6 +26,8 @@ void Response::initMethodMap() {
 }
 
 void Response::localization(){
+  file_.parse_match();
+  return ;
   std::string path = file_.getPath();
   std::string all = config_.getHeader("Accept-Language");
   int q = 10;
@@ -160,7 +162,7 @@ std::string Response::methodList() {
 void Response::build() {
   std::string &method = config_.getMethod();
 
-  file_.set_path(config_.getRoot() + config_.getTarget());
+  file_.set_path(config_.getRoot() + "/" + config_.getTarget());
 
   if (error_code_ > 1)
     status_code_ = error_code_;
@@ -173,13 +175,52 @@ void Response::build() {
   }
   else if (config_.getAuth() != "off" && !checkAuth())
     status_code_ = 401;
-  else if (Response::methods_[method])
-    status_code_ = (this->*(Response::methods_[method]))();
+  else
+    status_code_ = handleMethods();
 
   if (status_code_ >= 300 && !body_.length())
     status_code_ = buildErrorPage(status_code_);
 
   createResponse();
+}
+
+int Response::handleMethods() {
+  std::string &method = config_.getMethod();
+  std::string charset;
+
+  if (file_.is_directory()) {
+    std::string index = file_.find_index(config_.getIndexes());
+    if (index.length())
+      file_.set_path(config_.getRoot() + "/" + config_.getTarget() + "/" + index);
+    else if (!config_.getAutoindex())
+      return 404;
+  }
+
+  if (!file_.is_directory()) {
+    if (!file_.exists())
+      return 404;
+    if (!config_.getHeader("Accept-Language").empty())
+      localization();
+    if (!config_.getHeader("Accept-Charset").empty())
+      charset = accept_charset();
+    if (!file_.open())
+      return 403;
+
+    headers_["Last-Modified"] = file_.last_modified();
+  }
+
+  if (isCGI(file_.getMimeExtension())) {
+    CGI cgi(file_, config_, config_.getHeaders());
+
+    if ((status_code_ = cgi.execute()) > 400)
+      return status_code_;
+    cgi.parseHeaders(headers_);
+    body_ = cgi.getBody();
+    headers_["Content-Length"] = ft::to_string(body_.length());
+  }
+  else
+    status_code_ = (this->*(Response::methods_[method]))();
+  return status_code_;
 }
 
 void Response::createResponse() {
@@ -188,8 +229,10 @@ void Response::createResponse() {
 
   std::string status_code;
 
-  if (headers_.count("Status"))
+  if (headers_.count("Status")) {
     status_code = headers_["Status"];
+    headers_.erase("Status");
+  }
   else
     status_code = ft::to_string(status_code_) + " " + status_[status_code_];
 
@@ -213,47 +256,17 @@ void Response::createResponse() {
 }
 
 int Response::GET() {
-  std::string charset;
-  if (file_.is_directory()) {
-    std::string index = file_.find_index(config_.getIndexes());
-    if (index.length())
-      file_.set_path(config_.getRoot() + "/" + config_.getTarget() + index);
-    else if (!config_.getAutoindex())
-      return 404;
-  }
-
-  if (!file_.is_directory()) {
-    if (!file_.exists())
-      return 404;
-    if (!config_.getHeader("Accept-Language").empty())
-      localization();
-    if (!config_.getHeader("Accept-Charset").empty())
-      charset = accept_charset();
-    if (!file_.open())
-      return 403;
-
-    headers_["Last-Modified"] = file_.last_modified();
-  }
-
-  if (isCGI(file_.getExtension())) {
-    CGI cgi(file_, config_, config_.getHeaders());
-
-    if ((status_code_ = cgi.execute()) > 200)
-      return status_code_;
-    cgi.parseHeaders(headers_);
-    body_ = cgi.getBody();
-    headers_["Content-Length"] = ft::to_string(body_.length());
-  } else if (config_.getAutoindex() && file_.is_directory()) {
+  if (config_.getAutoindex() && file_.is_directory()) {
     headers_["Content-Type"] = MimeTypes::getType(".html");
-    if (charset[0])
-      headers_["Content-Type"] += "; charset=" + charset;
+    // if (charset[0])
+    //   headers_["Content-Type"] += "; charset=" + charset;
     body_ = file_.autoIndex(config_.getTarget());
     headers_["Content-Length"] = ft::to_string(body_.length());
   }
   else {
-    headers_["Content-Type"] = MimeTypes::getType(file_.getExtension());
-    if (charset[0])
-      headers_["Content-Type"] += "; charset=" + charset;
+    headers_["Content-Type"] = MimeTypes::getType(file_.getMimeExtension());
+    // if (charset[0])
+    //   headers_["Content-Type"] += "; charset=" + charset;
     body_ = file_.getContent();
     headers_["Content-Length"] = ft::to_string(body_.length());
   }
@@ -279,7 +292,7 @@ int Response::POST() {
     path = config_.getUri() + "/" + config_.getUpload() + config_.getTarget();
   }
 
-  if (isCGI(file_.getExtension())) {
+  if (isCGI(file_.getMimeExtension())) {
     CGI cgi(file_, config_, config_.getHeaders(), config_.getBody());
 
     if ((status_code_ = cgi.execute()) > 200)
