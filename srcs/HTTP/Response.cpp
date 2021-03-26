@@ -25,76 +25,78 @@ void Response::initMethodMap() {
   Response::methods_["DELETE"] = &Response::DELETE;
 }
 
-void Response::localization(){
-  file_.parse_match();
-  return ;
+bool Response::localization(std::vector<std::string> &matches){
   std::string path = file_.getPath();
   std::string all = config_.getHeader("Accept-Language");
   int q = 10;
   int max = 0;
-  std::string tmp;
+  std::vector<std::string> new_matches;
+  std::vector<std::string> select_matches;
 
-  std::cout << path << std::endl;
   headers_["Content-Language"] = "fr";
   while (1) {
-    std::string str = all.substr(0, all.find_first_of(" ,;-\0"));
-
+    std::string str = all.substr(0, all.find_first_of(" ,;\0"));
+    new_matches.clear();
     if (str.find("*") == std::string::npos){
-      if (path.find(".") == std::string::npos)
-        tmp = path + "." + str;
-      else
-        tmp = path.substr(0, path.find_last_of('.')) + "." + str + path.substr(path.find_last_of('.'));
+      for(std::vector<std::string>::iterator it = matches.begin() ; it != matches.end() ; it++)
+        if (it->find("." + str) != std::string::npos)
+          new_matches.push_back(*it);
     }
     else
-      tmp = path;
-    if (file_.exist(tmp) && (q > max)) {
-      file_.set_path(tmp);
+      new_matches = matches;
+    if (!new_matches.empty() && (q > max)) {
+      select_matches = new_matches;
       if(str[0] != '*')
         headers_["Content-Language"] = str;
       max = q;
     }
     if (all.find(".") != std::string::npos)
       q = ft::stoi(all.substr(all.find_first_of(".") + 1, 1));
-    if (all.find(",") == std::string::npos)
-      break ;
-    all = all.substr(all.find_first_of(" ,;-"));
-    all = all.substr(all.find_first_of("abcdefghijklmnoprstuvwxyzABCDEFGHIJKLMNOPRSTUVWXYZ*"));
+    if (all.find(",") == std::string::npos){
+      if (!select_matches.empty()){
+        matches = select_matches;
+        return (1);
+      }
+      return (0);
+    }
+    all = all.substr(all.find_first_of(" ,;"));
+    all = all.substr(all.find_first_of("abcdefghijklmnoprstuvwxyz*"));
   }
 }
 
-std::string Response::accept_charset(){
+std::string Response::accept_charset(std::vector<std::string> &matches){
   std::string path = file_.getPath();
   std::string all = config_.getHeader("Accept-Charset");
   int q = 10;
   int max = 0;
-  std::string tmp;
   std::string ret;
+  std::vector<std::string> new_matches;
+  std::vector<std::string> select_matches;
 
-  std::cout << path << std::endl;
   ret = "";
   while (1) {
     std::string str = all.substr(0, all.find_first_of(" ,;\0"));
 
     if (str.find("*") == std::string::npos){
-      if (path.find(".") == std::string::npos)
-        tmp = path + "." + str;
-      else {
-        tmp = path.substr(0, path.find_last_of('.')) + "." + str + path.substr(path.find_last_of('.'));
-        std::cout << "HAVA : " << tmp << std::endl;
-      }
+      for(std::vector<std::string>::iterator it = matches.begin() ; it != matches.end() ; it++)
+        if (it->find("." + str) != std::string::npos)
+          new_matches.push_back(*it);
     }
     else
-      tmp = path;
-    if (file_.exist(tmp) && (q > max)) {
-      file_.set_path(tmp);
+      new_matches = matches;;
+    if (!new_matches.empty() && (q > max)) {
+        select_matches = new_matches;
       if(str[0] != '*')
          ret = str;
       max = q;
     }
     if (all.find(".") != std::string::npos)
       q = ft::stoi(all.substr(all.find_first_of(".") + 1, 1));
-    if (all.find(",") == std::string::npos)
+    if (all.find(",") == std::string::npos){
+        if (!select_matches.empty())
+          matches = select_matches;
       break ;
+    }
     all = all.substr(all.find_first_of(" ,;"));
     all = all.substr(all.find_first_of("abcdefghijklmnoprstuvwxyz*"));
   }
@@ -186,7 +188,7 @@ void Response::build() {
 
 int Response::handleMethods() {
   std::string &method = config_.getMethod();
-  std::string charset;
+  std::string path;
 
   if (method == "GET" || method == "HEAD") {
     if (file_.is_directory()) {
@@ -197,13 +199,27 @@ int Response::handleMethods() {
         return 404;
     }
 
+    path = file_.getPath();
     if (!file_.is_directory()) {
       if (!file_.exists())
         return 404;
-      if (!config_.getHeader("Accept-Language").empty())
-        localization();
-      if (!config_.getHeader("Accept-Charset").empty())
-        charset = accept_charset();
+      file_.parse_match();
+      std::vector<std::string> &matches = file_.getMatches();
+      if (!config_.getHeader("Accept-Language").empty()){
+        if (localization(matches)){
+          if (matches.size() > 1)
+            return (300);
+          else
+            std::cout << path.substr(0, path.find_last_of("/") + 1) + matches.front() << std::endl;
+        }
+      }
+      if (!config_.getHeader("Accept-Charset").empty()){
+        charset_ = accept_charset(matches);
+        if (matches.size() > 1)
+          return (300);
+        else
+          std::cout << path.substr(0, path.find_last_of("/") + 1) + matches.front() << std::endl;
+      }
       if (!file_.open())
         return 403;
 
@@ -213,7 +229,6 @@ int Response::handleMethods() {
 
   if (isCGI(file_.getMimeExtension())) {
     CGI cgi(file_, config_, config_.getHeaders(), config_.getBody());
-
     if ((status_code_ = cgi.execute()) > 400)
       return status_code_;
     cgi.parseHeaders(headers_);
