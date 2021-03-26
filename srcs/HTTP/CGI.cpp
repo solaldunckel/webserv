@@ -9,7 +9,7 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
 
 CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers, std::string &req_body) : file_(file), config_(config), req_headers_(req_headers) {
   init();
-  if (req_body.empty())
+  if (req_body.empty() && config_.getMethod() != "POST")
     req_body_ = file_.getContent();
   else
     req_body_ = req_body;
@@ -59,7 +59,7 @@ int CGI::execute() {
     return 500;
 
   pid_t pid = fork();
-  
+
   if (pid == 0) {
     close(pip[1]);
     if (dup2(pip[0], 0) == -1)
@@ -81,7 +81,7 @@ int CGI::execute() {
   else
     return 502;
   chdir(cwd_.c_str());
-  
+
   body_ = tmp_file_.getContent();
   return 200;
 }

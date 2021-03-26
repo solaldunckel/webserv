@@ -32,9 +32,10 @@ set(INCLUDES
   includes/Utils
 )
 
-add_compile_options(-Wall -Werror -Wextra)
+add_compile_options(-Wall -Werror -Wextra -std=c++98)
 
 option(DEBUG "PRINT DEBUG MESSAGES" OFF)
+option(BONUS "COMPILE WITH BONUS" OFF)
 
 # custom fclean target
 add_custom_target(fclean
