@@ -47,7 +47,7 @@ void Response::localization(){
     }
     else
       tmp = path;
-    if (file_.exist(tmp) && (q > max)) {
+    if (file_.exists(tmp) && (q > max)) {
       file_.set_path(tmp);
       if(str[0] != '*')
         headers_["Content-Language"] = str;
@@ -85,7 +85,7 @@ std::string Response::accept_charset(){
     }
     else
       tmp = path;
-    if (file_.exist(tmp) && (q > max)) {
+    if (file_.exists(tmp) && (q > max)) {
       file_.set_path(tmp);
       if(str[0] != '*')
          ret = str;
@@ -358,6 +358,10 @@ int Response::DELETE() {
 
 int Response::send(int fd) {
   int ret = ::send(fd, response_.c_str() + total_sent_, response_.length() - total_sent_, 0);
+  if (ret < 0) {
+    strerror(errno);
+    return -1;
+  }
   total_sent_ += ret;
   if (total_sent_ >= response_.length())
     return 0;

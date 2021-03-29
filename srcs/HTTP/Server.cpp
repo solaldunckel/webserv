@@ -9,7 +9,7 @@ static void interruptHandler(int sig_int) {
 	Server::running_ = false;
 }
 
-Server::Server(std::vector<ServerConfig> &servers) : servers_(servers), handle_client_fd_(0) {
+Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
   FD_ZERO(&master_fds_);
   FD_ZERO(&read_fds_);
   FD_ZERO(&write_fds_);
@@ -23,11 +23,13 @@ Server::~Server() {
 
 void Server::setup() {
   int yes = 1;
-  int server_fd;
+  int server_fd = 0;
 
   std::vector<Listen> is_bind;
 
   for (std::vector<ServerConfig>::iterator it = servers_.begin(); it != servers_.end(); it++) {
+    if (it->getListens().empty())
+      it->getListens().push_back(Listen("0.0.0.0", 80));
     for (std::vector<Listen>::iterator list = it->getListens().begin(); list != it->getListens().end(); list++) {
       if (std::find(is_bind.begin(), is_bind.end(), *list) == is_bind.end()) {
         if ((server_fd = socket(PF_INET, SOCK_STREAM, 0)) < 0)
@@ -60,6 +62,9 @@ void Server::setup() {
       }
     }
   }
+
+  if (is_bind.empty())
+    throw webserv_exception("listen() failed", errno);
 }
 
 void Server::newConnection(int fd) {
@@ -97,31 +102,11 @@ void Server::clientDisconnect(int fd) {
     max_fd_--;
 }
 
-// int Server::readData(int fd, std::string &buffer) {
-//   Request *req = clients_[fd]->getRequest(true);
-
-//   int ret = req->parse(buffer);
-
-//   if (ret >= 1) {
-//     // #ifdef DEBUG
-//       // req->print();
-//     // #endif
-//     clients_[fd]->setupResponse(servers_, ret);
-//   }
-//   return 1;
-// }
-
 int Server::readData(int fd) {
-  // if (handle_client_fd_ && handle_client_fd_ != fd)
-  //   return 0;
-
   Request *req = clients_[fd]->getRequest();
 
-  if (!req) {
+  if (!req)
     req = clients_[fd]->getRequest(true);
-    handle_client_fd_ = fd;
-    // std::cout << "HANDLE : " << handle_client_fd_ << std::endl;
-  }
 
   char buf[BUF_SIZE];
 
@@ -129,13 +114,12 @@ int Server::readData(int fd) {
 
   int nbytes = recv(fd, buf, BUF_SIZE, 0);
 
-  if (nbytes == 0) {
-    handle_client_fd_ = 0;
+  if (nbytes == 0)
     return -1;
-  }
 
   if (nbytes < 0) {
     strerror(errno);
+    clientDisconnect(fd);
     return 0;
   }
 
@@ -143,7 +127,6 @@ int Server::readData(int fd) {
   int ret = req->parse(buffer);
 
   if (ret >= 1) {
-    handle_client_fd_ = 0;
     // #ifdef DEBUG
       req->print();
     // #endif
@@ -158,8 +141,14 @@ void Server::writeData(int fd) {
 
   Response *response = clients_[fd]->getResponse();
 
-  if (response && !response->send(fd))
-    clients_[fd]->clear();
+  if (response) {
+    int ret = response->send(fd);
+    if (ret < 0) {
+      clientDisconnect(fd);
+      return;
+    } else if (ret == 0)
+      clients_[fd]->clear();
+  }
 }
 
 void Server::run() {
@@ -195,6 +184,7 @@ void Server::run() {
 
         if (FD_ISSET(it->first, &write_fds_))
           writeData(it->first);
+
         it++;
       }
     } else if (ret == -1)

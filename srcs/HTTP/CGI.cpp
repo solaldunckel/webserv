@@ -17,6 +17,10 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
 
 void CGI::init() {
   char *cwd = getcwd(NULL, 0);
+  if (!cwd) {
+    std::cout << strerror(errno) << std::endl;
+    return ;
+  }
   cwd_ = cwd;
   free(cwd);
 
@@ -43,9 +47,15 @@ CGI::~CGI() {
 
 int CGI::execute() {
   file_path_ = cwd_ + "/" + file_.getPath();
-  
-  chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
+
+  if (chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str()) == -1) {
+    std::cout << strerror(errno) << std::endl;
+    return 500;
+  }
+
+  #ifdef DEBUG
   std::cout << "CALLING CGI " << cgi_path_ << std::endl;
+  #endif
   if (!setCGIEnv())
     return 500;
   if (!(argv_[0] = ft::strdup(cgi_path_.c_str())))
@@ -78,9 +88,14 @@ int CGI::execute() {
       return 500;
     close(tmp_fd_);
   }
-  else
+  else {
+    std::cout << strerror(errno) << std::endl;
     return 502;
-  chdir(cwd_.c_str());
+  }
+  if (chdir(cwd_.c_str()) == -1) {
+    std::cout << strerror(errno) << std::endl;
+    return 500;
+  }
 
   body_ = tmp_file_.getContent();
   return 200;

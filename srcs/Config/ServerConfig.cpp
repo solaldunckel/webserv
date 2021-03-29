@@ -68,12 +68,20 @@ void ServerConfig::listen(std::vector<std::string>::iterator &it) {
     }
 
     port = ft::stoi(port_str);
+    if (port > 65535)
+      throw std::runtime_error("duplicate value in 'listen'");
   }
   else if (str.find_first_not_of("0123456789") != std::string::npos) {
     ip = str;
   }
   else
     port = ft::stoi(str);
+
+  Listen list(ip, port);
+
+  if (std::find(listens_.begin(), listens_.end(), list) != listens_.end())
+    throw std::runtime_error("duplicate value in 'listen'");
+    // throw webserv_exception("duplicate listen " + ip + ":" + port);
 
   listens_.push_back(Listen(ip, port));
 

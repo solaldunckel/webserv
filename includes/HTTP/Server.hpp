@@ -65,11 +65,9 @@ class Server {
   std::vector<ServerConfig> &servers_;
   std::map<int, Listen> running_server_;
   std::map<int, Client*> clients_;
-  std::vector<int> clients_bin_;
   fd_set master_fds_;
   fd_set read_fds_;
   fd_set write_fds_;
-  int handle_client_fd_;
   int max_fd_;
 };
 
