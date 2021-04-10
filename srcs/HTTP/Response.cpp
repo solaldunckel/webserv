@@ -373,6 +373,10 @@ int Response::DELETE() {
 
 int Response::send(int fd) {
   int ret = ::send(fd, response_.c_str() + total_sent_, response_.length() - total_sent_, 0);
+  if (ret < 0) {
+    strerror(errno);
+    return -1;
+  }
   total_sent_ += ret;
   if (total_sent_ >= response_.length())
     return 0;

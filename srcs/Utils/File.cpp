@@ -31,20 +31,21 @@ void File::close() {
 }
 
 void File::create(std::string &body) {
-  close();
-  fd_ = ::open(path_.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
-  write(fd_, body.c_str(), body.length());
+  if (!open(true) || write(fd_, body.c_str(), body.length()) == -1) {
+    std::cerr << strerror(errno) << std::endl;
+  }
 }
 
 void File::append(std::string &body) {
   close();
   fd_ = ::open(path_.c_str(), O_RDWR | O_APPEND, 755);
-  write(fd_, body.c_str(), body.length());
-
+  if (write(fd_, body.c_str(), body.length()) == -1)
+    std::cerr << strerror(errno) << std::endl;
 }
 
 void File::unlink() {
-  ::unlink(path_.c_str());
+  if (::unlink(path_.c_str()) == -1)
+    std::cerr << strerror(errno) << std::endl;
 }
 
 std::string set_width(size_t width, std::string str) {
@@ -139,7 +140,7 @@ bool File::exists() {
   return stat(path_.c_str(), &statbuf) == 0;
 }
 
-bool File::exist(std::string path) {
+bool File::exists(std::string &path) {
   struct stat statbuf;
   return stat(path.c_str(), &statbuf) == 0;
 }

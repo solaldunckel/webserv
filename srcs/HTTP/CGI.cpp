@@ -9,7 +9,7 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
 
 CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers, std::string &req_body) : file_(file), config_(config), req_headers_(req_headers) {
   init();
-  if (req_body.empty())
+  if (req_body.empty() && config_.getMethod() != "POST")
     req_body_ = file_.getContent();
   else
     req_body_ = req_body;
@@ -17,6 +17,10 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
 
 void CGI::init() {
   char *cwd = getcwd(NULL, 0);
+  if (!cwd) {
+    std::cout << strerror(errno) << std::endl;
+    return ;
+  }
   cwd_ = cwd;
   free(cwd);
 
@@ -43,9 +47,15 @@ CGI::~CGI() {
 
 int CGI::execute() {
   file_path_ = cwd_ + "/" + file_.getPath();
-  
-  chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str());
+
+  if (chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str()) == -1) {
+    std::cout << strerror(errno) << std::endl;
+    return 500;
+  }
+
+  #ifdef DEBUG
   std::cout << "CALLING CGI " << cgi_path_ << std::endl;
+  #endif
   if (!setCGIEnv())
     return 500;
   if (!(argv_[0] = ft::strdup(cgi_path_.c_str())))
@@ -59,7 +69,7 @@ int CGI::execute() {
     return 500;
 
   pid_t pid = fork();
-  
+
   if (pid == 0) {
     close(pip[1]);
     if (dup2(pip[0], 0) == -1)
@@ -78,10 +88,15 @@ int CGI::execute() {
       return 500;
     close(tmp_fd_);
   }
-  else
+  else {
+    std::cout << strerror(errno) << std::endl;
     return 502;
-  chdir(cwd_.c_str());
-  
+  }
+  if (chdir(cwd_.c_str()) == -1) {
+    std::cout << strerror(errno) << std::endl;
+    return 500;
+  }
+
   body_ = tmp_file_.getContent();
   return 200;
 }
