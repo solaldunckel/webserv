@@ -126,12 +126,10 @@ int Request::prebody() {
       return 400;
     try {
       length_ = ft::stoi(headers_["Content-Length"]);
-      std::cout << length_ << std::endl;
       if (length_ < 0)
         throw std::invalid_argument("negative content-length");
     }
     catch (std::exception &e) {
-      std::cout << "EXCEPTION" << std::endl;
       return 400;
     }
     status_ = BODY;

@@ -28,17 +28,10 @@ namespace ft {
     return hex;
   }
 
-  size_t strlen(const char *str) {
-    int i = 0;
-    while (str[i])
-      i++;
-    return i;
-  }
-
   char *strdup(const char *str) {
     if (!str)
       return NULL;
-    char *newstr = (char*)malloc(sizeof(char) * ft::strlen(str) + 1);
+    char *newstr = (char*)malloc(sizeof(char) * (strlen(str) + 1));
 
     if (!newstr)
       return NULL;
@@ -56,7 +49,6 @@ namespace ft {
 
   std::string unique_char(std::string str) {
     std::string::iterator it = str.begin();
-    // std::string::iterator tmp = it;
 
     while (it != str.end()) {
       if (*it == '/') {

@@ -13,7 +13,7 @@
 # include <fcntl.h>
 # include <sys/select.h>
 # include <signal.h>
-# include <string.h>
+# include <cstring>
 
 # include "Client.hpp"
 # include "ServerConfig.hpp"

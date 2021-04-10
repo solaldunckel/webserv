@@ -38,7 +38,7 @@ void Server::setup() {
         fcntl(server_fd, F_SETFL, O_NONBLOCK);
 
         struct sockaddr_in address;
-        ft::memset(&address, 0, sizeof(address));
+        memset(&address, 0, sizeof(address));
         address.sin_family = AF_INET;
         address.sin_addr.s_addr = inet_addr(list->ip_.c_str());
         address.sin_port = htons(list->port_);
@@ -76,7 +76,7 @@ void Server::newConnection(int fd) {
   int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
 
   if (clientFd == -1) {
-    strerror(errno);
+    std::cerr << strerror(errno) << std::endl;
     return ;
   }
 
@@ -118,7 +118,7 @@ int Server::readData(int fd) {
     return -1;
 
   if (nbytes < 0) {
-    strerror(errno);
+    std::cerr << strerror(errno) << std::endl;
     clientDisconnect(fd);
     return 0;
   }
@@ -188,6 +188,6 @@ void Server::run() {
         it++;
       }
     } else if (ret == -1)
-      strerror(errno);
+      std::cerr << strerror(errno) << std::endl;
   }
 }

@@ -12,7 +12,6 @@ namespace ft {
   std::string to_upper(std::string s);
   std::string trim_left(std::string str, char c);
   size_t to_hex(std::string &str);
-  size_t strlen(const char *str);
   char *strdup(const char *str);
   std::string unique_char(std::string str);
   int stoi(const std::string &str, std::size_t *pos = 0, int base = 10);

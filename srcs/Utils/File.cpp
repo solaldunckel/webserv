@@ -211,7 +211,7 @@ void File::parse_match() {
     }
     closedir(dir);
   } else {
-    strerror(errno);
+    std::cerr << strerror(errno) << std::endl;
   }
 }
 

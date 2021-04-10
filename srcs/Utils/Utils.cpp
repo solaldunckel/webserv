@@ -22,14 +22,6 @@ bool isValidDirective(std::string const &str) {
 }
 
 namespace ft {
-  void	*memset(void *b, int c, size_t len) {
-    char *s = (char*)b;
-
-    for (size_t i = 0; i < len; i++)
-      s[i] = c;
-    return (b);
-  }
-
   std::string inet_ntop(const void *s) {
     const u_char *src = (const u_char*)s;
     std::ostringstream oss;
