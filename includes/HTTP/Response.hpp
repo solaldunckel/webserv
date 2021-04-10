@@ -28,8 +28,8 @@ class Response {
   int handleMethods();
   void createResponse();
   bool checkAuth();
-  void localization();
-  std::string accept_charset();
+  bool localization(std::vector<std::string> &matches);
+  std::string accept_charset(std::vector<std::string> &matches);
   std::string methodList();
 
   enum Status {
@@ -58,6 +58,7 @@ class Response {
   int status_code_;
   std::string response_;
   std::string body_;
+  std::string charset_;
   std::map<std::string, std::string> headers_;
 };
 
