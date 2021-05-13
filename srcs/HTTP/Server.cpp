@@ -76,7 +76,7 @@ void Server::newConnection(int fd) {
   int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
 
   if (clientFd == -1) {
-    std::cerr << strerror(errno) << std::endl;
+    std::cerr << "ACCEPT FAIL : " << strerror(errno) << std::endl;
     return ;
   }
 
@@ -100,6 +100,8 @@ void Server::clientDisconnect(int fd) {
   FD_CLR(fd, &master_fds_);
   if (fd == max_fd_)
     max_fd_--;
+
+  std::cout << "Client successfully disconnected" << std::endl;
 }
 
 int Server::readData(int fd) {
@@ -118,9 +120,8 @@ int Server::readData(int fd) {
     return -1;
 
   if (nbytes < 0) {
-    std::cerr << strerror(errno) << std::endl;
-    clientDisconnect(fd);
-    return 0;
+    std::cerr << "RECV FAIL : " << strerror(errno) << std::endl;
+    return -1;
   }
 
   std::string buffer(buf, nbytes);
@@ -188,6 +189,6 @@ void Server::run() {
         it++;
       }
     } else if (ret == -1)
-      std::cerr << strerror(errno) << std::endl;
+      std::cerr << "SELECT FAIL : " << strerror(errno) << std::endl;
   }
 }
