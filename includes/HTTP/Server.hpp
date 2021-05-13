@@ -69,6 +69,7 @@ class Server {
   fd_set read_fds_;
   fd_set write_fds_;
   int max_fd_;
+  int max_fd_tmp_;
 };
 
 #endif

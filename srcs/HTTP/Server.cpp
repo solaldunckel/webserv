@@ -94,12 +94,27 @@ void Server::newConnection(int fd) {
 void Server::clientDisconnect(int fd) {
   std::cout << "[Server] Connection closed (" << fd << ")" << std::endl;
 
+  FD_CLR(fd, &master_fds_);
+
+  if (max_fd_ == fd) {
+    std::map<int, Client*>::iterator it = clients_.find(fd);
+
+    std::cout << "MAX FD : " << max_fd_ << std::endl;
+    std::cout << "FD : " << fd << std::endl;
+    std::cout << "CLIENTS : " << clients_.size() << std::endl;
+
+    if (clients_.size() > 1) {
+      it--;
+      max_fd_ = it->first;
+    } else {
+      max_fd_ = max_fd_tmp_;
+    }
+  }
+
   delete clients_[fd];
   clients_.erase(fd);
 
   FD_CLR(fd, &master_fds_);
-  if (fd == max_fd_)
-    max_fd_--;
 
   std::cout << "Client successfully disconnected" << std::endl;
 }
@@ -157,7 +172,7 @@ void Server::run() {
   signal(SIGINT, interruptHandler);
   running_ = true;
   std::cout << "[Server] Starting." << std::endl;
-
+  max_fd_tmp_ = max_fd_;
   while (running_) {
     FD_COPY(&master_fds_, &read_fds_);
     FD_COPY(&master_fds_, &write_fds_);

@@ -51,6 +51,9 @@ int Request::method_line() {
 
     tmp = buffer_.substr(0, buffer_.find(' '));
 
+    if (tmp[0] != '/')
+      return 400;
+
     if (tmp.length() < 100000) {
       target_ = tmp;
       buffer_.erase(0, target_.length() + 1);
@@ -68,7 +71,7 @@ int Request::method_line() {
     size_t end = buffer_.find("\r\n");
     tmp = buffer_.substr(0, end);
 
-    if (tmp == "HTTP/1.1") {
+    if (tmp == "HTTP/1.1" || tmp == "HTTP/1.0") {
       protocol_ = tmp;
       buffer_.erase(0, end + 2);
     } else
@@ -98,8 +101,8 @@ int Request::headers() {
       value = buffer_.substr(last + 1, end - last - 1);
       if (header == "Host" && headers_.count(header))
         return 400;
-      // if (header.length() > 1000 || value.length() > 4000)
-      //   return 400;
+      if (header.length() > 1000 || value.length() > 4000)
+        return 400;
       headers_[header] = ft::trim_left(value, ' ');
     }
     else

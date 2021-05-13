@@ -253,7 +253,7 @@ void Response::createResponse() {
   else
     status_code = ft::to_string(status_code_) + " " + status_[status_code_];
 
-  response_ = response_ + "HTTP/1.1" + " " + status_code + "\r\n";
+  response_ = response_ + config_.getProtocol() + " " + status_code + "\r\n";
 
   headers_["Date"] = ft::get_http_date();
 
