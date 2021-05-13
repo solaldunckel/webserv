@@ -13,6 +13,10 @@ int main(int argc, char **argv) {
     path = argv[1];
   }
 
+  #ifdef BONUS
+    std::cout << "Launched with bonus" << std::endl;
+  #endif
+
   try {
     Config config(path);
 
