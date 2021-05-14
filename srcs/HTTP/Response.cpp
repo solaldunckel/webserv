@@ -134,7 +134,7 @@ int Response::buildErrorPage(int status_code) {
   headers_["Content-Length"] = ft::to_string(body_.length());
   if (status_code == 401)
     headers_["WWW-Authenticate"] = "Basic realm=\"Access to restricted area\"";
-  if (status_code == 408)
+  if (status_code == 408 || status_code == 503)
     headers_["Connection"] = "close";
   return status_code;
 }

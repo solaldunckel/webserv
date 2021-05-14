@@ -4,6 +4,7 @@ Request::Request() {
   body_offset_ = 0;
   chunk_size_ = 0;
   status_ = FIRST_LINE;
+  protocol_ = "HTTP/1.1";
   gettimeofday(&start_timer_, NULL);
 }
 

@@ -22,6 +22,7 @@
 # include "Utils.hpp"
 
 # define MAX_CONNECTION 128
+# define MAX_CLIENT 1000
 # define BUF_SIZE 65536
 
 class webserv_exception : virtual public std::exception {

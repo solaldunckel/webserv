@@ -15,7 +15,7 @@ class Response;
 
 class Client {
  public:
-  Client(int fd, std::string &addr, Listen &host_port);
+  Client(int fd, std::string &addr, Listen &host_port, bool disconnect = false);
   ~Client();
 
   void setupConfig(std::vector<ServerConfig> &servers);
@@ -23,6 +23,7 @@ class Client {
   void clear();
 
   bool timeout();
+  bool disconnect();
 
   int getFd();
   std::string &getAddr();
@@ -35,6 +36,7 @@ class Client {
   int fd_;
   std::string addr_;
   Listen &host_port_;
+  int disconnect_;
   Request *request_;
   RequestConfig *config_;
   Response *response_;

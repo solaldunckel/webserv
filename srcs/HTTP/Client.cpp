@@ -1,6 +1,6 @@
 #include "Client.hpp"
 
-Client::Client(int fd, std::string &addr, Listen &host_port) : fd_(fd), addr_(addr), host_port_(host_port) {
+Client::Client(int fd, std::string &addr, Listen &host_port, bool disconnect) : fd_(fd), addr_(addr), host_port_(host_port), disconnect_(disconnect) {
   request_ = NULL;
   config_ = NULL;
   response_ = NULL;
@@ -22,6 +22,9 @@ void Client::setupConfig(std::vector<ServerConfig> &servers) {
 }
 
 void Client::setupResponse(std::vector<ServerConfig> &servers, int error_code) {
+  if (!request_)
+    request_ = getRequest(true);
+
   if (!config_)
     setupConfig(servers);
 
@@ -36,6 +39,13 @@ bool Client::timeout() {
       if (request_->timeout())
         return true;
     }
+  }
+  return false;
+}
+
+bool Client::disconnect() {
+  if (disconnect_) {
+    return true;
   }
   return false;
 }

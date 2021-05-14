@@ -76,7 +76,7 @@ void Server::newConnection(int fd) {
   int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
 
   if (clientFd == -1) {
-    std::cerr << "ACCEPT FAIL : " << strerror(errno) << std::endl;
+    std::cerr << "accept : " << strerror(errno) << std::endl;
     return ;
   }
 
@@ -84,7 +84,7 @@ void Server::newConnection(int fd) {
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
   std::string client_addr = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
-  clients_[clientFd] = new Client(clientFd, client_addr, running_server_[fd]);
+  clients_[clientFd] = new Client(clientFd, client_addr, running_server_[fd], clients_.size() >= MAX_CLIENT);
 
   FD_SET(clientFd, &master_fds_);
   if (clientFd > max_fd_)
@@ -98,10 +98,6 @@ void Server::clientDisconnect(int fd) {
 
   if (max_fd_ == fd) {
     std::map<int, Client*>::iterator it = clients_.find(fd);
-
-    std::cout << "MAX FD : " << max_fd_ << std::endl;
-    std::cout << "FD : " << fd << std::endl;
-    std::cout << "CLIENTS : " << clients_.size() << std::endl;
 
     if (clients_.size() > 1) {
       it--;
@@ -135,7 +131,7 @@ int Server::readData(int fd) {
     return -1;
 
   if (nbytes < 0) {
-    std::cerr << "RECV FAIL : " << strerror(errno) << std::endl;
+    std::cerr << "recv : " << strerror(errno) << std::endl;
     return -1;
   }
 
@@ -159,11 +155,13 @@ void Server::writeData(int fd) {
 
   if (response) {
     int ret = response->send(fd);
+
     if (ret < 0) {
       clientDisconnect(fd);
       return;
-    } else if (ret == 0)
+    } else if (ret == 0) {
       clients_[fd]->clear();
+    }
   }
 }
 
@@ -174,8 +172,8 @@ void Server::run() {
   std::cout << "[Server] Starting." << std::endl;
   max_fd_tmp_ = max_fd_;
   while (running_) {
-    FD_COPY(&master_fds_, &read_fds_);
-    FD_COPY(&master_fds_, &write_fds_);
+    read_fds_ = master_fds_;
+    write_fds_ = master_fds_;
 
     ret = select(max_fd_ + 1, &read_fds_, &write_fds_, NULL, NULL);
 
@@ -188,7 +186,6 @@ void Server::run() {
       std::map<int, Client*>::iterator it = clients_.begin();
 
       while (it != clients_.end()) {
-
         if (FD_ISSET(it->first, &read_fds_) && readData(it->first) == -1) {
           clientDisconnect(it->first);
           it = clients_.begin();
@@ -198,12 +195,15 @@ void Server::run() {
         if (it->second->timeout())
           it->second->setupResponse(servers_, 408);
 
+        if (it->second->disconnect())
+          it->second->setupResponse(servers_, 503);
+
         if (FD_ISSET(it->first, &write_fds_))
           writeData(it->first);
 
         it++;
       }
     } else if (ret == -1)
-      std::cerr << "SELECT FAIL : " << strerror(errno) << std::endl;
+      std::cerr << "select : " << strerror(errno) << std::endl;
   }
 }

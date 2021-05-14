@@ -6,6 +6,8 @@
 # include <algorithm>
 # include <iostream>
 # include <stdlib.h>
+# include <cstring>
+# include <limits>
 
 namespace ft {
   std::string to_lower(std::string s);
