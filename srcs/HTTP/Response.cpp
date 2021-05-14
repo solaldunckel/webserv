@@ -260,16 +260,14 @@ void Response::createResponse() {
   for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++)
     response_ += it->first + ": " + it->second + "\r\n";
 
-  // #ifdef DEBUG
-  std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
-  // #endif
-
-  response_ += "\r\n";
-
-  if (!body_.empty())
-    response_ += body_;
-
+  // // #ifdef DEBUG
   // std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
+  // // #endif
+
+  // response_ += "\r\n";
+
+  // if (!body_.empty())
+  //   response_ += body_;
 }
 
 int Response::GET() {
@@ -372,7 +370,15 @@ int Response::DELETE() {
 }
 
 int Response::send(int fd) {
+  if (!total_sent_) {
+    response_ += "\r\n";
+
+    if (!body_.empty())
+      response_ += body_;
+  }
+
   int ret = ::send(fd, response_.c_str() + total_sent_, response_.length() - total_sent_, 0);
+
   if (ret < 0) {
     strerror(errno);
     return -1;
@@ -381,4 +387,8 @@ int Response::send(int fd) {
   if (total_sent_ >= response_.length())
     return 0;
   return 1;
+}
+
+void Response::print() {
+  std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
 }

@@ -31,6 +31,7 @@ class Response {
   bool localization(std::vector<std::string> &matches);
   std::string accept_charset(std::vector<std::string> &matches);
   std::string methodList();
+  void print();
 
   enum Status {
     BUILD,

@@ -3,6 +3,7 @@ NAME			= webserv
 SRCS_LIST	= \
 						main.cpp \
 						Config/Config.cpp \
+						Config/InputArgs.cpp \
 						Config/RequestConfig.cpp \
 						Config/ServerConfig.cpp \
 						HTTP/CGI.cpp \

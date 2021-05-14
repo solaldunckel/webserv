@@ -15,6 +15,7 @@
 # include <signal.h>
 # include <cstring>
 
+# include "InputArgs.hpp"
 # include "Client.hpp"
 # include "ServerConfig.hpp"
 # include "Request.hpp"
@@ -25,11 +26,14 @@
 # define MAX_CLIENT 1000
 # define BUF_SIZE 65536
 
+class InputArgs;
+
 class webserv_exception : virtual public std::exception {
  public:
   webserv_exception(std::string msg, int err_num = 0, std::string arg = "") : errno_(err_num) {
     error_msg_ = msg;
-    error_msg_.replace(error_msg_.find('%'), 2, arg);
+    if (error_msg_.find('%') != std::string::npos)
+      error_msg_.replace(error_msg_.find('%'), 1, arg);
     if (errno_) {
       error_msg_ = error_msg_ + " (" + ft::to_string(errno_) + ": " + strerror(errno_) + ")";
     }
@@ -48,7 +52,7 @@ class webserv_exception : virtual public std::exception {
 class Server {
  public:
   // Constructors & Deconstructors
-  Server(std::vector<ServerConfig> &servers);
+  Server(std::vector<ServerConfig> &servers, InputArgs &options);
   ~Server();
 
   void setup();
@@ -64,6 +68,7 @@ class Server {
 
  private:
   std::vector<ServerConfig> &servers_;
+  InputArgs &options_;
   std::map<int, Listen> running_server_;
   std::map<int, Client*> clients_;
   fd_set master_fds_;

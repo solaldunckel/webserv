@@ -9,7 +9,7 @@ static void interruptHandler(int sig_int) {
 	Server::running_ = false;
 }
 
-Server::Server(std::vector<ServerConfig> &servers) : servers_(servers) {
+Server::Server(std::vector<ServerConfig> &servers, InputArgs &options) : servers_(servers), options_(options) {
   FD_ZERO(&master_fds_);
   FD_ZERO(&read_fds_);
   FD_ZERO(&write_fds_);
@@ -46,14 +46,15 @@ void Server::setup() {
         setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
         if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
-          throw webserv_exception("bind() to %s failed", errno, list->ip_ + ":" + ft::to_string(list->port_));
+          throw webserv_exception("bind() to % failed", errno, list->ip_ + ":" + ft::to_string(list->port_));
 
         if (listen(server_fd, MAX_CONNECTION) < 0)
           throw webserv_exception("listen() failed", errno);
 
         running_server_[server_fd] = Listen(list->ip_, list->port_);
 
-        std::cout << "[Webserv] Setup server " << server_fd << " on " << list->ip_ << ":" << list->port_ << std::endl;
+        if (options_.verbose())
+          std::cout << "[Webserv] Setup server " << server_fd << " on " << list->ip_ << ":" << list->port_ << std::endl;
 
         FD_SET(server_fd, &master_fds_);
 
@@ -80,7 +81,8 @@ void Server::newConnection(int fd) {
     return ;
   }
 
-  std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
+  if (options_.verbose())
+    std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
   std::string client_addr = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
@@ -92,7 +94,8 @@ void Server::newConnection(int fd) {
 }
 
 void Server::clientDisconnect(int fd) {
-  std::cout << "[Server] Connection closed (" << fd << ")" << std::endl;
+  if (options_.verbose())
+    std::cout << "[Server] Connection closed (" << fd << ")" << std::endl;
 
   FD_CLR(fd, &master_fds_);
 
@@ -111,8 +114,6 @@ void Server::clientDisconnect(int fd) {
   clients_.erase(fd);
 
   FD_CLR(fd, &master_fds_);
-
-  std::cout << "Client successfully disconnected" << std::endl;
 }
 
 int Server::readData(int fd) {
@@ -139,11 +140,11 @@ int Server::readData(int fd) {
   int ret = req->parse(buffer);
 
   if (ret >= 1) {
-    // #ifdef DEBUG
+    if (options_.verbose())
       req->print();
-    // #endif
-    // std::cout << "HANDLE CLEARED" << std::endl;
     clients_[fd]->setupResponse(servers_, ret);
+    if (options_.verbose())
+      clients_[fd]->getResponse()->print();
   }
   return 0;
 }
@@ -204,7 +205,7 @@ void Server::run() {
 
         it++;
       }
-    } else if (ret == -1 && !running_)
+    } else if (ret == -1 && running_)
       std::cerr << "select : " << strerror(errno) << std::endl;
   }
 }
