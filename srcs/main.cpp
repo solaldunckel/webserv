@@ -1,6 +1,5 @@
 #include "Config.hpp"
 #include "Server.hpp"
-#include <regex.h>
 
 int main(int argc, char **argv) {
   std::string path = "./config/default.conf";

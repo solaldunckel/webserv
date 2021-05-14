@@ -44,9 +44,8 @@ bool Client::timeout() {
 }
 
 bool Client::disconnect() {
-  if (disconnect_) {
+  if (disconnect_)
     return true;
-  }
   return false;
 }
 

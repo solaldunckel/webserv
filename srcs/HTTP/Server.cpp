@@ -171,6 +171,7 @@ void Server::run() {
   running_ = true;
   std::cout << "[Server] Starting." << std::endl;
   max_fd_tmp_ = max_fd_;
+
   while (running_) {
     read_fds_ = master_fds_;
     write_fds_ = master_fds_;
@@ -203,7 +204,7 @@ void Server::run() {
 
         it++;
       }
-    } else if (ret == -1)
+    } else if (ret == -1 && !running_)
       std::cerr << "select : " << strerror(errno) << std::endl;
   }
 }
