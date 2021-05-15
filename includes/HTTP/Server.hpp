@@ -14,6 +14,7 @@
 # include <fcntl.h>
 # include <sys/select.h>
 # include <signal.h>
+# include <semaphore.h>
 
 # include "InputArgs.hpp"
 # include "Client.hpp"
@@ -35,14 +36,16 @@ class Server {
   ~Server();
 
   void setup();
-  void run();
+  void run(int worker_id = 0, sem_t *sem = NULL);
 
   int readData(int fd);
   void writeData(int fd);
   void newConnection(int fd);
   void clientDisconnect(int fd);
+  void closeClient(int fd);
 
   static bool running_;
+  int worker_id_;
 
  private:
   std::vector<ServerConfig> &servers_;

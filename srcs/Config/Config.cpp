@@ -70,6 +70,13 @@ void Config::parse() {
       serv.server(++it);
       servers_.push_back(serv);
     }
+    #ifdef BONUS
+    else if (*it == "workers") {
+      workers_ = ft::stoi(*(++it));
+      if (*++it != ";")
+        throw std::runtime_error("missing ';' in 'workers'");
+    }
+    #endif
     else
       throw webserv_exception("invalid directive % in main block", 0, *it);
   }
@@ -84,6 +91,12 @@ std::string &Config::getPath() {
 std::vector<ServerConfig> &Config::getServers() {
   return servers_;
 }
+
+#ifdef BONUS
+int Config::getWorkers() {
+  return workers_;
+}
+#endif
 
 void Config::print() {
   std::cout << "# configuration file " << path_ << ":\n" << std::endl;

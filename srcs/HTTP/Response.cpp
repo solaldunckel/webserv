@@ -4,7 +4,7 @@
 ** Constructors & Deconstructors
 */
 
-Response::Response(RequestConfig &config, int error_code) : config_(config) {
+Response::Response(RequestConfig &config, int worker_id, int error_code) : config_(config), worker_id_(worker_id) {
   headers_["Server"] = "webserv/1.0";
   error_code_ = error_code;
   status_code_ = 0;
@@ -229,6 +229,7 @@ int Response::handleMethods() {
 
   if (isCGI(file_.getMimeExtension())) {
     CGI cgi(file_, config_, config_.getHeaders(), config_.getBody());
+    cgi.init(worker_id_);
     if ((status_code_ = cgi.execute()) > 400)
       return status_code_;
     cgi.parseHeaders(headers_);

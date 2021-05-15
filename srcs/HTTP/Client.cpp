@@ -1,6 +1,6 @@
 #include "Client.hpp"
 
-Client::Client(int fd, std::string &addr, Listen &host_port, bool disconnect) : fd_(fd), addr_(addr), host_port_(host_port), disconnect_(disconnect) {
+Client::Client(int fd, std::string &addr, Listen &host_port, int worker_id, bool disconnect) : fd_(fd), addr_(addr), host_port_(host_port), worker_id_(worker_id), disconnect_(disconnect) {
   request_ = NULL;
   config_ = NULL;
   response_ = NULL;
@@ -30,7 +30,7 @@ void Client::setupResponse(std::vector<ServerConfig> &servers, InputArgs &option
 
   config_->setup(options);
 
-  response_ = new Response(*config_, error_code);
+  response_ = new Response(*config_, worker_id_, error_code);
 
   ft::delete_(request_);
 }

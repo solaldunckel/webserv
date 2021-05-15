@@ -1,21 +1,17 @@
 #include "CGI.hpp"
 
-std::string const CGI_TMP_PATH = "/tmp/webserv_cgi_tmp_";
-
 CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers) : file_(file), config_(config), req_headers_(req_headers) {
-  init();
   req_body_ = file_.getContent();
 }
 
 CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, ft::comp> &req_headers, std::string &req_body) : file_(file), config_(config), req_headers_(req_headers) {
-  init();
   if (req_body.empty() && config_.getMethod() != "POST")
     req_body_ = file_.getContent();
   else
     req_body_ = req_body;
 }
 
-void CGI::init() {
+void CGI::init(int worker_id) {
   char *cwd = getcwd(NULL, 0);
   if (!cwd) {
     std::cerr << strerror(errno) << std::endl;
@@ -33,7 +29,8 @@ void CGI::init() {
   } else {
     cgi_path_ = cwd_ + "/" + config_.getCGIBin() + "/" + cgi_exe_;
   }
-  tmp_file_.set_path(CGI_TMP_PATH.c_str());
+  std::string cgi_path = "/tmp/webserv_cgi_tmp_" + ft::to_string(worker_id);
+  tmp_file_.set_path(cgi_path.c_str());
   tmp_file_.open(true);
 }
 

@@ -4,8 +4,6 @@ bool Server::running_ = false;
 
 static void interruptHandler(int sig_int) {
   (void)sig_int;
-	std::cout << "\b\b \b\b";
-  std::cout << "[Server] Shutdown." << std::endl;
 	Server::running_ = false;
 }
 
@@ -13,12 +11,11 @@ Server::Server(std::vector<ServerConfig> &servers, InputArgs &options) : servers
   FD_ZERO(&master_fds_);
   FD_ZERO(&read_fds_);
   FD_ZERO(&write_fds_);
+
   setup();
 }
 
 Server::~Server() {
-  for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); it++)
-    it->second->clear();
 }
 
 void Server::setup() {
@@ -76,24 +73,31 @@ void Server::newConnection(int fd) {
   int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
 
   if (clientFd == -1) {
-    std::cerr << "accept : " << strerror(errno) << std::endl;
     return ;
   }
 
-  std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
+  if (worker_id_ > 0)
+    std::cout << "[Worker: " << worker_id_ << "] ";
+  else
+    std::cout << "[Server] ";
+  std::cout << "New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
   std::string client_addr = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
-  clients_[clientFd] = new Client(clientFd, client_addr, running_server_[fd], clients_.size() >= MAX_CLIENT);
+  clients_[clientFd] = new Client(clientFd, client_addr, running_server_[fd], worker_id_, clients_.size() >= MAX_CLIENT);
 
   FD_SET(clientFd, &master_fds_);
   if (clientFd > max_fd_)
     max_fd_ = clientFd;
 }
 
-void Server::clientDisconnect(int fd) {
+void Server::closeClient(int fd) {
   std::cout << "[Server] Connection closed (" << fd << ")" << std::endl;
+  delete clients_[fd];
+  clients_.erase(fd);
+}
 
+void Server::clientDisconnect(int fd) {
   FD_CLR(fd, &master_fds_);
 
   if (max_fd_ == fd) {
@@ -107,8 +111,7 @@ void Server::clientDisconnect(int fd) {
     }
   }
 
-  delete clients_[fd];
-  clients_.erase(fd);
+  closeClient(fd);
 
   FD_CLR(fd, &master_fds_);
 }
@@ -125,13 +128,8 @@ int Server::readData(int fd) {
 
   int nbytes = recv(fd, buf, BUF_SIZE, 0);
 
-  if (nbytes == 0)
+  if (nbytes <= 0)
     return -1;
-
-  if (nbytes < 0) {
-    std::cerr << "recv : " << strerror(errno) << std::endl;
-    return -1;
-  }
 
   std::string buffer(buf, nbytes);
   int ret = req->parse(buffer);
@@ -163,11 +161,22 @@ void Server::writeData(int fd) {
   }
 }
 
-void Server::run() {
+void Server::run(int worker_id, sem_t *sem) {
+  (void)sem;
+
+  worker_id_ = worker_id;
+
   int ret = 0;
+
   signal(SIGINT, interruptHandler);
   running_ = true;
-  std::cout << "[Server] Starting." << std::endl;
+
+  if (worker_id_ > 0)
+    std::cout << "[Worker: " << worker_id_ << "] ";
+  else
+    std::cout << "[Server] ";
+  std::cout << "Starting." << std::endl;
+
   max_fd_tmp_ = max_fd_;
 
   while (running_) {
@@ -178,8 +187,17 @@ void Server::run() {
 
     if (ret > 0) {
       for (std::map<int, Listen>::iterator it = running_server_.begin(); it != running_server_.end(); it++) {
-        if (FD_ISSET(it->first, &read_fds_))
+        #ifdef BONUS
+        if (sem)
+          sem_wait(sem);
+        #endif
+        if (FD_ISSET(it->first, &read_fds_)) {
           newConnection(it->first);
+        }
+        #ifdef BONUS
+        if (sem)
+          sem_post(sem);
+        #endif
       }
 
       std::map<int, Client*>::iterator it = clients_.begin();
@@ -205,4 +223,15 @@ void Server::run() {
     } else if (ret == -1 && running_)
       std::cerr << "select : " << strerror(errno) << std::endl;
   }
+  for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); it++)
+    closeClient(it->first);
+  if (worker_id_ > 0)
+    std::cout << "[Worker: " << worker_id_ << "] ";
+  else
+    std::cout << "[Server] ";
+  std::cout << "Shutdown." << std::endl;
+  #ifdef BONUS
+  if (worker_id_)
+    exit(0);
+  #endif
 }

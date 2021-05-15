@@ -15,7 +15,7 @@ class RequestConfig;
 
 class Response {
  public:
-  Response(RequestConfig &config, int error_code = 0);
+  Response(RequestConfig &config, int worker_id, int error_code = 0);
   ~Response();
 
   typedef int (Response::*type)();
@@ -52,6 +52,7 @@ class Response {
   RequestConfig &config_;
   File file_;
   int error_code_;
+  int worker_id_;
   int redirect_;
   StatusCode status_;
   Status status_send_;
