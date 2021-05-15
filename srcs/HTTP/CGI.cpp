@@ -49,13 +49,13 @@ int CGI::execute() {
   file_path_ = cwd_ + "/" + file_.getPath();
 
   if (chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str()) == -1) {
-    std::cerr << strerror(errno) << std::endl;
     return 500;
   }
 
   #ifdef DEBUG
   std::cout << "CALLING CGI " << cgi_path_ << std::endl;
   #endif
+
   if (!setCGIEnv())
     return 500;
   if (!(argv_[0] = ft::strdup(cgi_path_.c_str())))
@@ -65,6 +65,7 @@ int CGI::execute() {
   argv_[2] = NULL;
 
   int pip[2];
+
   if (pipe(pip) != 0)
     return 500;
 
@@ -78,23 +79,24 @@ int CGI::execute() {
       return 500;
     close(pip[0]);
     execve(argv_[0], argv_, env_);
-    return 502;
+    exit(1);
   }
   else if (pid > 0) {
     close(pip[0]);
     write(pip[1], req_body_.c_str(), req_body_.length());
     close(pip[1]);
-    if (waitpid(pid, NULL, 0) == -1)
+
+    int status;
+
+    if (waitpid(pid, &status, 0) == -1)
       return 500;
-    close(tmp_fd_);
+    if (chdir(cwd_.c_str()) == -1)
+      return 500;
+    if (WIFEXITED(status) && WEXITSTATUS(status))
+      return 502;
   }
   else {
-    std::cerr << strerror(errno) << std::endl;
     return 502;
-  }
-  if (chdir(cwd_.c_str()) == -1) {
-    std::cerr << strerror(errno) << std::endl;
-    return 500;
   }
 
   body_ = tmp_file_.getContent();

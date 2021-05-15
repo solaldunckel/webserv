@@ -8,6 +8,8 @@ int main(int argc, char **argv) {
     std::cout << "Launched with bonus" << std::endl;
   #endif
 
+  // int num_workers = 4;
+
   try {
     InputArgs options(argc, argv);
 
@@ -30,6 +32,17 @@ int main(int argc, char **argv) {
     config.clear();
 
     Server serv(config.getServers(), options);
+
+    // std::vector<pid_t> workers(num_workers);
+
+    // for (int i = 0; i < num_workers; i++) {
+    //   pid_t pid = fork();
+
+    //   if (pid == 0) {
+    //     serv.run(i + 1);
+    //   }
+    //   workers[i] = pid;
+    // }
 
     serv.run();
   }

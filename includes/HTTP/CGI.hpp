@@ -37,7 +37,6 @@ class CGI {
   std::string body_;
   std::string req_body_;
   File tmp_file_;
-  int tmp_fd_;
   std::map<std::string, std::string> cgi_env_;
   char **env_;
   char *argv_[3];
