@@ -8,27 +8,24 @@ RequestConfig::RequestConfig(Request &request, Listen &host_port, std::vector<Se
   request_(request),
   host_port_(host_port),
   servers_(servers),
-  client_(client)
-{
-  setup();
-}
+  client_(client) {}
 
 RequestConfig::~RequestConfig() {
 }
 
-void RequestConfig::setup() {
+void RequestConfig::setup(InputArgs &options) {
   ServerConfig *server = getServerForRequest(servers_);
   ServerConfig *location = NULL;
 
   if (request_.getStatus() > 2)
     location = getLocationForRequest(server, request_.target_);
 
-  #ifdef DEBUG
-  if (location)
-    std::cout << "MATCHING LOCATION " << location->uri_ << std::endl;
-  else
-    std::cout << "NO MATCHING LOCATION" << std::endl;
-  #endif
+  if (options.verbose()) {
+    if (location)
+      std::cout << "MATCHING LOCATION " << location->uri_ << std::endl;
+    else
+      std::cout << "NO MATCHING LOCATION" << std::endl;
+  }
 
   server_ = server;
   location_ = server;
@@ -37,7 +34,7 @@ void RequestConfig::setup() {
 
   if (location) {
     location_ = location;
-    if (request_.target_.find(location->uri_) != std::string::npos)
+    if (!options.location() && request_.target_.find(location->uri_) != std::string::npos)
       target_.erase(0, location_->uri_.length());
   }
 }
@@ -82,10 +79,8 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
     std::vector<std::string> server_names = (*it)->getServerNames();
 
     for (std::vector<std::string>::iterator server_name = server_names.begin(); server_name != server_names.end(); server_name++) {
-      if (host == *server_name) {
-        std::cout << "MATCHED SERVER BY SERVER NAME : " << *server_name << std::endl;
+      if (host == *server_name)
         return *it;
-      }
     }
   }
 
@@ -93,8 +88,10 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
   return matching_servers.front();
 }
 
+#ifdef BONUS
+
 ServerConfig *RequestConfig::match_regexp(std::vector<ServerConfig*> &locations, std::string &target) {
-  regex_t test;
+  regex_t reg;
 
   for (std::vector<ServerConfig*>::iterator it = locations.begin(); it != locations.end(); it++) {
     int flag = REG_NOSUB | REG_EXTENDED;
@@ -102,17 +99,19 @@ ServerConfig *RequestConfig::match_regexp(std::vector<ServerConfig*> &locations,
     if ((*it)->modifier_ == 3)
       flag |= REG_ICASE;
 
-    int err = regcomp(&test, (*it)->uri_.c_str(), flag);
+    int err = regcomp(&reg, (*it)->uri_.c_str(), flag);
 
     if (err == 0) {
-      int match = regexec(&test, target.c_str(), 0, NULL, 0);
-      regfree(&test);
+      int match = regexec(&reg, target.c_str(), 0, NULL, 0);
+      regfree(&reg);
       if (match == 0)
         return *it;
     }
   }
   return NULL;
 }
+
+#endif
 
 ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::string &target) {
   ServerConfig *location = NULL;

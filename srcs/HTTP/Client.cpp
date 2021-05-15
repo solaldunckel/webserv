@@ -21,12 +21,14 @@ void Client::setupConfig(std::vector<ServerConfig> &servers) {
   config_ = new RequestConfig(*request_, host_port_, servers, *this);
 }
 
-void Client::setupResponse(std::vector<ServerConfig> &servers, int error_code) {
+void Client::setupResponse(std::vector<ServerConfig> &servers, InputArgs &options, int error_code) {
   if (!request_)
     request_ = getRequest(true);
 
   if (!config_)
     setupConfig(servers);
+
+  config_->setup(options);
 
   response_ = new Response(*config_, error_code);
 

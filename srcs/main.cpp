@@ -13,15 +13,21 @@ int main(int argc, char **argv) {
 
     options.parse();
 
-    if (options.help())
+    if (options.help()) {
+      std::cout << options.helpText() << std::endl;
       return 0;
+    }
 
     Config config(options.getPath());
 
     config.parse();
 
-    if (options.verbose())
+    if (options.test()) {
       config.print();
+      return 0;
+    }
+
+    config.clear();
 
     Server serv(config.getServers(), options);
 

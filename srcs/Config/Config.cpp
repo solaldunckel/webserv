@@ -1,11 +1,23 @@
 #include "Config.hpp"
 
-Config::Config(std::string &path) : file_(path.c_str()) {
-  if (!file_.is_open() || !file_.good())
-    throw std::runtime_error("could not open config file");
+Config::Config(std::string &path) : path_(path) {
+  fd_ = open(path_.c_str(), O_RDONLY);
+  if (fd_ < 0)
+    throw webserv_exception("could not open configuration file : %", 0, path_);
 }
 
-Config::~Config() {}
+Config::~Config() {
+  clear();
+}
+
+void Config::clear() {
+  if (fd_ > 0) {
+    close(fd_);
+    fd_ = 0;
+  }
+  tokens_.clear();
+  file_content_.clear();
+}
 
 void Config::tokenize() {
   std::string line, tmp;
@@ -13,23 +25,26 @@ void Config::tokenize() {
   std::stack<bool> brackets;
 
   int line_idx = 1;
+  char *line_c;
 
-  while (std::getline(file_, line)) {
+  while (get_next_line(fd_, &line_c)) {
+    line = line_c;
+    file_content_ += line + "\n";
     last = 0;
     while ((first = line.find_first_not_of(" \t", last)) != std::string::npos) {
       if (line[first] == '#')
-          break;
+        break;
       last = line.find_first_of(" \t", first);
       tmp = line.substr(first, last - first);
       if (tmp == "{")
         brackets.push(true);
       else if (tmp == "}") {
         if (brackets.empty())
-          throw std::runtime_error("extra closing '}' on line " + ft::to_string(line_idx));
+          throw webserv_exception("extra closing '}' on line %", 0, ft::to_string(line_idx));
         brackets.pop();
       }
       if (isValidDirective(tmp) && line[line.find_last_not_of(" \t", line.length())] != ';')
-        throw std::runtime_error("missing ';' on line " + ft::to_string(line_idx));
+        throw webserv_exception("missing ';' on line %", 0, ft::to_string(line_idx));
       if (tmp.find(';', tmp.length() - 1) != std::string::npos) {
         tmp.erase(tmp.length() - 1, 1);
         tokens_.push_back(tmp);
@@ -39,8 +54,9 @@ void Config::tokenize() {
         tokens_.push_back(tmp);
     }
     line_idx++;
+    free(line_c);
   }
-  file_.close();
+  free(line_c);
 }
 
 void Config::parse() {
@@ -55,11 +71,14 @@ void Config::parse() {
       servers_.push_back(serv);
     }
     else
-      throw std::runtime_error("invalid directive '" + *it + "' in main block");
+      throw webserv_exception("invalid directive % in main block", 0, *it);
   }
   if (servers_.empty())
-    throw std::runtime_error("missing server block");
-  tokens_.clear();
+    throw webserv_exception("missing server block");
+}
+
+std::string &Config::getPath() {
+  return path_;
 }
 
 std::vector<ServerConfig> &Config::getServers() {
@@ -67,10 +86,6 @@ std::vector<ServerConfig> &Config::getServers() {
 }
 
 void Config::print() {
-  std::cout << "### CONFIG :\n" << std::endl;
-  for (std::vector<ServerConfig>::iterator it = servers_.begin(); it != servers_.end(); it++) {
-    it->print();
-    std::cout << std::endl;
-  }
-  std::cout << "###\n" << std::endl;
+  std::cout << "# configuration file " << path_ << ":\n" << std::endl;
+  std::cout << file_content_ << std::endl;
 }

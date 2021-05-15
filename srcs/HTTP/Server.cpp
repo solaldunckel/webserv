@@ -53,8 +53,7 @@ void Server::setup() {
 
         running_server_[server_fd] = Listen(list->ip_, list->port_);
 
-        if (options_.verbose())
-          std::cout << "[Webserv] Setup server " << server_fd << " on " << list->ip_ << ":" << list->port_ << std::endl;
+        std::cout << "[Server] Listening on " << list->ip_ << ":" << list->port_ << std::endl;
 
         FD_SET(server_fd, &master_fds_);
 
@@ -81,8 +80,7 @@ void Server::newConnection(int fd) {
     return ;
   }
 
-  if (options_.verbose())
-    std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
+  std::cout << "[Server] New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
   std::string client_addr = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
@@ -94,8 +92,7 @@ void Server::newConnection(int fd) {
 }
 
 void Server::clientDisconnect(int fd) {
-  if (options_.verbose())
-    std::cout << "[Server] Connection closed (" << fd << ")" << std::endl;
+  std::cout << "[Server] Connection closed (" << fd << ")" << std::endl;
 
   FD_CLR(fd, &master_fds_);
 
@@ -142,7 +139,7 @@ int Server::readData(int fd) {
   if (ret >= 1) {
     if (options_.verbose())
       req->print();
-    clients_[fd]->setupResponse(servers_, ret);
+    clients_[fd]->setupResponse(servers_, options_, ret);
     if (options_.verbose())
       clients_[fd]->getResponse()->print();
   }
@@ -195,10 +192,10 @@ void Server::run() {
         }
 
         if (it->second->timeout())
-          it->second->setupResponse(servers_, 408);
+          it->second->setupResponse(servers_, options_, 408);
 
         if (it->second->disconnect())
-          it->second->setupResponse(servers_, 503);
+          it->second->setupResponse(servers_, options_, 503);
 
         if (FD_ISSET(it->first, &write_fds_))
           writeData(it->first);

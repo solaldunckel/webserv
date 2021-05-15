@@ -2,8 +2,9 @@
 # define INPUTARGS_HPP
 
 # include <string>
+# include <map>
 
-# include "Server.hpp"
+# include "Utils.hpp"
 
 class InputArgs {
   public:
@@ -15,13 +16,14 @@ class InputArgs {
     std::string &getPath();
     bool verbose();
     bool help();
+    bool test();
+    bool location();
 
   private:
     int argc_;
     char **argv_;
-    bool verbose_;
-    bool help_;
     std::string path_;
+    std::map<std::string, bool> options_;
 };
 
 #endif

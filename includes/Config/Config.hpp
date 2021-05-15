@@ -3,10 +3,13 @@
 
 # include <iostream>
 # include <string>
-# include <fstream>
 # include <vector>
 # include <stack>
 
+# include <fcntl.h>
+
+# include "get_next_line.hpp"
+# include "Server.hpp"
 # include "ServerConfig.hpp"
 # include "StringUtils.hpp"
 # include "Utils.hpp"
@@ -18,13 +21,17 @@ class Config {
 
   void tokenize();
   void parse();
+  void clear();
 
   std::vector<ServerConfig> &getServers();
+  std::string &getPath();
 
   void print();
 
  private:
-  std::ifstream file_;
+  std::string path_;
+  int fd_;
+  std::string file_content_;
   std::vector<std::string> tokens_;
   std::vector<ServerConfig> servers_;
 };

@@ -1,6 +1,11 @@
 # include "InputArgs.hpp"
 
-InputArgs::InputArgs(int argc, char **argv) : argc_(argc), argv_(argv), verbose_(false), help_(false), path_("./config/default.conf") {}
+InputArgs::InputArgs(int argc, char **argv) : argc_(argc), argv_(argv), path_("./config/default.conf") {
+  options_["v"];
+  options_["h"];
+  options_["t"];
+  options_["u"];
+}
 
 InputArgs::~InputArgs() {};
 
@@ -11,16 +16,10 @@ void InputArgs::parse() {
     if (arg.find('-') == 0) {
       std::string opt = arg.substr(arg.find('-') + 1);
 
-      if (opt == "v" || opt == "-verbose") {
-        verbose_ = true;
-      } else if (opt == "h" || opt == "-help") {
-        help_ = true;
-        std::cout << helpText() << std::endl;
-        return;
-      }
+      if (options_.find(opt) != options_.end())
+        options_[opt] = true;
       else
         throw webserv_exception("invalid option -%\n\n" + helpText(), 0, opt);
-
     } else {
       path_ = arg;
       if (i != argc_ - 1)
@@ -32,22 +31,32 @@ void InputArgs::parse() {
 std::string InputArgs::helpText() {
   std::string text = "";
 
-  text += "Usage:\n   webserv [options] [config_file]\n";
+  text += "Usage: webserv [options] [config_file]\n";
   text += "\nOptions: \n";
-  text += "   -v, --verbose     VERBOSE, print response/requests status\n";
-  text += "   -h, --help        HELP, print help text";
+  text += "  -h        : this help text\n";
+  text += "  -v        : print response/requests status\n";
+  text += "  -t        : test config and exit\n";
+  text += "  -u        : keep location uri on rooting (similar to nginx)";
 
   return text;
-}
-
-bool InputArgs::help() {
-  return help_;
 }
 
 std::string &InputArgs::getPath() {
   return path_;
 }
 
+bool InputArgs::help() {
+  return options_["h"];
+}
+
 bool InputArgs::verbose() {
-  return verbose_;
+  return options_["v"];
+}
+
+bool InputArgs::test() {
+  return options_["t"];
+}
+
+bool InputArgs::location() {
+  return options_["u"];
 }

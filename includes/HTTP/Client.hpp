@@ -3,6 +3,7 @@
 
 # include <iostream>
 
+# include "InputArgs.hpp"
 # include "Request.hpp"
 # include "RequestConfig.hpp"
 # include "ServerConfig.hpp"
@@ -11,6 +12,7 @@
 # define TIMEOUT 60
 
 class RequestConfig;
+class InputArgs;
 class Response;
 
 class Client {
@@ -19,7 +21,7 @@ class Client {
   ~Client();
 
   void setupConfig(std::vector<ServerConfig> &servers);
-  void setupResponse(std::vector<ServerConfig> &servers, int error_code = 0);
+  void setupResponse(std::vector<ServerConfig> &servers, InputArgs &options, int error_code = 0);
   void clear();
 
   bool timeout();

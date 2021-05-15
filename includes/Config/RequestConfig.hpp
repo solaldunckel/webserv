@@ -3,12 +3,14 @@
 
 # include <regex.h>
 
+# include "InputArgs.hpp"
 # include "Client.hpp"
 # include "Request.hpp"
 # include "StringUtils.hpp"
 # include "Utils.hpp"
 
 class Client;
+class InputArgs;
 class Request;
 class ServerConfig;
 struct Listen;
@@ -18,7 +20,7 @@ class RequestConfig {
   RequestConfig(Request &request, Listen &host_port, std::vector<ServerConfig> &servers, Client &client);
   ~RequestConfig();
 
-  void setup();
+  void setup(InputArgs &options);
 
   ServerConfig *getServerForRequest(std::vector<ServerConfig> &servers);
   ServerConfig *getLocationForRequest(ServerConfig *server, std::string &target);

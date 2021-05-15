@@ -13,6 +13,7 @@ SRCS_LIST	= \
 						HTTP/Server.cpp \
 						Utils/Base64.cpp \
 						Utils/File.cpp \
+						Utils/get_next_line.cpp \
 						Utils/MimeTypes.cpp \
 						Utils/StatusCode.cpp \
 						Utils/StringUtils.cpp \

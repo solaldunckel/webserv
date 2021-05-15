@@ -299,10 +299,8 @@ int Response::POST() {
       dir.unlink();
     }
 
-    if (!dir.exists()) {
-      if (mkdir(dir.getPath().c_str(), 0755))
-        perror("/tmp/blah");
-    }
+    if (!dir.exists())
+      mkdir(dir.getPath().c_str(), 0755);
     file_.set_path(config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget());
     path = config_.getUri() + "/" + config_.getUpload() + config_.getTarget();
   }
@@ -333,10 +331,8 @@ int Response::PUT() {
       dir.unlink();
     }
 
-    if (!dir.exists()) {
-      if (mkdir(dir.getPath().c_str(), 0755))
-        perror("/tmp/blah");
-    }
+    if (!dir.exists())
+      mkdir(dir.getPath().c_str(), 0755);
     file_.set_path(config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget());
   }
 
