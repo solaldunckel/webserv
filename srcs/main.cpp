@@ -2,6 +2,10 @@
 #include "Config.hpp"
 #include "Server.hpp"
 
+void catch_sigint(int sig) {
+  (void)sig;
+}
+
 int main(int argc, char **argv) {
 
   #ifdef BONUS
@@ -38,20 +42,26 @@ int main(int argc, char **argv) {
       sem_unlink("/SEM_WEBSERV");
       sem_t *sem = sem_open("/SEM_WEBSERV", O_CREAT, S_IRWXU, 1);
 
+      signal(SIGINT, catch_sigint);
+
       for (int i = 0; i < config.getWorkers(); i++) {
         pid_t pid = fork();
 
-        if (pid == 0)
+        if (pid == 0) {
           serv.run(i + 1, sem);
-        workers[i] = pid;
+          exit(0);
+        }
+        else if (pid == -1) {
+          std::cout << strerror(errno) << std::endl;
+          return 1;
+        }
+        else
+          workers[i] = pid;
       }
-
-      int status = 0;
-      if (waitpid(-1, &status, 0) < 0 || ((WIFEXITED(status)
-          || WIFSIGNALED(status)) && status != 0)) {
-        for (int i = 0; i < config.getWorkers(); i++)
-          kill(workers[i], 0);
-      }
+      wait(NULL);
+      for (std::vector<pid_t>::iterator it = workers.begin(); it != workers.end(); it++)
+        kill(*it, SIGINT);
+      sem_close(sem);
     } else {
       serv.run();
     }

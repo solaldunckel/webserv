@@ -88,9 +88,11 @@ void Server::newConnection(int fd) {
 }
 
 void Server::closeClient(int fd) {
-  print("Connection closed");
-  delete clients_[fd];
-  clients_.erase(fd);
+  if (clients_.find(fd) != clients_.end()) {
+    print("Connection closed");
+    delete clients_[fd];
+    clients_.erase(fd);
+  }
 }
 
 void Server::clientDisconnect(int fd) {
@@ -158,15 +160,17 @@ void Server::writeData(int fd) {
 }
 
 void Server::run(int worker_id, sem_t *sem) {
-  (void)sem;
-
   worker_id_ = worker_id;
 
   int ret = 0;
 
+  #ifdef BONUS
   signal(SIGINT, interruptHandler);
-  running_ = true;
+  #else
+  signal(SIGINT, interruptHandler);
+  #endif
 
+  running_ = true;
   print("Starting");
 
   max_fd_tmp_ = max_fd_;
@@ -178,18 +182,19 @@ void Server::run(int worker_id, sem_t *sem) {
     ret = select(max_fd_ + 1, &read_fds_, &write_fds_, NULL, NULL);
 
     if (ret > 0) {
-      if (sem)
-        sem_wait(sem);
+      // if (sem)
+      //   sem_wait(sem);
       for (std::map<int, Listen>::iterator it = running_server_.begin(); it != running_server_.end(); it++) {
         if (FD_ISSET(it->first, &read_fds_)) {
           newConnection(it->first);
-          #ifdef BONUS
-          break;
-          #endif
+          if (sem) {
+            usleep(500);
+            break ;
+          }
         }
       }
-      if (sem)
-        sem_post(sem);
+      // if (sem)
+      //   sem_post(sem);
 
       std::map<int, Client*>::iterator it = clients_.begin();
 

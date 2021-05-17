@@ -37,6 +37,25 @@ int Request::parse(std::string &buffer) {
   return ret;
 }
 
+bool check_validity(std::string &uri) {
+  int count = 0;
+
+  std::string tmp = uri;
+
+  while (tmp.find('/') != std::string::npos) {
+    tmp = tmp.substr(tmp.find('/') + 1);
+    if (tmp.empty())
+      break;
+    std::string tmp2 = tmp.substr(0, tmp.find('/'));
+
+    if (tmp2.find("..", 0) != std::string::npos)
+      count--;
+    else
+      count++;
+  }
+  return count >= 0;
+}
+
 int Request::method_line() {
   if (buffer_.find("\r\n") != std::string::npos) {
     std::string tmp = buffer_.substr(0, buffer_.find(' '));
@@ -54,6 +73,9 @@ int Request::method_line() {
 
     if (tmp[0] != '/')
       return 400;
+
+    if (!check_validity(tmp))
+      return 403;
 
     if (tmp.length() < 100000) {
       target_ = tmp;

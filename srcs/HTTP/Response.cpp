@@ -38,7 +38,7 @@ bool Response::localization(std::vector<std::string> &matches){
     std::string str = all.substr(0, all.find_first_of(" ,;\0"));
     new_matches.clear();
     if (str.find("*") == std::string::npos){
-      for(std::vector<std::string>::iterator it = matches.begin() ; it != matches.end() ; it++)
+      for (std::vector<std::string>::iterator it = matches.begin() ; it != matches.end() ; it++)
         if (it->find("." + str) != std::string::npos)
           new_matches.push_back(*it);
     }
@@ -46,7 +46,7 @@ bool Response::localization(std::vector<std::string> &matches){
       new_matches = matches;
     if (!new_matches.empty() && (q > max)) {
       select_matches = new_matches;
-      if(str[0] != '*')
+      if (str[0] != '*')
         headers_["Content-Language"] = str;
       max = q;
     }
@@ -166,8 +166,6 @@ void Response::build() {
 
   file_.set_path(config_.getRoot() + "/" + config_.getTarget());
 
-  if (!file_.authorized())
-    error_code_ = 401;
   if (error_code_ > 1)
     status_code_ = error_code_;
   else if (!config_.methodAccepted(method)) {
@@ -207,21 +205,24 @@ int Response::handleMethods() {
         return 404;
       file_.parse_match();
       std::vector<std::string> &matches = file_.getMatches();
-      if (!config_.getHeader("Accept-Language").empty()){
+
+      if (!config_.getHeader("Accept-Language").empty()) {
         if (localization(matches)){
           if (matches.size() > 1)
-            return (300);
+            return 300;
           else
-            std::cout << path.substr(0, path.find_last_of("/") + 1) + matches.front() << std::endl;
+            file_.set_path(path.substr(0, path.find_last_of("/") + 1) + matches.front());
         }
       }
+
       if (!config_.getHeader("Accept-Charset").empty()){
         charset_ = accept_charset(matches);
         if (matches.size() > 1)
-          return (300);
+          return 300;
         else
-          std::cout << path.substr(0, path.find_last_of("/") + 1) + matches.front() << std::endl;
+          file_.set_path(path.substr(0, path.find_last_of("/") + 1) + matches.front());
       }
+
       if (!file_.open())
         return 403;
 
@@ -335,10 +336,8 @@ int Response::PUT() {
     headers_["Content-Length"] = "0";
     status_code = 201;
   }
-  else {
-    file_.unlink();
+  else
     file_.create(config_.getBody());
-  }
   headers_["Location"] = ft::unique_char(config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget());
   return status_code;
 }

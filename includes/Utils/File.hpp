@@ -41,7 +41,6 @@ class File {
   void unlink();
   void set_path(std::string path);
   bool is_directory();
-  bool authorized();
   std::string last_modified();
   bool exists();
   bool exists(std::string &path);

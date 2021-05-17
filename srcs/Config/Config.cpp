@@ -76,6 +76,8 @@ void Config::parse() {
     #ifdef BONUS
     else if (*it == "workers") {
       workers_ = ft::stoi(*(++it));
+      if (workers_ > 16 || workers_ < 0)
+        throw std::runtime_error("workers must be between [0-16]range");
       if (*++it != ";")
         throw std::runtime_error("missing ';' in 'workers'");
     }

@@ -25,21 +25,6 @@ bool File::open(bool create) {
   return fd_ > 0;
 }
 
-bool File::authorized() {
-  char *rl_path_c = realpath(path_.c_str(), NULL);
-  char *cwd_c = getcwd(NULL, 0);
-
-  std::string rl_path = rl_path_c;
-  std::string cwd = cwd_c;
-
-  free(rl_path_c);
-  free(cwd_c);
-
-  if (rl_path.find(cwd) != 0)
-    return false;
-  return true;
-}
-
 void File::close() {
   if (fd_ > 0)
     ::close(fd_);
@@ -54,13 +39,17 @@ void File::create(std::string &body) {
 void File::append(std::string &body) {
   close();
   fd_ = ::open(path_.c_str(), O_RDWR | O_APPEND, 755);
+  if (fd_ < 0)
+    return ;
   if (write(fd_, body.c_str(), body.length()) == -1)
-    std::cerr << "append : " << strerror(errno) << std::endl;
+    std::cerr << "append : " << strerror(errno) << " of " << path_ << std::endl;
 }
 
 void File::unlink() {
+  if (!exists())
+    return ;
   if (::unlink(path_.c_str()) == -1)
-    std::cerr << "unlink : " << strerror(errno) << std::endl;
+    std::cerr << "unlink : " << strerror(errno) << " of " << path_ << std::endl;
 }
 
 std::string set_width(size_t width, std::string str) {
@@ -179,8 +168,9 @@ std::string File::find_index(std::vector<std::string> &indexes) {
     while ((ent = readdir(dir))) {
       for (std::vector<std::string>::iterator it = indexes.begin(); it != indexes.end(); it++) {
         if (*it == ent->d_name) {
+          std::string ret = "/" + std::string(ent->d_name);
           closedir(dir);
-          return "/" + std::string(ent->d_name);
+          return ret;
         }
       }
     }
