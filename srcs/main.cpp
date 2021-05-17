@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
       std::vector<pid_t> workers(config.getWorkers());
 
       sem_unlink("/SEM_WEBSERV");
-      sem_t *sem = sem_open("/SEM_WEBSERV", O_CREAT | O_EXCL, S_IRWXU, 1);
+      sem_t *sem = sem_open("/SEM_WEBSERV", O_CREAT, S_IRWXU, 1);
 
       for (int i = 0; i < config.getWorkers(); i++) {
         pid_t pid = fork();

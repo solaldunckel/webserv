@@ -25,6 +25,21 @@ bool File::open(bool create) {
   return fd_ > 0;
 }
 
+bool File::authorized() {
+  char *rl_path_c = realpath(path_.c_str(), NULL);
+  char *cwd_c = getcwd(NULL, 0);
+
+  std::string rl_path = rl_path_c;
+  std::string cwd = cwd_c;
+
+  free(rl_path_c);
+  free(cwd_c);
+
+  if (rl_path.find(cwd) != 0)
+    return false;
+  return true;
+}
+
 void File::close() {
   if (fd_ > 0)
     ::close(fd_);
@@ -32,7 +47,7 @@ void File::close() {
 
 void File::create(std::string &body) {
   if (!open(true) || write(fd_, body.c_str(), body.length()) == -1) {
-    std::cerr << strerror(errno) << std::endl;
+    std::cerr << "create : " << strerror(errno) << std::endl;
   }
 }
 
@@ -40,12 +55,12 @@ void File::append(std::string &body) {
   close();
   fd_ = ::open(path_.c_str(), O_RDWR | O_APPEND, 755);
   if (write(fd_, body.c_str(), body.length()) == -1)
-    std::cerr << strerror(errno) << std::endl;
+    std::cerr << "append : " << strerror(errno) << std::endl;
 }
 
 void File::unlink() {
   if (::unlink(path_.c_str()) == -1)
-    std::cerr << strerror(errno) << std::endl;
+    std::cerr << "unlink : " << strerror(errno) << std::endl;
 }
 
 std::string set_width(size_t width, std::string str) {

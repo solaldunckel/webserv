@@ -25,7 +25,7 @@ SRCS				= $(addprefix ${SRCS_FOLDER}/, ${SRCS_LIST})
 
 OBJS				= ${SRCS:.cpp=.o}
 
-INCLUDES		= -I includes/Config -I includes/Utils -I includes/HTTP
+INCLUDES		= -I includes/Config -I includes/Utils -I includes/HTTP -pthread
 
 CC					= clang++
 CFLAGS 			= -Wall -Wextra -Werror -std=c++98

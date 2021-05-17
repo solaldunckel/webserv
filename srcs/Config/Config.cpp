@@ -1,6 +1,9 @@
 #include "Config.hpp"
 
 Config::Config(std::string &path) : path_(path) {
+  #ifdef BONUS
+  workers_ = 0;
+  #endif
   fd_ = open(path_.c_str(), O_RDONLY);
   if (fd_ < 0)
     throw webserv_exception("could not open configuration file : %", 0, path_);

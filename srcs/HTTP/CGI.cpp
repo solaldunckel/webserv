@@ -13,10 +13,8 @@ CGI::CGI(File &file, RequestConfig &config, std::map<std::string, std::string, f
 
 void CGI::init(int worker_id) {
   char *cwd = getcwd(NULL, 0);
-  if (!cwd) {
-    std::cerr << strerror(errno) << std::endl;
+  if (!cwd)
     return ;
-  }
   cwd_ = cwd;
   free(cwd);
 

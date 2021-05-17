@@ -72,15 +72,11 @@ void Server::newConnection(int fd) {
 
   int clientFd = accept(fd, (struct sockaddr *)&their_addr, &addr_size);
 
-  if (clientFd == -1) {
+  if (clientFd == -1)
     return ;
-  }
 
-  if (worker_id_ > 0)
-    std::cout << "[Worker: " << worker_id_ << "] ";
-  else
-    std::cout << "[Server] ";
-  std::cout << "New client " << clientFd << " on " << running_server_[fd].ip_ << ":" << running_server_[fd].port_ << std::endl;
+  print("New connection on " + ft::to_string(running_server_[fd].ip_) + ":" + ft::to_string(running_server_[fd].port_));
+
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
   std::string client_addr = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
@@ -92,7 +88,7 @@ void Server::newConnection(int fd) {
 }
 
 void Server::closeClient(int fd) {
-  std::cout << "[Server] Connection closed (" << fd << ")" << std::endl;
+  print("Connection closed");
   delete clients_[fd];
   clients_.erase(fd);
 }
@@ -171,11 +167,7 @@ void Server::run(int worker_id, sem_t *sem) {
   signal(SIGINT, interruptHandler);
   running_ = true;
 
-  if (worker_id_ > 0)
-    std::cout << "[Worker: " << worker_id_ << "] ";
-  else
-    std::cout << "[Server] ";
-  std::cout << "Starting." << std::endl;
+  print("Starting");
 
   max_fd_tmp_ = max_fd_;
 
@@ -186,19 +178,18 @@ void Server::run(int worker_id, sem_t *sem) {
     ret = select(max_fd_ + 1, &read_fds_, &write_fds_, NULL, NULL);
 
     if (ret > 0) {
+      if (sem)
+        sem_wait(sem);
       for (std::map<int, Listen>::iterator it = running_server_.begin(); it != running_server_.end(); it++) {
-        #ifdef BONUS
-        if (sem)
-          sem_wait(sem);
-        #endif
         if (FD_ISSET(it->first, &read_fds_)) {
           newConnection(it->first);
+          #ifdef BONUS
+          break;
+          #endif
         }
-        #ifdef BONUS
-        if (sem)
-          sem_post(sem);
-        #endif
       }
+      if (sem)
+        sem_post(sem);
 
       std::map<int, Client*>::iterator it = clients_.begin();
 
@@ -223,15 +214,26 @@ void Server::run(int worker_id, sem_t *sem) {
     } else if (ret == -1 && running_)
       std::cerr << "select : " << strerror(errno) << std::endl;
   }
-  for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); it++)
-    closeClient(it->first);
-  if (worker_id_ > 0)
-    std::cout << "[Worker: " << worker_id_ << "] ";
-  else
-    std::cout << "[Server] ";
-  std::cout << "Shutdown." << std::endl;
+
+  std::map<int, Client*>::iterator it = clients_.begin();
+
+  while (it != clients_.end()) {
+    std::map<int, Client*>::iterator tmp = it++;
+    closeClient(tmp->first);
+  }
+
+  print("Shutdown");
+
   #ifdef BONUS
   if (worker_id_)
     exit(0);
   #endif
+}
+
+void Server::print(std::string str) {
+  if (worker_id_ > 0)
+    std::cout << "[Worker: " << worker_id_ << "] ";
+  else
+    std::cout << "[Server] ";
+  std::cout << str << std::endl;
 }

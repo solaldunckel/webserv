@@ -142,8 +142,8 @@ int Response::buildErrorPage(int status_code) {
 bool Response::checkAuth() {
   if (config_.getHeader("Authorization").empty())
     return false;
-  std::string aut_cred = config_.getHeader("Authorization");
-  std::string token = ft::b64decode(aut_cred.substr(aut_cred.find(' ') + 1));
+  std::string auth_cred = config_.getHeader("Authorization");
+  std::string token = ft::b64decode(auth_cred.substr(auth_cred.find(' ') + 1));
   return (token == config_.getAuth());
 }
 
@@ -166,6 +166,8 @@ void Response::build() {
 
   file_.set_path(config_.getRoot() + "/" + config_.getTarget());
 
+  if (!file_.authorized())
+    error_code_ = 401;
   if (error_code_ > 1)
     status_code_ = error_code_;
   else if (!config_.methodAccepted(method)) {
@@ -260,15 +262,6 @@ void Response::createResponse() {
 
   for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++)
     response_ += it->first + ": " + it->second + "\r\n";
-
-  // // #ifdef DEBUG
-  // std::cout << "\n-> RESPONSE <-\n" << response_ << std::endl;
-  // // #endif
-
-  // response_ += "\r\n";
-
-  // if (!body_.empty())
-  //   response_ += body_;
 }
 
 int Response::GET() {
@@ -343,6 +336,7 @@ int Response::PUT() {
     status_code = 201;
   }
   else {
+    file_.unlink();
     file_.create(config_.getBody());
   }
   headers_["Location"] = ft::unique_char(config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget());
@@ -377,7 +371,7 @@ int Response::send(int fd) {
   int ret = ::send(fd, response_.c_str() + total_sent_, response_.length() - total_sent_, 0);
 
   if (ret < 0) {
-    strerror(errno);
+    std::cout << "send : " << strerror(errno) << std::endl;
     return -1;
   }
   total_sent_ += ret;

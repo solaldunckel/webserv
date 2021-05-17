@@ -72,7 +72,7 @@ int Request::method_line() {
     size_t end = buffer_.find("\r\n");
     tmp = buffer_.substr(0, end);
 
-    if (tmp == "HTTP/1.1" || tmp == "HTTP/1.0") {
+    if (tmp == "HTTP/1.1") {
       protocol_ = tmp;
       buffer_.erase(0, end + 2);
     } else

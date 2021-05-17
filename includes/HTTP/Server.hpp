@@ -43,6 +43,7 @@ class Server {
   void newConnection(int fd);
   void clientDisconnect(int fd);
   void closeClient(int fd);
+  void print(std::string str);
 
   static bool running_;
   int worker_id_;
