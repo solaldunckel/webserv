@@ -39,7 +39,8 @@ namespace ft {
     int i = 0;
 
     while (tab[i]) {
-      free(tab[i]);
+      if (tab[i])
+        free(tab[i]);
       tab[i] = NULL;
       i++;
     }

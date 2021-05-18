@@ -101,6 +101,8 @@ std::string Response::buildMethodList() {
 void Response::build() {
   std::string &method = config_.getMethod();
 
+  std::cout << "BUILD !" << std::endl;
+
   file_.set_path(config_.getRoot() + "/" + config_.getTarget());
 
   if (error_code_ > 1)
@@ -221,15 +223,11 @@ void Response::createResponse() {
 int Response::GET() {
   if (config_.getAutoindex() && file_.is_directory()) {
     headers_["Content-Type"] = MimeTypes::getType(".html");
-    // if (charset[0])
-    //   headers_["Content-Type"] += "; charset=" + charset;
     body_ = file_.autoIndex(config_.getRequestTarget());
     headers_["Content-Length"] = ft::to_string(body_.length());
   }
   else {
     headers_["Content-Type"] = MimeTypes::getType(file_.getMimeExtension());
-    // if (charset[0])
-    //   headers_["Content-Type"] += "; charset=" + charset;
     body_ = file_.getContent();
     headers_["Content-Length"] = ft::to_string(body_.length());
   }

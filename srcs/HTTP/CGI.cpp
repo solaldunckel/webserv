@@ -19,7 +19,9 @@ void CGI::init(int worker_id) {
   free(cwd);
 
   env_ = NULL;
-
+  argv_[0] = NULL;
+  argv_[1] = NULL;
+  argv_[2] = NULL;
   extension_ = file_.getMimeExtension();
   cgi_exe_ = config_.getCGI()[extension_];
   if (config_.getCGIBin()[0] == '/') {
@@ -37,15 +39,15 @@ CGI::~CGI() {
   free(argv_[1]);
   if (env_)
     ft::free_tab(env_);
+  chdir(cwd_.c_str());
   tmp_file_.unlink();
 }
 
 int CGI::execute() {
   file_path_ = cwd_ + "/" + file_.getPath();
 
-  if (chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str()) == -1) {
+  if (chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str()) == -1)
     return 500;
-  }
 
   std::cout << "CALLING CGI " << cgi_path_ << std::endl;
 
@@ -82,8 +84,6 @@ int CGI::execute() {
     int status;
 
     if (waitpid(pid, &status, 0) == -1)
-      return 500;
-    if (chdir(cwd_.c_str()) == -1)
       return 500;
     if (WIFEXITED(status) && WEXITSTATUS(status))
       return 502;
