@@ -11,11 +11,24 @@ Response::Response(RequestConfig &config, int worker_id, int error_code) : confi
   total_sent_ = 0;
   header_size_ = 0;
   body_size_ = 0;
+  redirect_ = false;
   initMethodMap();
-  build();
 }
 
 Response::~Response() {}
+
+void Response::clear() {
+  error_code_ = 0;
+  status_code_ = 0;
+  total_sent_ = 0;
+  header_size_ = 0;
+  body_size_ = 0;
+  redirect_ = false;
+  response_.clear();
+  body_.clear();
+  headers_.clear();
+  headers_["Server"] = "webserv/1.0";
+}
 
 std::map<std::string, Response::type> Response::methods_;
 void Response::initMethodMap() {
@@ -46,12 +59,12 @@ bool Response::checkAuth() {
 
 int Response::buildErrorPage(int status_code) {
   if (!config_.getErrorPages()[status_code].empty()) {
-    std::string path = config_.getErrorPages()[status_code];
+    std::string target = config_.getErrorPages()[status_code];
 
-    file_.set_path(config_.getRoot() + path);
+    redirect_ = true;
+    redirect_target_ = target;
 
-    if (file_.open())
-      body_ += file_.getContent();
+    return 0;
   } else {
     body_ += "<html>\r\n";
     body_ += "<head><title>" + ft::to_string(status_code) + " " + status_[status_code] + "</title></head>\r\n";
@@ -107,7 +120,8 @@ void Response::build() {
   if (status_code_ >= 300 && !body_.length())
     status_code_ = buildErrorPage(status_code_);
 
-  createResponse();
+  if (!redirect_)
+    createResponse();
 }
 
 int Response::handleMethods() {
@@ -117,8 +131,11 @@ int Response::handleMethods() {
   if (method == "GET" || method == "HEAD") {
     if (file_.is_directory()) {
       std::string index = file_.find_index(config_.getIndexes());
-      if (index.length())
-        file_.set_path(config_.getRoot() + "/" + config_.getTarget() + "/" + index);
+      if (index.length()) {
+        redirect_ = true;
+        redirect_target_ = ft::unique_char("/" + config_.getRequestTarget() + "/" + index);
+        return 200;
+      }
       else if (!config_.getAutoindex())
         return 404;
     }
@@ -224,14 +241,6 @@ int Response::POST() {
 
   std::string path;
   if (!config_.getUpload().empty()) {
-    // File dir(config_.getRoot() + "/" + config_.getUpload());
-
-    // if (dir.exists() && !dir.is_directory()) {
-    //   dir.unlink();
-    // }
-
-    // if (!dir.exists())
-    //   mkdir(dir.getPath().c_str(), 0755);
     file_.set_path(config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget());
     path = config_.getUri() + "/" + config_.getUpload() + config_.getTarget();
   }
@@ -255,17 +264,8 @@ int Response::POST() {
 int Response::PUT() {
   int status_code = 204;
 
-  if (!config_.getUpload().empty()) {
-    // File dir(config_.getRoot() + "/" + config_.getUpload());
-
-    // if (dir.exists() && !dir.is_directory()) {
-    //   dir.unlink();
-    // }
-
-    // if (!dir.exists())
-    //   mkdir(dir.getPath().c_str(), 0755);
+  if (!config_.getUpload().empty())
     file_.set_path(config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget());
-  }
 
   if (!file_.exists()) {
     file_.create(config_.getBody());
@@ -379,6 +379,14 @@ bool Response::shouldDisconnect() {
   if (headers_.find("Connection") != headers_.end() && headers_["Connection"] == "close")
     return true;
   return false;
+}
+
+bool Response::redirect() {
+  return redirect_;
+}
+
+std::string Response::redirect_target() {
+  return redirect_target_;
 }
 
 /* Send */

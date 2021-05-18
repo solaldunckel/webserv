@@ -32,6 +32,26 @@ void Client::setupResponse(std::vector<ServerConfig> &servers, InputArgs &option
 
   response_ = new Response(*config_, worker_id_, error_code);
 
+  int loop = 0;
+
+  for (int ret = 1; ret != 0; loop++) {
+    ret = 0;
+
+    response_->build();
+
+    if (response_->redirect()) {
+      ret = 1;
+      config_->redirectLocation(response_->redirect_target());
+      response_->clear();
+    }
+    if (loop >= 10) {
+      ft::delete_(response_);
+      response_ = new Response(*config_, worker_id_, 500);
+      response_->build();
+      break ;
+    }
+  }
+
   ft::delete_(request_);
 }
 

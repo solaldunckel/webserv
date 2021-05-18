@@ -192,7 +192,7 @@ void Server::run(int worker_id, sem_t *sem) {
         if (FD_ISSET(it->first, &read_fds_)) {
           newConnection(it->first);
           #ifdef BONUS
-            usleep(1500);
+            usleep(1000);
             break ;
           #endif
         }

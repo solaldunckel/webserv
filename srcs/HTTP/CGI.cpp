@@ -47,9 +47,7 @@ int CGI::execute() {
     return 500;
   }
 
-  #ifdef DEBUG
   std::cout << "CALLING CGI " << cgi_path_ << std::endl;
-  #endif
 
   if (!setCGIEnv())
     return 500;

@@ -39,20 +39,18 @@ void RequestConfig::setup(InputArgs &options) {
   }
 }
 
-bool RequestConfig::redirectLocation(std::string target) {
+void RequestConfig::redirectLocation(std::string target) {
   ServerConfig *location = NULL;
 
   if (request_.getStatus() > 2)
     location = getLocationForRequest(server_, target);
 
-  if (location != location_) {
+  if (location) {
     location_ = location;
     target_ = target;
     if (target_.find(location->uri_) != std::string::npos)
       target_.erase(0, location_->uri_.length());
-    return true;
   }
-  return false;
 }
 
 ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &servers) {

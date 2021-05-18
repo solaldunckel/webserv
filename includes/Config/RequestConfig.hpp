@@ -24,7 +24,7 @@ class RequestConfig {
 
   ServerConfig *getServerForRequest(std::vector<ServerConfig> &servers);
   ServerConfig *getLocationForRequest(ServerConfig *server, std::string &target);
-  bool redirectLocation(std::string target);
+  void redirectLocation(std::string target);
 
   ServerConfig *match_regexp(std::vector<ServerConfig*> &locations, std::string &target);
   bool methodAccepted(std::string &method);

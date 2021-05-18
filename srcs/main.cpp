@@ -7,10 +7,6 @@ void catch_sigint(int sig) {
 }
 
 int main(int argc, char **argv) {
-  #ifdef BONUS
-    std::cout << "Launched with bonus" << std::endl;
-  #endif
-
   try {
     InputArgs options(argc, argv);
 

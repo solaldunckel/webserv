@@ -22,6 +22,7 @@ class Response {
   static std::map<std::string, type> methods_;
   static void initMethodMap();
 
+  void clear();
   int buildErrorPage(int status_code);
   bool isCGI(std::string extension);
   void build();
@@ -32,13 +33,9 @@ class Response {
   std::string accept_charset(std::vector<std::string> &matches);
   std::string buildMethodList();
   bool shouldDisconnect();
+  bool redirect();
+  std::string redirect_target();
   void print();
-
-  enum Status {
-    BUILD,
-    SENDING,
-    COMPLETE,
-  };
 
   int GET();
   int POST();
@@ -59,6 +56,8 @@ class Response {
   int status_code_;
   std::string response_;
   std::string body_;
+  bool redirect_;
+  std::string redirect_target_;
   size_t header_size_;
   size_t body_size_;
   std::string charset_;
