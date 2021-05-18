@@ -30,7 +30,8 @@ class Response {
   bool checkAuth();
   bool localization(std::vector<std::string> &matches);
   std::string accept_charset(std::vector<std::string> &matches);
-  std::string methodList();
+  std::string buildMethodList();
+  bool shouldDisconnect();
   void print();
 
   enum Status {
@@ -53,13 +54,13 @@ class Response {
   File file_;
   int error_code_;
   int worker_id_;
-  int redirect_;
   StatusCode status_;
-  Status status_send_;
   size_t total_sent_;
   int status_code_;
   std::string response_;
   std::string body_;
+  size_t header_size_;
+  size_t body_size_;
   std::string charset_;
   std::map<std::string, std::string> headers_;
 };

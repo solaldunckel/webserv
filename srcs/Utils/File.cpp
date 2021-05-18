@@ -116,7 +116,7 @@ std::string File::autoIndex(std::string &target) {
   std::sort(listing.begin(), listing.end(), sort_auto_listing);
 
   for (std::vector<auto_listing>::iterator it = listing.begin(); it != listing.end(); it++) {
-    body = body + "<a href=\"" + it->name_ + "\">" + it->name_ + "</a>";
+    body = body + "<a href=\"" + ft::unique_char(target + + "/" + it->name_) + "\">" + it->name_ + "</a>";
     if (it != listing.begin()) {
       body += set_width(68 - it->name_.length(), it->date_);
       if (it->is_dir_)

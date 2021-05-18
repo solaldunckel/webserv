@@ -97,11 +97,9 @@ std::vector<ServerConfig> &Config::getServers() {
   return servers_;
 }
 
-#ifdef BONUS
 int Config::getWorkers() {
   return workers_;
 }
-#endif
 
 void Config::print() {
   std::cout << "# configuration file " << path_ << ":\n" << std::endl;

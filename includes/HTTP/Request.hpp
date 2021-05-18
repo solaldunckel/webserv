@@ -31,7 +31,8 @@ class Request {
   int chunk_trailer();
 
   bool timeout();
-  time_t get_timer_in_sec();
+  time_t get_start_timer_in_sec();
+  time_t get_last_timer_in_sec();
 
   int getStatus();
 
@@ -65,6 +66,7 @@ class Request {
   int body_offset_;
   int chunk_size_;
   struct timeval start_timer_;
+  struct timeval last_timer_;
   size_t length_;
 
   Status status_;

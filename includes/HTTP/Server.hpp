@@ -39,7 +39,7 @@ class Server {
   void run(int worker_id = 0, sem_t *sem = NULL);
 
   int readData(int fd);
-  void writeData(int fd);
+  bool writeData(int fd);
   void newConnection(int fd);
   void clientDisconnect(int fd);
   void closeClient(int fd);

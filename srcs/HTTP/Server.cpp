@@ -142,7 +142,7 @@ int Server::readData(int fd) {
   return 0;
 }
 
-void Server::writeData(int fd) {
+bool Server::writeData(int fd) {
   FD_CLR(fd, &write_fds_);
 
   Response *response = clients_[fd]->getResponse();
@@ -152,16 +152,22 @@ void Server::writeData(int fd) {
 
     if (ret < 0) {
       clientDisconnect(fd);
-      return;
+      return false;
     } else if (ret == 0) {
+      bool disconnect = response->shouldDisconnect() || clients_[fd]->disconnect();
       clients_[fd]->clear();
+      if (disconnect) {
+        clientDisconnect(fd);
+        return false;
+      }
     }
   }
+  return true;
 }
 
 void Server::run(int worker_id, sem_t *sem) {
   worker_id_ = worker_id;
-
+  (void)sem;
   int ret = 0;
 
   #ifdef BONUS
@@ -181,20 +187,16 @@ void Server::run(int worker_id, sem_t *sem) {
 
     ret = select(max_fd_ + 1, &read_fds_, &write_fds_, NULL, NULL);
 
-    if (ret > 0) {
-      // if (sem)
-      //   sem_wait(sem);
+    if (ret >= 0) {
       for (std::map<int, Listen>::iterator it = running_server_.begin(); it != running_server_.end(); it++) {
         if (FD_ISSET(it->first, &read_fds_)) {
           newConnection(it->first);
-          if (sem) {
-            usleep(500);
+          #ifdef BONUS
+            usleep(1500);
             break ;
-          }
+          #endif
         }
       }
-      // if (sem)
-      //   sem_post(sem);
 
       std::map<int, Client*>::iterator it = clients_.begin();
 
@@ -205,19 +207,30 @@ void Server::run(int worker_id, sem_t *sem) {
           continue;
         }
 
-        if (it->second->timeout())
+        if (it->second->timeout()) {
           it->second->setupResponse(servers_, options_, 408);
+          if (options_.verbose())
+            it->second->getResponse()->print();
+        }
 
-        if (it->second->disconnect())
+        if (it->second->disconnect()) {
           it->second->setupResponse(servers_, options_, 503);
+          if (options_.verbose())
+            it->second->getResponse()->print();
+        }
 
-        if (FD_ISSET(it->first, &write_fds_))
-          writeData(it->first);
+        if (FD_ISSET(it->first, &write_fds_)) {
+          if (!writeData(it->first)) {
+            it = clients_.begin();
+            continue;
+          }
+        }
 
         it++;
       }
     } else if (ret == -1 && running_)
       std::cerr << "select : " << strerror(errno) << std::endl;
+    usleep(500);
   }
 
   std::map<int, Client*>::iterator it = clients_.begin();

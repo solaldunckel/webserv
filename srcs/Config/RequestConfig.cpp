@@ -172,6 +172,10 @@ std::string &RequestConfig::getTarget() {
   return target_;
 }
 
+std::string &RequestConfig::getRequestTarget() {
+  return request_.target_;
+}
+
 std::string &RequestConfig::getQuery() {
   return request_.query_string_;
 }

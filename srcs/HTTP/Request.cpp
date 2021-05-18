@@ -13,6 +13,8 @@ Request::~Request() {}
 int Request::parse(std::string &buffer) {
   size_t ret = 0;
 
+  gettimeofday(&last_timer_, NULL);
+
   buffer_ += buffer;
   buffer.clear();
 
@@ -240,8 +242,12 @@ int Request::getStatus() {
   return status_;
 }
 
-time_t Request::get_timer_in_sec() {
+time_t Request::get_start_timer_in_sec() {
   return start_timer_.tv_sec;
+}
+
+time_t Request::get_last_timer_in_sec() {
+  return last_timer_.tv_sec;
 }
 
 void Request::print() {

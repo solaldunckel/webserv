@@ -26,9 +26,7 @@ class Config {
   std::vector<ServerConfig> &getServers();
   std::string &getPath();
 
-  #ifdef BONUS
   int getWorkers();
-  #endif
 
   void print();
 
@@ -36,9 +34,7 @@ class Config {
   std::string path_;
   int fd_;
 
-  #ifdef BONUS
   int workers_;
-  #endif
 
   std::string file_content_;
   std::vector<std::string> tokens_;

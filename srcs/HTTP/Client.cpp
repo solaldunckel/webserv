@@ -37,7 +37,9 @@ void Client::setupResponse(std::vector<ServerConfig> &servers, InputArgs &option
 
 bool Client::timeout() {
   if (request_) {
-    if (ft::get_current_time_in_sec() - request_->get_timer_in_sec() > TIMEOUT) {
+    time_t current_time = ft::get_current_time_in_sec();
+    if (current_time - request_->get_start_timer_in_sec() > START_TIMEOUT
+      || current_time - request_->get_last_timer_in_sec() > LAST_TIMEOUT) {
       if (request_->timeout())
         return true;
     }

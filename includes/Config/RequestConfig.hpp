@@ -33,6 +33,7 @@ class RequestConfig {
   std::string &getRoot();
   std::string &getUri();
   std::string &getTarget();
+  std::string &getRequestTarget();
   std::string &getQuery();
   std::string &getCGIBin();
   void setTarget(std::string target);
