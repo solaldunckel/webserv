@@ -13,6 +13,7 @@ Response::Response(RequestConfig &config, int worker_id, int error_code) : confi
   body_size_ = 0;
   redirect_code_ = 0;
   redirect_ = false;
+  charset_ = "";
   initMethodMap();
 }
 
@@ -155,18 +156,11 @@ int Response::handleMethods() {
 
       if (!config_.getHeader("Accept-Language").empty()) {
         if (localization(matches)) {
-          if (matches.size() > 1)
-            return 300;
-          else
             file_.set_path(path.substr(0, path.find_last_of("/") + 1) + matches.front());
         }
       }
-
       if (!config_.getHeader("Accept-Charset").empty()) {
         charset_ = accept_charset(matches);
-        if (matches.size() > 1)
-          return 300;
-        else
           file_.set_path(path.substr(0, path.find_last_of("/") + 1) + matches.front());
       }
 
@@ -235,6 +229,8 @@ int Response::GET() {
   }
   else {
     headers_["Content-Type"] = MimeTypes::getType(file_.getMimeExtension());
+    if (!charset_.empty())
+      headers_["Content-Type"] += "; charset=" + charset_;
     body_ = file_.getContent();
     headers_["Content-Length"] = ft::to_string(body_.length());
   }
