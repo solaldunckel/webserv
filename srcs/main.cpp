@@ -30,6 +30,8 @@ int main(int argc, char **argv) {
 
     Server serv(config.getServers(), options);
 
+    serv.setup();
+
     #ifdef BONUS
     if (config.getWorkers() > 0) {
       std::vector<pid_t> workers(config.getWorkers());
@@ -40,7 +42,7 @@ int main(int argc, char **argv) {
         pid_t pid = fork();
 
         if (pid == 0) {
-          serv.run(i + 1, NULL);
+          serv.run(i + 1);
           exit(0);
         }
         else if (pid == -1) {

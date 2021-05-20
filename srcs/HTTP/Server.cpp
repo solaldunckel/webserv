@@ -7,12 +7,10 @@ static void interruptHandler(int sig_int) {
 	Server::running_ = false;
 }
 
-Server::Server(std::vector<ServerConfig> &servers, InputArgs &options) : servers_(servers), options_(options) {
+Server::Server(std::vector<ServerConfig> &servers, InputArgs &options) : servers_(servers), options_(options), max_fd_(0) {
   FD_ZERO(&master_fds_);
   FD_ZERO(&read_fds_);
   FD_ZERO(&write_fds_);
-
-  setup();
 }
 
 Server::~Server() {
@@ -52,9 +50,7 @@ void Server::setup() {
 
         std::cout << "[Server] Listening on " << list->ip_ << ":" << list->port_ << std::endl;
 
-        FD_SET(server_fd, &master_fds_);
-
-        max_fd_ = server_fd;
+        add_to_fd_set(server_fd);
         is_bind.push_back(*list);
       }
     }
@@ -82,12 +78,11 @@ void Server::newConnection(int fd) {
   std::string client_addr = ft::inet_ntop(ft::get_in_addr((struct sockaddr *)&their_addr));
   clients_[clientFd] = new Client(clientFd, client_addr, running_server_[fd], worker_id_, clients_.size() >= MAX_CLIENT);
 
-  FD_SET(clientFd, &master_fds_);
-  if (clientFd > max_fd_)
-    max_fd_ = clientFd;
+  add_to_fd_set(clientFd);
 }
 
-void Server::closeClient(int fd) {
+void Server::clientDisconnect(int fd) {
+  remove_from_fd_set(fd);
   if (clients_.find(fd) != clients_.end()) {
     print("Connection closed");
     delete clients_[fd];
@@ -95,26 +90,7 @@ void Server::closeClient(int fd) {
   }
 }
 
-void Server::clientDisconnect(int fd) {
-  FD_CLR(fd, &master_fds_);
-
-  if (max_fd_ == fd) {
-    std::map<int, Client*>::iterator it = clients_.find(fd);
-
-    if (clients_.size() > 1) {
-      it--;
-      max_fd_ = it->first;
-    } else {
-      max_fd_ = max_fd_tmp_;
-    }
-  }
-
-  closeClient(fd);
-
-  FD_CLR(fd, &master_fds_);
-}
-
-int Server::readData(int fd) {
+bool Server::recv(int fd) {
   Request *req = clients_[fd]->getRequest();
 
   if (!req)
@@ -124,10 +100,10 @@ int Server::readData(int fd) {
 
   FD_CLR(fd, &read_fds_);
 
-  int nbytes = recv(fd, buf, BUF_SIZE, 0);
+  int nbytes = ::recv(fd, buf, BUF_SIZE, 0);
 
   if (nbytes <= 0)
-    return -1;
+    return false;
 
   std::string buffer(buf, nbytes);
   int ret = req->parse(buffer);
@@ -139,10 +115,10 @@ int Server::readData(int fd) {
     if (options_.verbose())
       clients_[fd]->getResponse()->print();
   }
-  return 0;
+  return true;
 }
 
-bool Server::writeData(int fd) {
+bool Server::send(int fd) {
   FD_CLR(fd, &write_fds_);
 
   Response *response = clients_[fd]->getResponse();
@@ -150,36 +126,56 @@ bool Server::writeData(int fd) {
   if (response) {
     int ret = response->send(fd);
 
-    if (ret < 0) {
-      clientDisconnect(fd);
+    if (ret < 0)
       return false;
-    } else if (ret == 0) {
+    else if (ret == 0) {
       bool disconnect = response->shouldDisconnect() || clients_[fd]->disconnect();
       clients_[fd]->clear();
-      if (disconnect) {
-        clientDisconnect(fd);
+      if (disconnect)
         return false;
-      }
     }
   }
   return true;
 }
 
-void Server::run(int worker_id, sem_t *sem) {
+void Server::add_to_fd_set(int fd) {
+  fd_set_.insert(fd);
+  FD_SET(fd, &master_fds_);
+
+  if (fd > max_fd_)
+    max_fd_ = fd;
+}
+
+void Server::remove_from_fd_set(int fd) {
+  fd_set_.erase(fd);
+  FD_CLR(fd, &master_fds_);
+
+  if (fd == max_fd_)
+    max_fd_ = *fd_set_.rbegin();
+}
+
+void Server::check_timeout_disconnect(Client *client) {
+  if (client->timeout()) {
+    client->setupResponse(servers_, options_, 408);
+    if (options_.verbose())
+      client->getResponse()->print();
+  }
+
+  if (client->disconnect()) {
+    client->setupResponse(servers_, options_, 503);
+    if (options_.verbose())
+      client->getResponse()->print();
+  }
+}
+
+void Server::run(int worker_id) {
   worker_id_ = worker_id;
-  (void)sem;
   int ret = 0;
 
-  #ifdef BONUS
   signal(SIGINT, interruptHandler);
-  #else
-  signal(SIGINT, interruptHandler);
-  #endif
 
   running_ = true;
   print("Starting");
-
-  max_fd_tmp_ = max_fd_;
 
   while (running_) {
     read_fds_ = master_fds_;
@@ -198,35 +194,24 @@ void Server::run(int worker_id, sem_t *sem) {
         }
       }
 
-      std::map<int, Client*>::iterator it = clients_.begin();
+      std::map<int, Client*>::iterator next_it;
 
-      while (it != clients_.end()) {
-        if (FD_ISSET(it->first, &read_fds_) && readData(it->first) == -1) {
-          clientDisconnect(it->first);
-          it = clients_.begin();
+      for (std::map<int, Client*>::iterator it = clients_.begin(), next_it = it; it != clients_.end(); it = next_it) {
+        int client_fd = it->first;
+
+        next_it++;
+
+        if (FD_ISSET(client_fd, &read_fds_) && !recv(client_fd)) {
+          clientDisconnect(client_fd);
           continue;
         }
 
-        if (it->second->timeout()) {
-          it->second->setupResponse(servers_, options_, 408);
-          if (options_.verbose())
-            it->second->getResponse()->print();
-        }
+        check_timeout_disconnect(it->second);
 
-        if (it->second->disconnect()) {
-          it->second->setupResponse(servers_, options_, 503);
-          if (options_.verbose())
-            it->second->getResponse()->print();
+        if (FD_ISSET(client_fd, &write_fds_) && !send(client_fd)) {
+          clientDisconnect(client_fd);
+          continue;
         }
-
-        if (FD_ISSET(it->first, &write_fds_)) {
-          if (!writeData(it->first)) {
-            it = clients_.begin();
-            continue;
-          }
-        }
-
-        it++;
       }
     } else if (ret == -1 && running_)
       std::cerr << "select : " << strerror(errno) << std::endl;
@@ -237,7 +222,7 @@ void Server::run(int worker_id, sem_t *sem) {
 
   while (it != clients_.end()) {
     std::map<int, Client*>::iterator tmp = it++;
-    closeClient(tmp->first);
+    clientDisconnect(tmp->first);
   }
 
   print("Shutdown");

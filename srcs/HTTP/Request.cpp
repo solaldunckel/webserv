@@ -120,7 +120,7 @@ int Request::headers() {
       break;
     }
     if ((last = buffer_.find(':', 0)) != std::string::npos) {
-      if (buffer_[last - 1] == ' ' || last == 0)
+      if (last == 0 || buffer_[last - 1] == ' ')
         return 400;
       header = buffer_.substr(0, last);
       value = buffer_.substr(last + 1, end - last - 1);

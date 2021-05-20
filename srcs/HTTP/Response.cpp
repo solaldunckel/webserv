@@ -11,6 +11,7 @@ Response::Response(RequestConfig &config, int worker_id, int error_code) : confi
   total_sent_ = 0;
   header_size_ = 0;
   body_size_ = 0;
+  redirect_code_ = 0;
   redirect_ = false;
   initMethodMap();
 }
@@ -61,7 +62,10 @@ int Response::buildErrorPage(int status_code) {
   if (!config_.getErrorPages()[status_code].empty()) {
     std::string target = config_.getErrorPages()[status_code];
 
+    config_.getMethod() = "GET";
+
     redirect_ = true;
+    redirect_code_ = status_code;
     redirect_target_ = target;
 
     return 0;
@@ -101,7 +105,7 @@ std::string Response::buildMethodList() {
 void Response::build() {
   std::string &method = config_.getMethod();
 
-  std::cout << "BUILD !" << std::endl;
+  std::cout << "BUILD ! method : " << method << " / target : " << config_.getTarget() << std::endl;
 
   file_.set_path(config_.getRoot() + "/" + config_.getTarget());
 
@@ -191,6 +195,9 @@ void Response::createResponse() {
   if (config_.getMethod() == "HEAD")
     body_.clear();
 
+  if (status_code_ < 400 && redirect_code_)
+    status_code_ = redirect_code_;
+
   std::string status_code;
 
   if (headers_.count("Status")) {
@@ -237,25 +244,24 @@ int Response::GET() {
 int Response::POST() {
   int status_code = 200;
 
-  std::string path;
-  if (!config_.getUpload().empty()) {
+  std::string path = config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget();
+
+  if (!config_.getUpload().empty())
     file_.set_path(config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget());
-    path = config_.getUri() + "/" + config_.getUpload() + config_.getTarget();
-  }
+
+  body_ = config_.getBody();
 
   if (!file_.exists()) {
-    path = config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget();
-    file_.create(config_.getBody());
-    headers_["Content-Length"] = "0";
-    headers_["Location"] = ft::unique_char(path);
+    file_.create(body_);
     status_code = 201;
   }
   else {
-    path = config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget();
-    file_.append(config_.getBody());
-    headers_["Location"] = ft::unique_char(path);
-    status_code = 204;
+    file_.append(body_);
+    status_code = 200;
   }
+
+  headers_["Content-Length"] = ft::to_string(body_.length());
+  headers_["Location"] = ft::unique_char(path);
   return status_code;
 }
 
@@ -267,7 +273,6 @@ int Response::PUT() {
 
   if (!file_.exists()) {
     file_.create(config_.getBody());
-    headers_["Content-Length"] = "0";
     status_code = 201;
   }
   else

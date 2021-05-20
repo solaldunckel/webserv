@@ -4,6 +4,7 @@
 # include <iostream>
 # include <vector>
 # include <cstring>
+# include <set>
 
 # include <sys/types.h>
 # include <sys/socket.h>
@@ -14,7 +15,6 @@
 # include <fcntl.h>
 # include <sys/select.h>
 # include <signal.h>
-# include <semaphore.h>
 
 # include "InputArgs.hpp"
 # include "Client.hpp"
@@ -36,13 +36,16 @@ class Server {
   ~Server();
 
   void setup();
-  void run(int worker_id = 0, sem_t *sem = NULL);
+  void run(int worker_id = 0);
 
-  int readData(int fd);
-  bool writeData(int fd);
+  bool recv(int fd);
+  bool send(int fd);
   void newConnection(int fd);
   void clientDisconnect(int fd);
   void closeClient(int fd);
+  void add_to_fd_set(int fd);
+  void remove_from_fd_set(int fd);
+  void check_timeout_disconnect(Client *client);
   void print(std::string str);
 
   static bool running_;
@@ -56,8 +59,8 @@ class Server {
   fd_set master_fds_;
   fd_set read_fds_;
   fd_set write_fds_;
+  std::set<int> fd_set_;
   int max_fd_;
-  int max_fd_tmp_;
 };
 
 #endif

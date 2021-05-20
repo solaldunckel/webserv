@@ -58,6 +58,7 @@ class Response {
   std::string body_;
   bool redirect_;
   std::string redirect_target_;
+  int redirect_code_;
   size_t header_size_;
   size_t body_size_;
   std::string charset_;
