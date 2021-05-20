@@ -247,21 +247,22 @@ int Response::POST() {
   std::string path = config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget();
 
   if (!config_.getUpload().empty())
-    file_.set_path(config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget());
+    file_.set_path(config_.getUpload() + "/" + config_.getTarget());
 
   body_ = config_.getBody();
 
   if (!file_.exists()) {
     file_.create(body_);
     status_code = 201;
+    headers_["Location"] = ft::unique_char(path);
   }
   else {
     file_.append(body_);
     status_code = 200;
+    headers_["Content-Location"] = ft::unique_char(path);
   }
 
   headers_["Content-Length"] = ft::to_string(body_.length());
-  headers_["Location"] = ft::unique_char(path);
   return status_code;
 }
 
@@ -269,7 +270,7 @@ int Response::PUT() {
   int status_code = 204;
 
   if (!config_.getUpload().empty())
-    file_.set_path(config_.getRoot() + "/" + config_.getUpload() + "/" + config_.getTarget());
+    file_.set_path(config_.getUpload() + "/" + config_.getTarget());
 
   if (!file_.exists()) {
     file_.create(config_.getBody());

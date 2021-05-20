@@ -218,11 +218,11 @@ void Server::run(int worker_id) {
     usleep(500);
   }
 
-  std::map<int, Client*>::iterator it = clients_.begin();
+  std::map<int, Client*>::iterator next_it;
 
-  while (it != clients_.end()) {
-    std::map<int, Client*>::iterator tmp = it++;
-    clientDisconnect(tmp->first);
+  for (std::map<int, Client*>::iterator it = clients_.begin(), next_it = it; it != clients_.end(); it = next_it) {
+    next_it++;
+    clientDisconnect(it->first);
   }
 
   print("Shutdown");
