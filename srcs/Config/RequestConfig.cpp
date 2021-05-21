@@ -20,13 +20,6 @@ void RequestConfig::setup(InputArgs &options) {
   if (request_.getStatus() > 2)
     location = getLocationForRequest(server, request_.target_);
 
-  if (options.verbose()) {
-    if (location)
-      std::cout << "MATCHING LOCATION " << location->uri_ << std::endl;
-    else
-      std::cout << "NO MATCHING LOCATION" << std::endl;
-  }
-
   server_ = server;
   location_ = server;
 
@@ -256,4 +249,12 @@ std::map<std::string, std::string, ft::comp> &RequestConfig::getHeaders() {
 
 std::string &RequestConfig::getProtocol() {
   return request_.protocol_;
+}
+
+std::string RequestConfig::log() {
+  std::string ret;
+
+  ret = ret + getMethod() + " " + getRequestTarget();
+  ret = ret + " -> [location: " + getUri() + "]";
+  return ret;
 }

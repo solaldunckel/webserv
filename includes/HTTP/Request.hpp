@@ -51,8 +51,6 @@ class Request {
     CHUNK_SIZE,
   };
 
-  void print();
-
  private:
   std::string buffer_;
 

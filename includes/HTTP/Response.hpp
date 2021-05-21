@@ -4,6 +4,7 @@
 # include <iostream>
 # include <string>
 
+# include "Logger.hpp"
 # include "RequestConfig.hpp"
 # include "StatusCode.hpp"
 # include "MimeTypes.hpp"
@@ -13,14 +14,15 @@
 
 class RequestConfig;
 
+extern pthread_mutex_t g_write;
+
 class Response {
  public:
   Response(RequestConfig &config, int worker_id, int error_code = 0);
   ~Response();
 
   typedef int (Response::*type)();
-  static std::map<std::string, type> methods_;
-  static void initMethodMap();
+  void initMethodMap();
 
   void clear();
   int buildErrorPage(int status_code);
@@ -35,7 +37,7 @@ class Response {
   bool shouldDisconnect();
   bool redirect();
   std::string redirect_target();
-  void print();
+  std::string response_log(LogLevel level);
 
   int GET();
   int POST();
@@ -48,6 +50,7 @@ class Response {
 
  private:
   RequestConfig &config_;
+  MimeTypes mimes_;
   File file_;
   int error_code_;
   int worker_id_;
@@ -62,6 +65,7 @@ class Response {
   size_t header_size_;
   size_t body_size_;
   std::string charset_;
+  std::map<std::string, Response::type> methods_;
   std::map<std::string, std::string> headers_;
 };
 

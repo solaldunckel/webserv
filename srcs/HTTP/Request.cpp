@@ -249,16 +249,3 @@ time_t Request::get_start_timer_in_sec() {
 time_t Request::get_last_timer_in_sec() {
   return last_timer_.tv_sec;
 }
-
-void Request::print() {
-  std::cout << "\n-> REQUEST <-\n";
-  std::cout << "Method: " << method_ << std::endl;
-  std::cout << "Target: " << target_ << std::endl;
-  std::cout << "Protocol: " << protocol_ << std::endl;
-  for (std::map<std::string, std::string>::iterator it = headers_.begin(); it != headers_.end(); it++) {
-    if (!it->second.empty())
-      std::cout << it->first << ": " << it->second << std::endl;;
-  }
-  // std::cout << "Body: [" << req_body_ << "]" << std::endl;
-  std::cout << std::endl;
-}

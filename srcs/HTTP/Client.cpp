@@ -17,8 +17,9 @@ void Client::clear() {
   ft::delete_(response_);
 }
 
-void Client::setupConfig(std::vector<ServerConfig> &servers) {
+void Client::setupConfig(std::vector<ServerConfig> &servers, InputArgs &options) {
   config_ = new RequestConfig(*request_, host_port_, servers, *this);
+  config_->setup(options);
 }
 
 void Client::setupResponse(std::vector<ServerConfig> &servers, InputArgs &options, int error_code) {
@@ -26,9 +27,7 @@ void Client::setupResponse(std::vector<ServerConfig> &servers, InputArgs &option
     request_ = getRequest(true);
 
   if (!config_)
-    setupConfig(servers);
-
-  config_->setup(options);
+    setupConfig(servers, options);
 
   response_ = new Response(*config_, worker_id_, error_code);
 

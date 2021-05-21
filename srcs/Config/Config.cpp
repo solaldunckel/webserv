@@ -64,12 +64,14 @@ void Config::tokenize() {
 
 void Config::parse() {
   tokenize();
+  int i = 1;
   std::vector<std::string>::iterator it;
 
   for (it = tokens_.begin(); it != tokens_.end(); ++it) {
     if (*it == "server") {
       ServerConfig serv;
 
+      serv.id_ = i++;
       serv.server(++it);
       servers_.push_back(serv);
     }
@@ -101,7 +103,6 @@ int Config::getWorkers() {
   return workers_;
 }
 
-void Config::print() {
-  std::cout << "# configuration file " << path_ << ":\n" << std::endl;
-  std::cout << file_content_ << std::endl;
+std::string &Config::getFileContent() {
+  return file_content_;
 }

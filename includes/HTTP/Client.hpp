@@ -21,7 +21,7 @@ class Client {
   Client(int fd, std::string &addr, Listen &host_port, int worker_id, bool disconnect = false);
   ~Client();
 
-  void setupConfig(std::vector<ServerConfig> &servers);
+  void setupConfig(std::vector<ServerConfig> &servers, InputArgs &options);
   void setupResponse(std::vector<ServerConfig> &servers, InputArgs &options, int error_code = 0);
   void clear();
 

@@ -68,6 +68,8 @@ class ServerConfig {
     LONGEST,
   };
 
+  int id_;
+
  private:
   std::vector<Listen> listens_;
   std::vector<std::string> server_name_;

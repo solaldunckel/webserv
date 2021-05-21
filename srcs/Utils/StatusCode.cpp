@@ -1,10 +1,6 @@
 # include "StatusCode.hpp"
 
-std::map<int, std::string> StatusCode::error_codes_;
-
-bool StatusCode::init_ = false;
-
-void StatusCode::initMap() {
+StatusCode::StatusCode() {
   // Informational 1xx
   error_codes_[100] = "Continue";
   error_codes_[101] = "Switching Protocols";
@@ -55,12 +51,8 @@ void StatusCode::initMap() {
   error_codes_[503] = "Service Unavailable";
   error_codes_[504] = "Gateway Timeout";
   error_codes_[505] = "HTTP Version Not Supported";
-
-  init_ = true;
 }
 
-std::string &StatusCode::operator[](int status_code) const {
-  if (!init_)
-    initMap();
+std::string &StatusCode::operator[](int status_code) {
   return error_codes_[status_code];
 }
