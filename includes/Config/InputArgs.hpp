@@ -4,6 +4,7 @@
 # include <string>
 # include <map>
 
+# include "Logger.hpp"
 # include "Utils.hpp"
 
 class InputArgs {
@@ -14,7 +15,7 @@ class InputArgs {
     void parse();
     std::string helpText();
     std::string &getPath();
-    bool verbose();
+    LogLevel log();
     bool help();
     bool test();
     bool location();
@@ -23,6 +24,7 @@ class InputArgs {
     int argc_;
     char **argv_;
     std::string path_;
+    LogLevel log_level_;
     std::map<std::string, bool> options_;
 };
 

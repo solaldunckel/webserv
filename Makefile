@@ -16,6 +16,7 @@ SRCS_LIST	= \
 						Utils/Base64.cpp \
 						Utils/File.cpp \
 						Utils/get_next_line.cpp \
+						Utils/Logger.cpp \
 						Utils/MimeTypes.cpp \
 						Utils/StatusCode.cpp \
 						Utils/StringUtils.cpp \
@@ -31,7 +32,7 @@ OBJS_BONUS	= ${SRCS:.cpp=.o_bonus}
 INCLUDES		= -I includes/Config -I includes/Utils -I includes/HTTP
 
 CC					= clang++
-CFLAGS 			= -Wall -Wextra -Werror -std=c++98
+CFLAGS 			= -Wall -Wextra -Werror -std=c++98 -pthread -g -fsanitize=address
 RM					= rm -f
 
 BONUS				= -DBONUS

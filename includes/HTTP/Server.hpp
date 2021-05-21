@@ -4,7 +4,7 @@
 # include <iostream>
 # include <vector>
 # include <cstring>
-# include <set>
+# include <list>
 
 # include <sys/types.h>
 # include <sys/socket.h>
@@ -15,7 +15,9 @@
 # include <fcntl.h>
 # include <sys/select.h>
 # include <signal.h>
+# include <pthread.h>
 
+# include "Logger.hpp"
 # include "InputArgs.hpp"
 # include "Client.hpp"
 # include "ServerConfig.hpp"
@@ -27,19 +29,26 @@
 # define MAX_CLIENT 1000
 # define BUF_SIZE 65536
 
+extern pthread_mutex_t g_accept;
+extern pthread_mutex_t g_write;
+extern Logger Log;
+
 class Client;
 
 class Server {
  public:
   // Constructors & Deconstructors
+  Server(const Server &copy);
   Server(std::vector<ServerConfig> &servers, InputArgs &options);
   ~Server();
+  Server &operator=(const Server &copy);
 
   void setup();
   void run(int worker_id = 0);
 
   bool recv(int fd);
   bool send(int fd);
+  bool createWorker();
   void newConnection(int fd);
   void clientDisconnect(int fd);
   void closeClient(int fd);
@@ -53,13 +62,14 @@ class Server {
 
  private:
   std::vector<ServerConfig> &servers_;
+  std::string head_;
   InputArgs &options_;
   std::map<int, Listen> running_server_;
   std::map<int, Client*> clients_;
   fd_set master_fds_;
   fd_set read_fds_;
   fd_set write_fds_;
-  std::set<int> fd_set_;
+  std::list<int> fd_set_;
   int max_fd_;
 };
 

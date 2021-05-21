@@ -32,6 +32,10 @@ void CGI::init(int worker_id) {
   std::string cgi_path = "/tmp/webserv_cgi_tmp_" + ft::to_string(worker_id);
   tmp_file_.set_path(cgi_path.c_str());
   tmp_file_.open(true);
+  if (worker_id)
+    Log.print(DEBUG, "worker[" + ft::to_string(worker_id) + "] : CGI -> " + cgi_path_);
+  else
+    Log.print(DEBUG, "server : CGI -> " + cgi_path_);
 }
 
 CGI::~CGI() {
@@ -39,17 +43,11 @@ CGI::~CGI() {
   free(argv_[1]);
   if (env_)
     ft::free_tab(env_);
-  chdir(cwd_.c_str());
   tmp_file_.unlink();
 }
 
 int CGI::execute() {
   file_path_ = cwd_ + "/" + file_.getPath();
-
-  if (chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str()) == -1)
-    return 500;
-
-  std::cout << "CALLING CGI " << cgi_path_ << std::endl;
 
   if (!setCGIEnv())
     return 500;
@@ -67,6 +65,8 @@ int CGI::execute() {
   pid_t pid = fork();
 
   if (pid == 0) {
+    if (chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str()) == -1)
+      return 500;
     close(pip[1]);
     if (dup2(pip[0], 0) == -1)
       return 500;

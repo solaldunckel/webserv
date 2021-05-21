@@ -28,7 +28,7 @@ class Config {
 
   int getWorkers();
 
-  void print();
+  std::string &getFileContent();
 
  private:
   std::string path_;

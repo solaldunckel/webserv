@@ -4,13 +4,29 @@ bool Server::running_ = false;
 
 static void interruptHandler(int sig_int) {
   (void)sig_int;
+  std::cout << "\b\b \b\b";
 	Server::running_ = false;
+}
+
+Server::Server(const Server &copy) : servers_(copy.servers_), options_(copy.options_) {
+  *this = copy;
 }
 
 Server::Server(std::vector<ServerConfig> &servers, InputArgs &options) : servers_(servers), options_(options), max_fd_(0) {
   FD_ZERO(&master_fds_);
   FD_ZERO(&read_fds_);
   FD_ZERO(&write_fds_);
+}
+
+Server	&Server::operator=(const Server &copy) {
+  servers_ = copy.servers_;
+  options_ = copy.options_;
+  running_server_ = copy.running_server_;
+  clients_ = copy.clients_;
+  master_fds_ = copy.master_fds_;
+  fd_set_ = copy.fd_set_;
+  max_fd_ = copy.max_fd_;
+  return (*this);
 }
 
 Server::~Server() {
@@ -48,7 +64,7 @@ void Server::setup() {
 
         running_server_[server_fd] = Listen(list->ip_, list->port_);
 
-        std::cout << "[Server] Listening on " << list->ip_ << ":" << list->port_ << std::endl;
+        Log.print(INFO, "listening on " + ft::to_string(list->ip_) + ":" + ft::to_string(list->port_), GREEN);
 
         add_to_fd_set(server_fd);
         is_bind.push_back(*list);
@@ -71,7 +87,7 @@ void Server::newConnection(int fd) {
   if (clientFd == -1)
     return ;
 
-  print("New connection on " + ft::to_string(running_server_[fd].ip_) + ":" + ft::to_string(running_server_[fd].port_));
+  Log.print(INFO, head_ + "new connection on " + ft::to_string(running_server_[fd].ip_) + ":" + ft::to_string(running_server_[fd].port_), GREEN);
 
   fcntl(clientFd, F_SETFL, O_NONBLOCK);
 
@@ -84,7 +100,7 @@ void Server::newConnection(int fd) {
 void Server::clientDisconnect(int fd) {
   remove_from_fd_set(fd);
   if (clients_.find(fd) != clients_.end()) {
-    print("Connection closed");
+    Log.print(INFO, head_ + "connection closed", GREEN);
     delete clients_[fd];
     clients_.erase(fd);
   }
@@ -106,14 +122,13 @@ bool Server::recv(int fd) {
     return false;
 
   std::string buffer(buf, nbytes);
+
   int ret = req->parse(buffer);
 
   if (ret >= 1) {
-    if (options_.verbose())
-      req->print();
+    clients_[fd]->setupConfig(servers_, options_);
+    Log.print(INFO, head_ + "<< " + clients_[fd]->getConfig()->log());
     clients_[fd]->setupResponse(servers_, options_, ret);
-    if (options_.verbose())
-      clients_[fd]->getResponse()->print();
   }
   return true;
 }
@@ -130,6 +145,7 @@ bool Server::send(int fd) {
       return false;
     else if (ret == 0) {
       bool disconnect = response->shouldDisconnect() || clients_[fd]->disconnect();
+      Log.print(INFO, head_ + ">> " + response->response_log(Log.getLogLevel()));
       clients_[fd]->clear();
       if (disconnect)
         return false;
@@ -139,7 +155,9 @@ bool Server::send(int fd) {
 }
 
 void Server::add_to_fd_set(int fd) {
-  fd_set_.insert(fd);
+  fd_set_.push_back(fd);
+  fd_set_.sort();
+
   FD_SET(fd, &master_fds_);
 
   if (fd > max_fd_)
@@ -147,7 +165,13 @@ void Server::add_to_fd_set(int fd) {
 }
 
 void Server::remove_from_fd_set(int fd) {
-  fd_set_.erase(fd);
+  for (std::list<int>::iterator it = fd_set_.begin(); it != fd_set_.end(); it++) {
+    if (*it == fd) {
+      fd_set_.erase(it);
+      break ;
+    }
+  }
+
   FD_CLR(fd, &master_fds_);
 
   if (fd == max_fd_)
@@ -157,39 +181,53 @@ void Server::remove_from_fd_set(int fd) {
 void Server::check_timeout_disconnect(Client *client) {
   if (client->timeout()) {
     client->setupResponse(servers_, options_, 408);
-    if (options_.verbose())
-      client->getResponse()->print();
   }
 
   if (client->disconnect()) {
     client->setupResponse(servers_, options_, 503);
-    if (options_.verbose())
-      client->getResponse()->print();
   }
 }
 
 void Server::run(int worker_id) {
   worker_id_ = worker_id;
-  int ret = 0;
 
-  signal(SIGINT, interruptHandler);
+  head_ = "server : ";
+  if (worker_id_ > 0)
+    head_ = "worker[" + ft::to_string(worker_id_) + "] : ";
+
+  if (!worker_id_ || worker_id_ == 1) {
+    signal(SIGINT, interruptHandler);
+    signal(SIGQUIT, interruptHandler);
+  }
 
   running_ = true;
-  print("Starting");
+  Log.print(INFO, head_ + "starting", GREEN);
+
+  struct timeval timeout;
+
+  #ifdef BONUS
+  timeout.tv_sec = 0;
+  #else
+  timeout.tv_sec = 300;
+  #endif
+
+  timeout.tv_usec = 0;
 
   while (running_) {
     read_fds_ = master_fds_;
     write_fds_ = master_fds_;
 
-    ret = select(max_fd_ + 1, &read_fds_, &write_fds_, NULL, NULL);
+    int ret = select(max_fd_ + 1, &read_fds_, &write_fds_, NULL, &timeout);
 
     if (ret >= 0) {
       for (std::map<int, Listen>::iterator it = running_server_.begin(); it != running_server_.end(); it++) {
         if (FD_ISSET(it->first, &read_fds_)) {
+          #ifdef BONUS
+          pthread_mutex_lock(&g_accept);
+          #endif
           newConnection(it->first);
           #ifdef BONUS
-            usleep(1000);
-            break ;
+          pthread_mutex_unlock(&g_accept);
           #endif
         }
       }
@@ -214,7 +252,7 @@ void Server::run(int worker_id) {
         }
       }
     } else if (ret == -1 && running_)
-      std::cerr << "select : " << strerror(errno) << std::endl;
+      throw webserv_exception("select() failed", errno);
     usleep(500);
   }
 
@@ -225,18 +263,12 @@ void Server::run(int worker_id) {
     clientDisconnect(it->first);
   }
 
-  print("Shutdown");
-
-  #ifdef BONUS
-  if (worker_id_)
-    exit(0);
-  #endif
+  Log.print(INFO, head_ + "shutdown", GREEN);
 }
 
 void Server::print(std::string str) {
+  std::string head = "[server] ";
   if (worker_id_ > 0)
-    std::cout << "[Worker: " << worker_id_ << "] ";
-  else
-    std::cout << "[Server] ";
-  std::cout << str << std::endl;
+    head = "worker[" + ft::to_string(worker_id_) + "] : ";
+  Log.print(INFO, head + str);
 }

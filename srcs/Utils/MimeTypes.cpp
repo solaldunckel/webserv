@@ -1,8 +1,6 @@
 # include "MimeTypes.hpp"
 
-std::map<std::string, std::string, ft::comp> MimeTypes::mimes_;
-
-void MimeTypes::initMap() {
+MimeTypes::MimeTypes() {
   mimes_[".html"] = "text/html";
   mimes_[".htm"] = "text/html";
   mimes_[".shtml"] = "text/html";
@@ -123,7 +121,6 @@ void MimeTypes::initMap() {
 }
 
 std::string MimeTypes::getType(std::string extension) {
-  initMap();
   if (!extension.length())
     return "application/octet-stream";
   if (mimes_.count(extension))
