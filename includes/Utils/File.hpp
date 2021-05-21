@@ -18,6 +18,7 @@
 # include "MimeTypes.hpp"
 # include "Logger.hpp"
 # include "StringUtils.hpp"
+# include "MimeTypes.hpp"
 
 extern Logger Log;
 extern MimeTypes g_mimes;
