@@ -237,12 +237,10 @@ void File::parseExtensions() {
   file.erase(0, file.find("."));
   if (file.find_last_of(".") != std::string::npos) {
     int last = file.find_last_of(".");
-    MimeTypes l;
     mime_ext_ = file.substr(last);
-    while(!l.getType(mime_ext_).compare("application/octet-stream")){
+    while (!g_mimes.getType(mime_ext_).compare("application/octet-stream")) {
       int last2 = last;
-      if ((file.find_last_of(".", last - 1) != std::string::npos)){
-
+      if ((file.find_last_of(".", last - 1) != std::string::npos)) {
         last = file.find_last_of(".", last - 1);
         std::cout << "oups " << mime_ext_ << " ; " << last2 << file << std::endl;
         mime_ext_ = file.substr(last, last2 - last) ;
