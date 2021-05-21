@@ -250,7 +250,10 @@ void File::parseExtensions() {
       else
         break ;
       if (last <= 0)
+      {
+        mime_negoc_ = mime_ext_;
         break ;
+      }
     }
     file.erase(file.find_last_of("."));
   }
