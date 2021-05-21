@@ -254,7 +254,9 @@ std::string &RequestConfig::getProtocol() {
 std::string RequestConfig::log() {
   std::string ret;
 
-  ret = ret + getMethod() + " " + getRequestTarget();
-  ret = ret + " -> [location: " + getUri() + "]";
+  ret = ret + "[method: " + getMethod() + "]";
+  ret = ret + " [target: " + getRequestTarget() + "]";
+  ret = ret + " [server: " + ft::to_string(server_->id_) + "]";
+  ret = ret + " [location: " + getUri() + "]";
   return ret;
 }

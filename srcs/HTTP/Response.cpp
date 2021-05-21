@@ -5,7 +5,6 @@
 */
 
 Response::Response(RequestConfig &config, int worker_id, int error_code) : config_(config), worker_id_(worker_id) {
-  headers_["Server"] = "webserv/1.0";
   error_code_ = error_code;
   status_code_ = 0;
   total_sent_ = 0;
@@ -28,7 +27,6 @@ void Response::clear() {
   response_.clear();
   body_.clear();
   headers_.clear();
-  headers_["Server"] = "webserv/1.0";
 }
 
 void Response::initMethodMap() {
@@ -83,6 +81,8 @@ int Response::buildErrorPage(int status_code) {
     headers_["WWW-Authenticate"] = "Basic realm=\"Access to restricted area\"";
   if (status_code == 408 || status_code == 503)
     headers_["Connection"] = "close";
+  if (status_code == 503)
+    headers_["Retry-After"] = "30";
   return status_code;
 }
 
@@ -182,13 +182,35 @@ int Response::handleMethods() {
     cgi.parseHeaders(headers_);
     body_ = cgi.getBody();
     headers_["Content-Length"] = ft::to_string(body_.length());
+    return status_code_;
   }
-  else
-    status_code_ = (this->*(Response::methods_[method]))();
-  return status_code_;
+
+  if (method == "PUT" || method == "POST") {
+    std::string path = config_.getUri() + "/" + config_.getTarget();
+
+    if (!config_.getUpload().empty()) {
+      File dir(config_.getRoot() + "/" + config_.getUpload());
+
+      path = "/" + config_.getUpload() + "/" + config_.getTarget();
+      if (dir.exists() && !dir.is_directory()) {
+        dir.unlink();
+      }
+
+      if (!dir.exists()) {
+        if (mkdir(dir.getPath().c_str(), 0755) == -1)
+          Log.print(DEBUG, "mkdir : " + std::string(strerror(errno)), RED, true);
+      }
+      file_.set_path(dir.getPath() + "/" + config_.getTarget());
+    }
+    headers_["Location"] = ft::unique_char(path);
+  }
+
+  return (this->*(Response::methods_[method]))();
 }
 
 void Response::createResponse() {
+  headers_["Server"] = "webserv/1.0";
+
   if (config_.getMethod() == "HEAD")
     body_.clear();
 
@@ -241,11 +263,6 @@ int Response::GET() {
 int Response::POST() {
   int status_code = 200;
 
-  std::string path = config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget();
-
-  if (!config_.getUpload().empty())
-    file_.set_path(config_.getUpload() + "/" + config_.getTarget());
-
   body_ = config_.getBody();
 
   #ifdef BONUS
@@ -255,12 +272,10 @@ int Response::POST() {
   if (!file_.exists()) {
     file_.create(body_);
     status_code = 201;
-    headers_["Location"] = ft::unique_char(path);
   }
   else {
     file_.append(body_);
     status_code = 200;
-    headers_["Content-Location"] = ft::unique_char(path);
   }
 
   #ifdef BONUS
@@ -274,15 +289,13 @@ int Response::POST() {
 int Response::PUT() {
   int status_code = 204;
 
-  if (!config_.getUpload().empty())
-    file_.set_path(config_.getUpload() + "/" + config_.getTarget());
-
   #ifdef BONUS
   pthread_mutex_lock(&g_write);
   #endif
 
   if (!file_.exists()) {
     file_.create(config_.getBody());
+    headers_["Content-Length"] = "0";
     status_code = 201;
   }
   else
@@ -292,7 +305,6 @@ int Response::PUT() {
   pthread_mutex_unlock(&g_write);
   #endif
 
-  headers_["Location"] = ft::unique_char(config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget());
   return status_code;
 }
 
@@ -426,7 +438,7 @@ std::string Response::response_log(LogLevel level) {
   std::string ret;
 
   if (level == INFO) {
-    ret = ft::to_string(status_code_) + " " + status_[status_code_];
+    ret = "[status: " + ft::to_string(status_code_) + " " + status_[status_code_] + "]";
     if (headers_.count("Content-Length"))
       ret = ret + " [length: " + headers_["Content-Length"] + "]";
   } else if (level > INFO) {

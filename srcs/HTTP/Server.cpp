@@ -155,7 +155,9 @@ bool Server::send(int fd) {
 }
 
 void Server::add_to_fd_set(int fd) {
-  fd_set_.insert(fd);
+  fd_set_.push_back(fd);
+  fd_set_.sort();
+
   FD_SET(fd, &master_fds_);
 
   if (fd > max_fd_)
@@ -163,7 +165,13 @@ void Server::add_to_fd_set(int fd) {
 }
 
 void Server::remove_from_fd_set(int fd) {
-  fd_set_.erase(fd);
+  for (std::list<int>::iterator it = fd_set_.begin(); it != fd_set_.end(); it++) {
+    if (*it == fd) {
+      fd_set_.erase(it);
+      break ;
+    }
+  }
+
   FD_CLR(fd, &master_fds_);
 
   if (fd == max_fd_)

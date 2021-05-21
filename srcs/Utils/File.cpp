@@ -26,14 +26,15 @@ bool File::open(bool create) {
 }
 
 void File::close() {
-  if (fd_ > 0)
+  if (fd_ > 0) {
     ::close(fd_);
+    fd_ = 0;
+  }
 }
 
 void File::create(std::string &body) {
-  if (!open(true) || write(fd_, body.c_str(), body.length()) == -1) {
-    std::cerr << "create : " << strerror(errno) << std::endl;
-  }
+  if (!open(true) || write(fd_, body.c_str(), body.length()) < 0)
+    Log.print(DEBUG, "create : " + std::string(strerror(errno)) + " of " + path_, RED, true);
 }
 
 void File::append(std::string &body) {
@@ -41,15 +42,15 @@ void File::append(std::string &body) {
   fd_ = ::open(path_.c_str(), O_RDWR | O_APPEND, 755);
   if (fd_ < 0)
     return ;
-  if (write(fd_, body.c_str(), body.length()) == -1)
-    std::cerr << "append : " << strerror(errno) << " of " << path_ << std::endl;
+  if (write(fd_, body.c_str(), body.length()) < 0)
+    Log.print(DEBUG, "append : " + std::string(strerror(errno)) + " of " + path_, RED, true);
 }
 
 void File::unlink() {
   if (!exists())
     return ;
   if (::unlink(path_.c_str()) == -1)
-    std::cerr << "unlink : " << strerror(errno) << " of " << path_ << std::endl;
+    Log.print(DEBUG, "unlink : " + std::string(strerror(errno)) + " of " + path_, RED, true);
 }
 
 std::string set_width(size_t width, std::string str) {
@@ -176,7 +177,7 @@ std::string File::find_index(std::vector<std::string> &indexes) {
     }
     closedir(dir);
   } else {
-    strerror(errno);
+    Log.print(DEBUG, "opendir : " + std::string(strerror(errno)) + " of " + path_, RED, true);
     return "";
   }
   return "";
@@ -188,7 +189,11 @@ std::string File::getContent() {
   int ret;
 
   lseek(fd_, 0, SEEK_SET);
-  while ((ret = read(fd_, buf, 4096)) > 0) {
+  while ((ret = read(fd_, buf, 4096)) != 0) {
+    if (ret == -1) {
+      Log.print(DEBUG, "read : " + std::string(strerror(errno)), RED, true);
+      return "";
+    }
     buf[ret] = '\0';
     final.insert(final.length(), buf, ret);
   }
@@ -216,7 +221,7 @@ void File::parse_match() {
     }
     closedir(dir);
   } else {
-    std::cerr << strerror(errno) << std::endl;
+    Log.print(DEBUG, "opendir : " + std::string(strerror(errno)) + " of " + path_, RED, true);
   }
 }
 

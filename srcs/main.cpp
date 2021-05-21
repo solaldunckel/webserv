@@ -2,9 +2,10 @@
 #include "Config.hpp"
 #include "Server.hpp"
 #include "Logger.hpp"
-#include <pthread.h>
 
 #ifdef BONUS
+#include <pthread.h>
+
 pthread_mutex_t g_accept;
 pthread_mutex_t g_write;
 
@@ -12,7 +13,6 @@ struct Worker {
   Server *serv_;
   int id_;
   pthread_t thr_;
-  int pip_[2];
 };
 
 std::vector<Worker> g_workers;
@@ -76,8 +76,8 @@ int main(int argc, char **argv) {
         delete g_workers[i].serv_;
       }
 
+      pthread_mutex_destroy(&g_write);
       pthread_mutex_destroy(&g_accept);
-	    pthread_mutex_destroy(&g_write);
     } else {
       serv.run();
     }

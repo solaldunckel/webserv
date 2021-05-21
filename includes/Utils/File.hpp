@@ -15,8 +15,10 @@
 # include <algorithm>
 # include <vector>
 
+# include "Logger.hpp"
 # include "StringUtils.hpp"
 
+extern Logger Log;
 struct auto_listing {
   std::string name_;
   bool is_dir_;

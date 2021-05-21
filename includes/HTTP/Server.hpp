@@ -4,7 +4,7 @@
 # include <iostream>
 # include <vector>
 # include <cstring>
-# include <set>
+# include <list>
 
 # include <sys/types.h>
 # include <sys/socket.h>
@@ -69,7 +69,7 @@ class Server {
   fd_set master_fds_;
   fd_set read_fds_;
   fd_set write_fds_;
-  std::set<int> fd_set_;
+  std::list<int> fd_set_;
   int max_fd_;
 };
 
