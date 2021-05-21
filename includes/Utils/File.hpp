@@ -15,10 +15,13 @@
 # include <algorithm>
 # include <vector>
 
+# include "MimeTypes.hpp"
 # include "Logger.hpp"
 # include "StringUtils.hpp"
 
 extern Logger Log;
+extern MimeTypes g_mimes;
+
 struct auto_listing {
   std::string name_;
   bool is_dir_;

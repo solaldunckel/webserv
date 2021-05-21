@@ -14,7 +14,12 @@
 
 class RequestConfig;
 
+#ifdef BONUS
 extern pthread_mutex_t g_write;
+#endif
+
+extern StatusCode g_status;
+extern MimeTypes g_mimes;
 
 class Response {
  public:
@@ -50,11 +55,9 @@ class Response {
 
  private:
   RequestConfig &config_;
-  MimeTypes mimes_;
   File file_;
   int error_code_;
   int worker_id_;
-  StatusCode status_;
   size_t total_sent_;
   int status_code_;
   std::string response_;

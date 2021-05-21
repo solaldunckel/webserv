@@ -15,7 +15,6 @@
 # include <fcntl.h>
 # include <sys/select.h>
 # include <signal.h>
-# include <pthread.h>
 
 # include "Logger.hpp"
 # include "InputArgs.hpp"

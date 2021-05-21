@@ -2,6 +2,9 @@
 
 bool Server::running_ = false;
 
+StatusCode g_status;
+MimeTypes g_mimes;
+
 static void interruptHandler(int sig_int) {
   (void)sig_int;
   std::cout << "\b\b \b\b";

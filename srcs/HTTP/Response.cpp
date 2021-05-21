@@ -57,25 +57,27 @@ bool Response::checkAuth() {
 
 int Response::buildErrorPage(int status_code) {
   if (!config_.getErrorPages()[status_code].empty()) {
-    std::string target = config_.getErrorPages()[status_code];
+    std::string target = ft::unique_char(config_.getErrorPages()[status_code]);
+    std::string cur_target = ft::unique_char("/" + config_.getTarget());
 
-    config_.getMethod() = "GET";
+    if (target != cur_target) {
+      config_.getMethod() = "GET";
 
-    redirect_ = true;
-    redirect_code_ = status_code;
-    redirect_target_ = target;
+      redirect_ = true;
+      redirect_code_ = status_code;
+      redirect_target_ = target;
 
-    return 0;
-  } else {
-    body_ += "<html>\r\n";
-    body_ += "<head><title>" + ft::to_string(status_code) + " " + status_[status_code] + "</title></head>\r\n";
-    body_ += "<body>\r\n";
-    body_ += "<center><h1>" + ft::to_string(status_code) + " " + status_[status_code] + "</h1></center>\r\n";
-    body_ += "<hr><center>" + headers_["Server"] + "</center>\r\n";
-    body_ += "</body>\r\n";
-    body_ += "</html>\r\n";
-    headers_["Content-Type"] = mimes_.getType(".html");
+      return 0;
+    }
   }
+  body_ += "<html>\r\n";
+  body_ += "<head><title>" + ft::to_string(status_code) + " " + g_status[status_code] + "</title></head>\r\n";
+  body_ += "<body>\r\n";
+  body_ += "<center><h1>" + ft::to_string(status_code) + " " + g_status[status_code] + "</h1></center>\r\n";
+  body_ += "<hr><center>" + headers_["Server"] + "</center>\r\n";
+  body_ += "</body>\r\n";
+  body_ += "</html>\r\n";
+  headers_["Content-Type"] = g_mimes.getType(".html");
   headers_["Content-Length"] = ft::to_string(body_.length());
   if (status_code == 401)
     headers_["WWW-Authenticate"] = "Basic realm=\"Access to restricted area\"";
@@ -224,7 +226,7 @@ void Response::createResponse() {
     headers_.erase("Status");
   }
   else
-    status_code = ft::to_string(status_code_) + " " + status_[status_code_];
+    status_code = ft::to_string(status_code_) + " " + g_status[status_code_];
 
   response_ = response_ + config_.getProtocol() + " " + status_code + "\r\n";
 
@@ -248,12 +250,12 @@ void Response::createResponse() {
 
 int Response::GET() {
   if (config_.getAutoindex() && file_.is_directory()) {
-    headers_["Content-Type"] = mimes_.getType(".html");
+    headers_["Content-Type"] = g_mimes.getType(".html");
     body_ = file_.autoIndex(config_.getRequestTarget());
     headers_["Content-Length"] = ft::to_string(body_.length());
   }
   else {
-    headers_["Content-Type"] = mimes_.getType(file_.getMimeExtension());
+    headers_["Content-Type"] = g_mimes.getType(file_.getMimeExtension());
     body_ = file_.getContent();
     headers_["Content-Length"] = ft::to_string(body_.length());
   }
@@ -320,7 +322,7 @@ int Response::DELETE() {
               <h1>File deleted</h1>\n\
             </body>\n\
             </html>";
-  headers_["Content-Type"] = mimes_.getType(".html");
+  headers_["Content-Type"] = g_mimes.getType(".html");
   headers_["Content-Length"] = ft::to_string(body_.length());
   return 200;
 }
@@ -438,7 +440,7 @@ std::string Response::response_log(LogLevel level) {
   std::string ret;
 
   if (level == INFO) {
-    ret = "[status: " + ft::to_string(status_code_) + " " + status_[status_code_] + "]";
+    ret = "[status: " + ft::to_string(status_code_) + " " + g_status[status_code_] + "]";
     if (headers_.count("Content-Length"))
       ret = ret + " [length: " + headers_["Content-Length"] + "]";
   } else if (level > INFO) {

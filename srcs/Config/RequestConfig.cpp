@@ -38,9 +38,9 @@ void RequestConfig::redirectLocation(std::string target) {
   if (request_.getStatus() > 2)
     location = getLocationForRequest(server_, target);
 
+  target_ = target;
   if (location) {
     location_ = location;
-    target_ = target;
     if (target_.find(location->uri_) != std::string::npos)
       target_.erase(0, location_->uri_.length());
   }

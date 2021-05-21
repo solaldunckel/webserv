@@ -41,6 +41,7 @@ void Client::setupResponse(std::vector<ServerConfig> &servers, InputArgs &option
     if (response_->redirect()) {
       ret = 1;
       config_->redirectLocation(response_->redirect_target());
+      Log.print(INFO, "INTERNAL REDIRECT : [target: " + response_->redirect_target() + "]");
       response_->clear();
     }
     if (loop >= 10) {
