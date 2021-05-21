@@ -17,6 +17,7 @@
 
 # include "Logger.hpp"
 # include "StringUtils.hpp"
+# include "MimeTypes.hpp"
 
 extern Logger Log;
 struct auto_listing {
