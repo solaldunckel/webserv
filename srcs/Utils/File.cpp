@@ -10,9 +10,13 @@ File::~File() {
   close();
 }
 
-void File::set_path(std::string path) {
+void File::set_path(std::string path, bool negociation) {
   path_ = ft::unique_char(path);
-  parseExtensions();
+
+  if (negociation)
+    parseExtensionsNegociation();
+  else
+    parseExtensions();
 }
 
 bool File::open(bool create) {
@@ -238,21 +242,33 @@ void File::parseExtensions() {
   if (file.find_last_of(".") != std::string::npos) {
     int last = file.find_last_of(".");
     mime_ext_ = file.substr(last);
+  }
+}
+
+void File::parseExtensionsNegociation() {
+  std::string file = path_.substr(path_.find_last_of("/") + 1);
+
+  if (file.empty())
+    return;
+
+  file_name_full_ = file;
+
+  file_name_ = file.substr(0, file.find("."));
+  file.erase(0, file.find("."));
+  if (file.find_last_of(".") != std::string::npos) {
+    int last = file.find_last_of(".");
+    mime_ext_ = file.substr(last);
     while (!g_mimes.getType(mime_ext_).compare("application/octet-stream")) {
       int last2 = last;
       if ((file.find_last_of(".", last - 1) != std::string::npos)) {
         last = file.find_last_of(".", last - 1);
-        mime_negoc_ = file.substr(last, last2 - last) ;
+        mime_ext_ = file.substr(last, last2 - last) ;
       }
       else
         break ;
       if (last <= 0)
-      {
-        mime_negoc_ = mime_ext_;
         break ;
-      }
     }
-    file.erase(file.find_last_of("."));
   }
 }
 

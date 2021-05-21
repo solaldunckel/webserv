@@ -45,7 +45,7 @@ class File {
   void create(std::string &body);
   void append(std::string &body);
   void unlink();
-  void set_path(std::string path);
+  void set_path(std::string path, bool negociation = false);
   bool is_directory();
   std::string last_modified();
   bool exists();
@@ -57,6 +57,7 @@ class File {
   std::string autoIndex(std::string &target);
   std::string &getMimeExtension();
   void parseExtensions();
+  void parseExtensionsNegociation();
   std::string getContent();
   std::string &getPath();
   std::vector<std::string> &getMatches();
@@ -67,7 +68,6 @@ class File {
   std::string file_name_;
   std::string file_name_full_;
   std::string mime_ext_;
-  std::string mime_negoc_;
   std::vector<std::string> matches_;
   std::string path_;
 };

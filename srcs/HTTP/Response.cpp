@@ -155,12 +155,12 @@ int Response::handleMethods() {
 
       if (!config_.getHeader("Accept-Language").empty()) {
         if (localization(matches)) {
-            file_.set_path(path.substr(0, path.find_last_of("/") + 1) + matches.front());
+          file_.set_path(path.substr(0, path.find_last_of("/") + 1) + matches.front(), true);
         }
       }
       if (!config_.getHeader("Accept-Charset").empty()) {
         charset_ = accept_charset(matches);
-          file_.set_path(path.substr(0, path.find_last_of("/") + 1) + matches.front());
+        file_.set_path(path.substr(0, path.find_last_of("/") + 1) + matches.front(), true);
       }
 
       if (!file_.open())
@@ -353,7 +353,7 @@ bool Response::localization(std::vector<std::string> &matches){
     if (all.find(".") != std::string::npos)
       q = ft::stoi(all.substr(all.find_first_of(".") + 1, 1));
     if (all.find(",") == std::string::npos){
-      if (!select_matches.empty()){
+      if (!select_matches.empty()) {
         matches = select_matches;
         return (1);
       }
