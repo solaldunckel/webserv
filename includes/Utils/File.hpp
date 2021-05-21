@@ -64,6 +64,7 @@ class File {
   std::string file_name_;
   std::string file_name_full_;
   std::string mime_ext_;
+  std::string mime_negoc_;
   std::vector<std::string> matches_;
   std::string path_;
 };
