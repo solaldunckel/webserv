@@ -242,15 +242,16 @@ void File::parseExtensions() {
       int last2 = last;
       if ((file.find_last_of(".", last - 1) != std::string::npos)) {
         last = file.find_last_of(".", last - 1);
-        std::cout << "oups " << mime_ext_ << " ; " << last2 << file << std::endl;
-        mime_ext_ = file.substr(last, last2 - last) ;
+        mime_negoc_ = file.substr(last, last2 - last) ;
       }
       else
         break ;
       if (last <= 0)
+      {
+        mime_negoc_ = mime_ext_;
         break ;
+      }
     }
-    std::cout << "oups " << mime_ext_ << " ; " << file << std::endl;
     file.erase(file.find_last_of("."));
   }
 }
