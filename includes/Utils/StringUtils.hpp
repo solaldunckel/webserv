@@ -13,6 +13,7 @@ namespace ft {
   std::string to_lower(std::string s);
   std::string to_upper(std::string s);
   std::string trim_left(std::string str, char c);
+  std::string trim_right(std::string str, char c);
   size_t to_hex(std::string &str);
   char *strdup(const char *str);
   std::string unique_char(std::string str);

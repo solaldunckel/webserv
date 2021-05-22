@@ -187,7 +187,7 @@ int Response::handleMethods() {
     if (!config_.getUpload().empty()) {
       File dir(config_.getRoot() + "/" + config_.getUpload());
 
-      path = "/" + config_.getUpload() + "/" + config_.getTarget();
+      path = config_.getUri() + "/" + config_.getUpload() + "/" + config_.getTarget();
       if (dir.exists() && !dir.is_directory()) {
         dir.unlink();
       }

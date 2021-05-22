@@ -128,7 +128,9 @@ int Request::headers() {
         return 400;
       if (header.length() > 1000 || value.length() > 4000)
         return 400;
-      headers_[header] = ft::trim_left(value, ' ');
+      headers_[header] = ft::trim_left(ft::trim_right(value, ' '), ' ');
+      if (headers_[header].empty())
+        headers_.erase(header);
     }
     else
       return 400;
@@ -140,16 +142,16 @@ int Request::headers() {
 int Request::prebody() {
   body_offset_ = 0;
 
-  if (headers_["Host"].empty())
+  if (headers_.find("Host") == headers_.end() || headers_["Host"].empty())
     return 400;
 
   if (headers_["Host"].find("@") != std::string::npos)
     return 400;
 
-  if (!headers_["Transfer-Encoding"].empty() && headers_["Transfer-Encoding"] == "chunked") {
+  if (headers_.find("Transfer-Encoding") != headers_.end() && headers_["Transfer-Encoding"] == "chunked") {
     status_ = CHUNK;
     chunk_status_ = CHUNK_SIZE;
-  } else if (!headers_["Content-Length"].empty()) {
+  } else if (headers_.find("Content-Length") != headers_.end()) {
     if (headers_["Content-Length"].find_first_not_of("0123456789") != std::string::npos)
       return 400;
     try {

@@ -18,6 +18,14 @@ namespace ft {
     return str;
   }
 
+  std::string trim_right(std::string str, char c) {
+    size_t lastpos = str.find_last_not_of(c);
+    if (lastpos == std::string::npos)
+      return "";
+    str.erase(lastpos + 1, str.length());
+    return str;
+  }
+
   size_t to_hex(std::string &str) {
     std::stringstream ss;
     size_t hex;

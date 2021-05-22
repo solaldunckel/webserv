@@ -258,5 +258,7 @@ std::string RequestConfig::log() {
   ret = ret + " [target: " + getRequestTarget() + "]";
   ret = ret + " [server: " + ft::to_string(server_->id_) + "]";
   ret = ret + " [location: " + getUri() + "]";
+  for (std::map<std::string, std::string>::iterator it = getHeaders().begin(); it != getHeaders().end(); it++)
+    ret = ret + "\n" + it->first + ": " + it->second;
   return ret;
 }
