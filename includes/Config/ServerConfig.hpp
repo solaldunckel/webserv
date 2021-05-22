@@ -57,9 +57,6 @@ class ServerConfig {
   std::vector<std::string> &getServerNames();
   std::vector<ServerConfig> &getLocations();
 
-  void print();
-  void printLocation();
-
   enum LocationModifier {
     NONE,
     EXACT,

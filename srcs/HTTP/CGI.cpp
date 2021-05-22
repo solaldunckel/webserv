@@ -43,6 +43,7 @@ CGI::~CGI() {
   free(argv_[1]);
   if (env_)
     ft::free_tab(env_);
+  tmp_file_.close();
   tmp_file_.unlink();
 }
 
@@ -78,7 +79,8 @@ int CGI::execute() {
   }
   else if (pid > 0) {
     close(pip[0]);
-    write(pip[1], req_body_.c_str(), req_body_.length());
+    if (req_body_.length() && write(pip[1], req_body_.c_str(), req_body_.length()) <= 0)
+      return 500;
     close(pip[1]);
 
     int status;

@@ -154,9 +154,8 @@ int Response::handleMethods() {
       std::vector<std::string> &matches = file_.getMatches();
 
       if (!config_.getHeader("Accept-Language").empty()) {
-        if (localization(matches)) {
+        if (localization(matches))
           file_.set_path(path.substr(0, path.find_last_of("/") + 1) + matches.front(), true);
-        }
       }
       if (!config_.getHeader("Accept-Charset").empty()) {
         charset_ = accept_charset(matches);
@@ -422,7 +421,7 @@ std::string Response::redirect_target() {
 int Response::send(int fd) {
   int ret = ::send(fd, response_.c_str() + total_sent_, response_.length() - total_sent_, 0);
 
-  if (ret < 0) {
+  if (ret <= 0) {
     std::cout << "send : " << strerror(errno) << std::endl;
     return -1;
   }

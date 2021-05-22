@@ -268,10 +268,3 @@ void Server::run(int worker_id) {
 
   Log.print(INFO, head_ + "shutdown", GREEN);
 }
-
-void Server::print(std::string str) {
-  std::string head = "[server] ";
-  if (worker_id_ > 0)
-    head = "worker[" + ft::to_string(worker_id_) + "] : ";
-  Log.print(INFO, head + str);
-}

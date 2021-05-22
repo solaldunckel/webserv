@@ -23,21 +23,26 @@ bool File::open(bool create) {
   close();
 
   if (create)
-    fd_ = ::open(path_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0666);
+    fd_ = ::open(path_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 755);
   else
     fd_ = ::open(path_.c_str(), O_RDONLY);
   return fd_ > 0;
 }
 
 void File::close() {
-  if (fd_ > 0) {
-    ::close(fd_);
-    fd_ = 0;
-  }
+  if (fd_ <= 0)
+    return ;
+
+  ::close(fd_);
+  fd_ = 0;
 }
 
 void File::create(std::string &body) {
-  if (!open(true) || write(fd_, body.c_str(), body.length()) < 0)
+  if (!open(true)) {
+    Log.print(DEBUG, "create : " + std::string(strerror(errno)) + " of " + path_, RED, true);
+    return ;
+  }
+  if (body.length() && write(fd_, body.c_str(), body.length()) <= 0)
     Log.print(DEBUG, "create : " + std::string(strerror(errno)) + " of " + path_, RED, true);
 }
 
@@ -46,7 +51,7 @@ void File::append(std::string &body) {
   fd_ = ::open(path_.c_str(), O_RDWR | O_APPEND, 755);
   if (fd_ < 0)
     return ;
-  if (write(fd_, body.c_str(), body.length()) < 0)
+  if (body.length() && write(fd_, body.c_str(), body.length()) <= 0)
     Log.print(DEBUG, "append : " + std::string(strerror(errno)) + " of " + path_, RED, true);
 }
 

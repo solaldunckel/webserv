@@ -26,7 +26,7 @@
 
 # define MAX_CONNECTION 128
 # define MAX_CLIENT 1000
-# define BUF_SIZE 65536
+# define BUF_SIZE 65535
 
 extern pthread_mutex_t g_accept;
 extern pthread_mutex_t g_write;
@@ -54,14 +54,12 @@ class Server {
   void add_to_fd_set(int fd);
   void remove_from_fd_set(int fd);
   void check_timeout_disconnect(Client *client);
-  void print(std::string str);
 
   static bool running_;
   int worker_id_;
 
  private:
   std::vector<ServerConfig> &servers_;
-  std::string head_;
   InputArgs &options_;
   std::map<int, Listen> running_server_;
   std::map<int, Client*> clients_;
@@ -70,6 +68,7 @@ class Server {
   fd_set write_fds_;
   std::list<int> fd_set_;
   int max_fd_;
+  std::string head_;
 };
 
 #endif

@@ -30,11 +30,11 @@ void Logger::print(LogLevel level, std::string str, std::string color, bool erro
     if (error) {
       std::cerr << CYAN << "[" << buf << "] " << RESET;
       std::cerr << color << str << RESET;
-      std::cerr << std::endl;
+      std::cerr << "\n";
     } else {
       std::cout << CYAN << "[" << buf << "] " << RESET;
       std::cout << color << str << RESET;
-      std::cout << std::endl;
+      std::cout << "\n";
     }
     #ifdef BONUS
     pthread_mutex_unlock(&g_write);
