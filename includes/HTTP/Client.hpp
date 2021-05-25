@@ -9,8 +9,8 @@
 # include "ServerConfig.hpp"
 # include "Response.hpp"
 
-# define START_TIMEOUT 30
-# define LAST_TIMEOUT 5
+# define START_TIMEOUT 60
+# define LAST_TIMEOUT 10
 
 class RequestConfig;
 class InputArgs;
