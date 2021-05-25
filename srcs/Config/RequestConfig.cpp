@@ -251,14 +251,16 @@ std::string &RequestConfig::getProtocol() {
   return request_.protocol_;
 }
 
-std::string RequestConfig::log() {
+std::string RequestConfig::log(LogLevel level) {
   std::string ret;
 
   ret = ret + "[method: " + getMethod() + "]";
   ret = ret + " [target: " + getRequestTarget() + "]";
   ret = ret + " [server: " + ft::to_string(server_->id_) + "]";
   ret = ret + " [location: " + getUri() + "]";
-  for (std::map<std::string, std::string>::iterator it = getHeaders().begin(); it != getHeaders().end(); it++)
-    ret = ret + "\n" + it->first + ": " + it->second;
+  if (level > INFO) {
+    for (std::map<std::string, std::string>::iterator it = getHeaders().begin(); it != getHeaders().end(); it++)
+      ret = ret + "\n" + it->first + ": " + it->second;
+  }
   return ret;
 }

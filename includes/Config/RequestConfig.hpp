@@ -52,7 +52,7 @@ class RequestConfig {
   std::string &getHost();
   uint32_t &getPort();
   Client &getClient();
-  std::string log();
+  std::string log(LogLevel level);
 
  private:
   Request &request_;

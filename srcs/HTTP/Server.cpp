@@ -130,7 +130,7 @@ bool Server::recv(int fd) {
 
   if (ret >= 1) {
     clients_[fd]->setupConfig(servers_, options_);
-    Log.print(INFO, head_ + "<< " + clients_[fd]->getConfig()->log());
+    Log.print(INFO, head_ + "<< " + clients_[fd]->getConfig()->log(Log.getLogLevel()));
     clients_[fd]->setupResponse(servers_, options_, ret);
   }
   return true;
