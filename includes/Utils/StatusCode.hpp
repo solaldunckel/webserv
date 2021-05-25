@@ -6,12 +6,11 @@
 
 class StatusCode {
  public:
-  std::string &operator[](int status_code) const;
+  StatusCode();
+  std::string &operator[](int status_code);
 
  private:
-  static bool init_;
-  static std::map<int, std::string> error_codes_;
-  static void initMap();
+  std::map<int, std::string> error_codes_;
 };
 
 #endif

@@ -20,13 +20,6 @@ void RequestConfig::setup(InputArgs &options) {
   if (request_.getStatus() > 2)
     location = getLocationForRequest(server, request_.target_);
 
-  if (options.verbose()) {
-    if (location)
-      std::cout << "MATCHING LOCATION " << location->uri_ << std::endl;
-    else
-      std::cout << "NO MATCHING LOCATION" << std::endl;
-  }
-
   server_ = server;
   location_ = server;
 
@@ -39,20 +32,18 @@ void RequestConfig::setup(InputArgs &options) {
   }
 }
 
-bool RequestConfig::redirectLocation(std::string target) {
+void RequestConfig::redirectLocation(std::string target) {
   ServerConfig *location = NULL;
 
   if (request_.getStatus() > 2)
     location = getLocationForRequest(server_, target);
 
-  if (location != location_) {
+  target_ = target;
+  if (location) {
     location_ = location;
-    target_ = target;
     if (target_.find(location->uri_) != std::string::npos)
       target_.erase(0, location_->uri_.length());
-    return true;
   }
-  return false;
 }
 
 ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &servers) {
@@ -172,6 +163,10 @@ std::string &RequestConfig::getTarget() {
   return target_;
 }
 
+std::string &RequestConfig::getRequestTarget() {
+  return request_.target_;
+}
+
 std::string &RequestConfig::getQuery() {
   return request_.query_string_;
 }
@@ -254,4 +249,18 @@ std::map<std::string, std::string, ft::comp> &RequestConfig::getHeaders() {
 
 std::string &RequestConfig::getProtocol() {
   return request_.protocol_;
+}
+
+std::string RequestConfig::log(LogLevel level) {
+  std::string ret;
+
+  ret = ret + "[method: " + getMethod() + "]";
+  ret = ret + " [target: " + getRequestTarget() + "]";
+  ret = ret + " [server: " + ft::to_string(server_->id_) + "]";
+  ret = ret + " [location: " + getUri() + "]";
+  if (level > INFO) {
+    for (std::map<std::string, std::string>::iterator it = getHeaders().begin(); it != getHeaders().end(); it++)
+      ret = ret + "\n" + it->first + ": " + it->second;
+  }
+  return ret;
 }

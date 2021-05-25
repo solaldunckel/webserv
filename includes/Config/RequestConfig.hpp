@@ -24,7 +24,7 @@ class RequestConfig {
 
   ServerConfig *getServerForRequest(std::vector<ServerConfig> &servers);
   ServerConfig *getLocationForRequest(ServerConfig *server, std::string &target);
-  bool redirectLocation(std::string target);
+  void redirectLocation(std::string target);
 
   ServerConfig *match_regexp(std::vector<ServerConfig*> &locations, std::string &target);
   bool methodAccepted(std::string &method);
@@ -33,6 +33,7 @@ class RequestConfig {
   std::string &getRoot();
   std::string &getUri();
   std::string &getTarget();
+  std::string &getRequestTarget();
   std::string &getQuery();
   std::string &getCGIBin();
   void setTarget(std::string target);
@@ -51,6 +52,7 @@ class RequestConfig {
   std::string &getHost();
   uint32_t &getPort();
   Client &getClient();
+  std::string log(LogLevel level);
 
  private:
   Request &request_;

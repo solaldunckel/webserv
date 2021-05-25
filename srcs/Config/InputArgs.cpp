@@ -1,10 +1,12 @@
 # include "InputArgs.hpp"
 
-InputArgs::InputArgs(int argc, char **argv) : argc_(argc), argv_(argv), path_("./config/default.conf") {
-  options_["v"];
+InputArgs::InputArgs(int argc, char **argv) : argc_(argc), argv_(argv), path_("./config/default.conf"), log_level_(INFO) {
   options_["h"];
+  options_["-help"];
   options_["t"];
+  options_["-test"];
   options_["u"];
+  options_["-uri"];
 }
 
 InputArgs::~InputArgs() {};
@@ -18,6 +20,19 @@ void InputArgs::parse() {
 
       if (options_.find(opt) != options_.end())
         options_[opt] = true;
+      else if (opt == "l" || opt == "-log") {
+        if (i + 1 < argc_) {
+          std::string opt2 = argv_[i + 1];
+          if (opt2.find_first_not_of("0123456789") == std::string::npos) {
+            i++;
+            int level = ft::stoi(argv_[i]);
+            if (level <= 2)
+              log_level_ = (LogLevel)level;
+            else
+              throw webserv_exception("invalid option %\n\n" + helpText(), 0, opt + " " + opt2);
+          }
+        }
+      }
       else
         throw webserv_exception("invalid option -%\n\n" + helpText(), 0, opt);
     } else {
@@ -33,10 +48,10 @@ std::string InputArgs::helpText() {
 
   text += "Usage: webserv [options] [config_file]\n";
   text += "\nOptions: \n";
-  text += "  -h        : this help text\n";
-  text += "  -v        : print response/requests status\n";
-  text += "  -t        : test config and exit\n";
-  text += "  -u        : keep location uri on rooting (similar to nginx)";
+  text += "  -h, --help         : this help text\n";
+  text += "  -l, --log [LEVEL]  : set log level (between 0 and 2)\n";
+  text += "  -t, --test         : test config and exit\n";
+  text += "  -u, --uri          : keep location uri on rooting (similar to nginx)";
 
   return text;
 }
@@ -46,17 +61,17 @@ std::string &InputArgs::getPath() {
 }
 
 bool InputArgs::help() {
-  return options_["h"];
+  return options_["h"] || options_["-help"];
 }
 
-bool InputArgs::verbose() {
-  return options_["v"];
+LogLevel InputArgs::log() {
+  return log_level_;
 }
 
 bool InputArgs::test() {
-  return options_["t"];
+  return options_["t"] || options_["-test"];
 }
 
 bool InputArgs::location() {
-  return options_["u"];
+  return options_["u"] || options_["-uri"];
 }

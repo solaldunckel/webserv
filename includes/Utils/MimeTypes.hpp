@@ -8,11 +8,11 @@
 
 class MimeTypes {
  public:
-  static std::string getType(std::string extension);
+  MimeTypes();
+  std::string getType(std::string extension);
 
  private:
-  static std::map<std::string, std::string, ft::comp> mimes_;
-  static void initMap();
+  std::map<std::string, std::string, ft::comp> mimes_;
 };
 
 #endif

@@ -1,17 +1,33 @@
 #include "InputArgs.hpp"
 #include "Config.hpp"
 #include "Server.hpp"
+#include "Logger.hpp"
 
-void catch_sigint(int sig) {
-  (void)sig;
+#ifdef BONUS
+#include <pthread.h>
+
+pthread_mutex_t g_accept;
+pthread_mutex_t g_write;
+
+struct Worker {
+  Server *serv_;
+  int id_;
+  pthread_t thr_;
+};
+
+std::vector<Worker> g_workers;
+
+void *startWorker(void *arg) {
+  Server *serv = ((Worker*)arg)->serv_;
+  int id = ((Worker*)arg)->id_;
+  serv->run(id);
+  return NULL;
 }
+#endif
+
+Logger Log;
 
 int main(int argc, char **argv) {
-
-  #ifdef BONUS
-    std::cout << "Launched with bonus" << std::endl;
-  #endif
-
   try {
     InputArgs options(argc, argv);
 
@@ -22,46 +38,46 @@ int main(int argc, char **argv) {
       return 0;
     }
 
+    Log.setLogLevel(options.log());
+
     Config config(options.getPath());
 
     config.parse();
 
     if (options.test()) {
-      config.print();
+      Log.print(INFO, "# configuration file " + config.getPath() + "\n\n" + config.getFileContent());
       return 0;
     }
+
+    Log.print(INFO, "# configuration file " + config.getPath());
 
     config.clear();
 
     Server serv(config.getServers(), options);
 
+    serv.setup();
+
     #ifdef BONUS
     if (config.getWorkers() > 0) {
-      std::vector<pid_t> workers(config.getWorkers());
+      g_workers.resize(config.getWorkers());
 
-      sem_unlink("/SEM_WEBSERV");
-      sem_t *sem = sem_open("/SEM_WEBSERV", O_CREAT, S_IRWXU, 1);
-
-      signal(SIGINT, catch_sigint);
+      pthread_mutex_init(&g_accept, NULL);
+	    pthread_mutex_init(&g_write, NULL);
 
       for (int i = 0; i < config.getWorkers(); i++) {
-        pid_t pid = fork();
-
-        if (pid == 0) {
-          serv.run(i + 1, sem);
-          exit(0);
-        }
-        else if (pid == -1) {
-          std::cout << strerror(errno) << std::endl;
-          return 1;
-        }
-        else
-          workers[i] = pid;
+        g_workers[i].id_ = i + 1;
+        g_workers[i].serv_ = new Server(serv);
+        pthread_create(&g_workers[i].thr_, NULL, startWorker, &g_workers[i]);
+        usleep(500);
       }
-      wait(NULL);
-      for (std::vector<pid_t>::iterator it = workers.begin(); it != workers.end(); it++)
-        kill(*it, SIGINT);
-      sem_close(sem);
+
+      for (int i = 0; i < config.getWorkers(); i++) {
+        pthread_join(g_workers[i].thr_, NULL);
+        delete g_workers[i].serv_;
+      }
+
+      pthread_mutex_destroy(&g_write);
+      pthread_mutex_destroy(&g_accept);
     } else {
       serv.run();
     }
@@ -70,7 +86,7 @@ int main(int argc, char **argv) {
     #endif
   }
   catch (std::exception &e) {
-    std::cerr << "webserv: " << e.what() << std::endl;
+    Log.print(INFO, e.what(), RED, true);
     return 1;
   }
   return 0;

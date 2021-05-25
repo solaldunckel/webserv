@@ -64,7 +64,7 @@ void ServerConfig::listen(std::vector<std::string>::iterator &it) {
     std::string port_str = str.substr(str.find(':') + 1);
 
     if (port_str.find_first_not_of("0123456789") != std::string::npos) {
-      std::cout << "Invalid port" << std::endl;
+      throw std::runtime_error("invalid port :" + port_str);
     }
 
     port = ft::stoi(port_str);
@@ -227,54 +227,3 @@ std::vector<std::string> &ServerConfig::getServerNames() {
 std::vector<ServerConfig> &ServerConfig::getLocations() {
   return locations_;
 };
-
-/* Debug Functions */
-
-void ServerConfig::print() {
-  std::cout << "Server :" << std::endl;
-
-  std::cout << "  listen :" << std::endl;
-  for (std::vector<Listen>::iterator it = listens_.begin();
-    it != listens_.end(); it++) {
-      std::cout << "    " << it->ip_ << ":" << it->port_ << std::endl;
-  }
-  std::cout << "  server_name :" << std::endl;
-  for (std::vector<std::string>::iterator it = server_name_.begin(); it != server_name_.end(); it++) {
-    std::cout << "    " << *it << std::endl;
-  }
-  if (client_max_body_size_ > 0)
-    std::cout << "  client_max_body_size : " << client_max_body_size_ << std::endl;
-  if (autoindex_)
-    std::cout << "  autoindex : on" << std::endl;
-  if (locations_.size() > 0) {
-    std::cout << "  Locations :" << std::endl;
-    for (std::vector<ServerConfig>::iterator it = locations_.begin(); it != locations_.end(); it++) {
-      it->printLocation();
-    }
-  }
-}
-
-void ServerConfig::printLocation() {
-  std::cout << "    - uri : " << uri_ << std::endl;
-
-  if (!index_.empty()) {
-    std::cout << "      index :" << std::endl;
-    for (std::vector<std::string>::iterator it = index_.begin(); it != index_.end(); it++)
-      std::cout << "        " << *it << std::endl;
-  }
-
-  if (!cgi_.empty()) {
-    std::cout << "      cgi : " << std::endl;
-    for (std::map<std::string, std::string>::iterator it = cgi_.begin(); it != cgi_.end(); it++)
-      std::cout << "        " << it->first << " -> " << it->second << std::endl;
-  }
-
-  if (client_max_body_size_ > 0)
-    std::cout << "      client_max_body_size : " << client_max_body_size_ << std::endl;
-
-  if (autoindex_)
-    std::cout << "      autoindex : on" << std::endl;
-
-  if (!root_.empty())
-    std::cout << "      root : " << root_ << std::endl;
-}

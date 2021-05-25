@@ -57,9 +57,6 @@ class ServerConfig {
   std::vector<std::string> &getServerNames();
   std::vector<ServerConfig> &getLocations();
 
-  void print();
-  void printLocation();
-
   enum LocationModifier {
     NONE,
     EXACT,
@@ -67,6 +64,8 @@ class ServerConfig {
     CASE_INSENSITIVE_REG,
     LONGEST,
   };
+
+  int id_;
 
  private:
   std::vector<Listen> listens_;

@@ -10,30 +10,40 @@ File::~File() {
   close();
 }
 
-void File::set_path(std::string path) {
+void File::set_path(std::string path, bool negociation) {
   path_ = ft::unique_char(path);
-  parseExtensions();
+
+  if (negociation)
+    parseExtensionsNegociation();
+  else
+    parseExtensions();
 }
 
 bool File::open(bool create) {
   close();
 
   if (create)
-    fd_ = ::open(path_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0666);
+    fd_ = ::open(path_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 755);
   else
     fd_ = ::open(path_.c_str(), O_RDONLY);
   return fd_ > 0;
 }
 
 void File::close() {
-  if (fd_ > 0)
-    ::close(fd_);
+  if (fd_ <= 0)
+    return ;
+
+  ::close(fd_);
+  fd_ = 0;
 }
 
 void File::create(std::string &body) {
-  if (!open(true) || write(fd_, body.c_str(), body.length()) == -1) {
-    std::cerr << "create : " << strerror(errno) << std::endl;
+  if (!open(true)) {
+    Log.print(DEBUG, "create : " + std::string(strerror(errno)) + " of " + path_, RED, true);
+    return ;
   }
+  if (body.length() && write(fd_, body.c_str(), body.length()) <= 0)
+    Log.print(DEBUG, "create : " + std::string(strerror(errno)) + " of " + path_, RED, true);
 }
 
 void File::append(std::string &body) {
@@ -41,15 +51,15 @@ void File::append(std::string &body) {
   fd_ = ::open(path_.c_str(), O_RDWR | O_APPEND, 755);
   if (fd_ < 0)
     return ;
-  if (write(fd_, body.c_str(), body.length()) == -1)
-    std::cerr << "append : " << strerror(errno) << " of " << path_ << std::endl;
+  if (body.length() && write(fd_, body.c_str(), body.length()) <= 0)
+    Log.print(DEBUG, "append : " + std::string(strerror(errno)) + " of " + path_, RED, true);
 }
 
 void File::unlink() {
   if (!exists())
     return ;
   if (::unlink(path_.c_str()) == -1)
-    std::cerr << "unlink : " << strerror(errno) << " of " << path_ << std::endl;
+    Log.print(DEBUG, "unlink : " + std::string(strerror(errno)) + " of " + path_, RED, true);
 }
 
 std::string set_width(size_t width, std::string str) {
@@ -116,7 +126,7 @@ std::string File::autoIndex(std::string &target) {
   std::sort(listing.begin(), listing.end(), sort_auto_listing);
 
   for (std::vector<auto_listing>::iterator it = listing.begin(); it != listing.end(); it++) {
-    body = body + "<a href=\"" + it->name_ + "\">" + it->name_ + "</a>";
+    body = body + "<a href=\"" + ft::unique_char(target + + "/" + it->name_) + "\">" + it->name_ + "</a>";
     if (it != listing.begin()) {
       body += set_width(68 - it->name_.length(), it->date_);
       if (it->is_dir_)
@@ -176,7 +186,7 @@ std::string File::find_index(std::vector<std::string> &indexes) {
     }
     closedir(dir);
   } else {
-    strerror(errno);
+    Log.print(DEBUG, "opendir : " + std::string(strerror(errno)) + " of " + path_, RED, true);
     return "";
   }
   return "";
@@ -188,7 +198,11 @@ std::string File::getContent() {
   int ret;
 
   lseek(fd_, 0, SEEK_SET);
-  while ((ret = read(fd_, buf, 4096)) > 0) {
+  while ((ret = read(fd_, buf, 4096)) != 0) {
+    if (ret == -1) {
+      Log.print(DEBUG, "read : " + std::string(strerror(errno)), RED, true);
+      return "";
+    }
     buf[ret] = '\0';
     final.insert(final.length(), buf, ret);
   }
@@ -216,7 +230,7 @@ void File::parse_match() {
     }
     closedir(dir);
   } else {
-    std::cerr << strerror(errno) << std::endl;
+    Log.print(DEBUG, "opendir : " + std::string(strerror(errno)) + " of " + path_, RED, true);
   }
 }
 
@@ -230,10 +244,36 @@ void File::parseExtensions() {
 
   file_name_ = file.substr(0, file.find("."));
   file.erase(0, file.find("."));
-
   if (file.find_last_of(".") != std::string::npos) {
-    mime_ext_ = file.substr(file.find_last_of("."));
-    file.erase(file.find_last_of("."));
+    int last = file.find_last_of(".");
+    mime_ext_ = file.substr(last);
+  }
+}
+
+void File::parseExtensionsNegociation() {
+  std::string file = path_.substr(path_.find_last_of("/") + 1);
+
+  if (file.empty())
+    return;
+
+  file_name_full_ = file;
+
+  file_name_ = file.substr(0, file.find("."));
+  file.erase(0, file.find("."));
+  if (file.find_last_of(".") != std::string::npos) {
+    int last = file.find_last_of(".");
+    mime_ext_ = file.substr(last);
+    while (!g_mimes.getType(mime_ext_).compare("application/octet-stream")) {
+      int last2 = last;
+      if ((file.find_last_of(".", last - 1) != std::string::npos)) {
+        last = file.find_last_of(".", last - 1);
+        mime_ext_ = file.substr(last, last2 - last) ;
+      }
+      else
+        break ;
+      if (last <= 0)
+        break ;
+    }
   }
 }
 

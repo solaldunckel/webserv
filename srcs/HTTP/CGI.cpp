@@ -19,7 +19,9 @@ void CGI::init(int worker_id) {
   free(cwd);
 
   env_ = NULL;
-
+  argv_[0] = NULL;
+  argv_[1] = NULL;
+  argv_[2] = NULL;
   extension_ = file_.getMimeExtension();
   cgi_exe_ = config_.getCGI()[extension_];
   if (config_.getCGIBin()[0] == '/') {
@@ -30,6 +32,10 @@ void CGI::init(int worker_id) {
   std::string cgi_path = "/tmp/webserv_cgi_tmp_" + ft::to_string(worker_id);
   tmp_file_.set_path(cgi_path.c_str());
   tmp_file_.open(true);
+  if (worker_id)
+    Log.print(DEBUG, "worker[" + ft::to_string(worker_id) + "] : CGI -> " + cgi_path_);
+  else
+    Log.print(DEBUG, "server : CGI -> " + cgi_path_);
 }
 
 CGI::~CGI() {
@@ -37,19 +43,12 @@ CGI::~CGI() {
   free(argv_[1]);
   if (env_)
     ft::free_tab(env_);
+  tmp_file_.close();
   tmp_file_.unlink();
 }
 
 int CGI::execute() {
   file_path_ = cwd_ + "/" + file_.getPath();
-
-  if (chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str()) == -1) {
-    return 500;
-  }
-
-  #ifdef DEBUG
-  std::cout << "CALLING CGI " << cgi_path_ << std::endl;
-  #endif
 
   if (!setCGIEnv())
     return 500;
@@ -67,6 +66,8 @@ int CGI::execute() {
   pid_t pid = fork();
 
   if (pid == 0) {
+    if (chdir(file_path_.substr(0, file_path_.find_last_of('/')).c_str()) == -1)
+      return 500;
     close(pip[1]);
     if (dup2(pip[0], 0) == -1)
       return 500;
@@ -78,14 +79,13 @@ int CGI::execute() {
   }
   else if (pid > 0) {
     close(pip[0]);
-    write(pip[1], req_body_.c_str(), req_body_.length());
+    if (req_body_.length() && write(pip[1], req_body_.c_str(), req_body_.length()) <= 0)
+      return 500;
     close(pip[1]);
 
     int status;
 
     if (waitpid(pid, &status, 0) == -1)
-      return 500;
-    if (chdir(cwd_.c_str()) == -1)
       return 500;
     if (WIFEXITED(status) && WEXITSTATUS(status))
       return 502;

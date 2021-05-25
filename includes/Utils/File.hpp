@@ -15,7 +15,13 @@
 # include <algorithm>
 # include <vector>
 
+# include "MimeTypes.hpp"
+# include "Logger.hpp"
 # include "StringUtils.hpp"
+# include "MimeTypes.hpp"
+
+extern Logger Log;
+extern MimeTypes g_mimes;
 
 struct auto_listing {
   std::string name_;
@@ -39,7 +45,7 @@ class File {
   void create(std::string &body);
   void append(std::string &body);
   void unlink();
-  void set_path(std::string path);
+  void set_path(std::string path, bool negociation = false);
   bool is_directory();
   std::string last_modified();
   bool exists();
@@ -51,6 +57,7 @@ class File {
   std::string autoIndex(std::string &target);
   std::string &getMimeExtension();
   void parseExtensions();
+  void parseExtensionsNegociation();
   std::string getContent();
   std::string &getPath();
   std::vector<std::string> &getMatches();
