@@ -32,7 +32,7 @@ OBJS_BONUS	= ${SRCS:.cpp=.o_bonus}
 INCLUDES		= -I includes/Config -I includes/Utils -I includes/HTTP
 
 CC					= clang++
-CFLAGS 			= -Wall -Wextra -Werror -std=c++98 -pthread -g3 -fsanitize=address
+CFLAGS 			= -Wall -Wextra -Werror -std=c++98 -pthread
 RM					= rm -f
 
 BONUS				= -DBONUS
