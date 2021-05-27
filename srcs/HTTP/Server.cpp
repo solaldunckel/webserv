@@ -208,12 +208,7 @@ void Server::run(int worker_id) {
 
   struct timeval timeout;
 
-  #ifdef BONUS
-  timeout.tv_sec = 0;
-  #else
-  timeout.tv_sec = 300;
-  #endif
-
+  timeout.tv_sec = 1;
   timeout.tv_usec = 0;
 
   while (running_) {
@@ -225,13 +220,9 @@ void Server::run(int worker_id) {
     if (ret >= 0) {
       for (std::map<int, Listen>::iterator it = running_server_.begin(); it != running_server_.end(); it++) {
         if (FD_ISSET(it->first, &read_fds_)) {
-          #ifdef BONUS
           pthread_mutex_lock(&g_accept);
-          #endif
           newConnection(it->first);
-          #ifdef BONUS
           pthread_mutex_unlock(&g_accept);
-          #endif
         }
       }
 

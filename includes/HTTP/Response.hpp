@@ -14,10 +14,7 @@
 
 class RequestConfig;
 
-#ifdef BONUS
 extern pthread_mutex_t g_write;
-#endif
-
 extern StatusCode g_status;
 extern MimeTypes g_mimes;
 

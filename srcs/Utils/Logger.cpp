@@ -23,9 +23,7 @@ void Logger::print(LogLevel level, std::string str, std::string color, bool erro
     int ret = strftime(buf, 32, "%T", tm);
     buf[ret] = '\0';
 
-    #ifdef BONUS
     pthread_mutex_lock(&g_write);
-    #endif
 
     if (error) {
       std::cerr << CYAN << "[" << buf << "] " << RESET;
@@ -36,8 +34,6 @@ void Logger::print(LogLevel level, std::string str, std::string color, bool erro
       std::cout << color << str << RESET;
       std::cout << "\n";
     }
-    #ifdef BONUS
     pthread_mutex_unlock(&g_write);
-    #endif
   }
 };

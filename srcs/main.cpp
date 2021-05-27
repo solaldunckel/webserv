@@ -3,7 +3,6 @@
 #include "Server.hpp"
 #include "Logger.hpp"
 
-#ifdef BONUS
 #include <pthread.h>
 
 pthread_mutex_t g_accept;
@@ -23,7 +22,6 @@ void *startWorker(void *arg) {
   serv->run(id);
   return NULL;
 }
-#endif
 
 Logger Log;
 
@@ -57,7 +55,6 @@ int main(int argc, char **argv) {
 
     serv.setup();
 
-    #ifdef BONUS
     if (config.getWorkers() > 0) {
       g_workers.resize(config.getWorkers());
 
@@ -81,9 +78,6 @@ int main(int argc, char **argv) {
     } else {
       serv.run();
     }
-    #else
-      serv.run();
-    #endif
   }
   catch (std::exception &e) {
     Log.print(INFO, e.what(), RED, true);

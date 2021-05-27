@@ -29,9 +29,7 @@ enum LogLevel {
   DEBUG
 };
 
-#ifdef BONUS
 extern pthread_mutex_t g_write;
-#endif
 
 class Logger {
  public:

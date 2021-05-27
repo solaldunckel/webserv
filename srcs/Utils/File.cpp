@@ -23,7 +23,7 @@ bool File::open(bool create) {
   close();
 
   if (create)
-    fd_ = ::open(path_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 755);
+    fd_ = ::open(path_.c_str(), O_CREAT | O_RDWR | O_TRUNC, 00755);
   else
     fd_ = ::open(path_.c_str(), O_RDONLY);
   return fd_ > 0;
@@ -48,7 +48,7 @@ void File::create(std::string &body) {
 
 void File::append(std::string &body) {
   close();
-  fd_ = ::open(path_.c_str(), O_RDWR | O_APPEND, 755);
+  fd_ = ::open(path_.c_str(), O_RDWR | O_APPEND);
   if (fd_ < 0)
     return ;
   if (body.length() && write(fd_, body.c_str(), body.length()) <= 0)

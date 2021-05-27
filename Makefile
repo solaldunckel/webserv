@@ -1,7 +1,5 @@
 NAME			= webserv
 
-NAME_BONUS = webserv_bonus
-
 SRCS_LIST	= \
 						main.cpp \
 						Config/Config.cpp \
@@ -27,7 +25,6 @@ SRCS_FOLDER		= srcs
 SRCS				= $(addprefix ${SRCS_FOLDER}/, ${SRCS_LIST})
 
 OBJS				= ${SRCS:.cpp=.o}
-OBJS_BONUS	= ${SRCS:.cpp=.o_bonus}
 
 INCLUDES		= -I includes/Config -I includes/Utils -I includes/HTTP
 
@@ -35,29 +32,19 @@ CC					= clang++
 CFLAGS 			= -Wall -Wextra -Werror -std=c++98 -pthread
 RM					= rm -f
 
-BONUS				= -DBONUS
-
 all:				$(NAME)
 
 $(NAME):		$(OBJS)
 						$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) -o $(NAME)
 
-$(NAME_BONUS):		$(OBJS_BONUS)
-									$(CC) $(CFLAGS) $(INCLUDES) $(OBJS_BONUS) -o $(NAME_BONUS)
-
 %.o: %.cpp
 						${CC} ${CFLAGS} $(INCLUDES) -o $@ -c $<
 
-%.o_bonus: %.cpp
-						${CC} ${CFLAGS} $(BONUS) $(INCLUDES) -o $@ -c $<
-
-bonus:			$(NAME_BONUS)
-
 clean:
-						${RM} ${OBJS} ${OBJS_BONUS}
+						${RM} ${OBJS}
 
 fclean:			clean
-						${RM} ${NAME} ${NAME_BONUS}
+						${RM} ${NAME}
 
 re:					fclean all
 

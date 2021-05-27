@@ -79,8 +79,6 @@ ServerConfig *RequestConfig::getServerForRequest(std::vector<ServerConfig> &serv
   return matching_servers.front();
 }
 
-#ifdef BONUS
-
 ServerConfig *RequestConfig::match_regexp(std::vector<ServerConfig*> &locations, std::string &target) {
   regex_t reg;
 
@@ -101,8 +99,6 @@ ServerConfig *RequestConfig::match_regexp(std::vector<ServerConfig*> &locations,
   }
   return NULL;
 }
-
-#endif
 
 ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::string &target) {
   ServerConfig *location = NULL;
@@ -135,14 +131,10 @@ ServerConfig *RequestConfig::getLocationForRequest(ServerConfig *server, std::st
     }
   }
 
-  #ifdef BONUS
-
   ServerConfig *reg = match_regexp(reg_locations, target);
 
   if (reg)
     return reg;
-
-  #endif
 
   return location;
 }

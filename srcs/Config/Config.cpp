@@ -1,9 +1,7 @@
 #include "Config.hpp"
 
 Config::Config(std::string &path) : path_(path) {
-  #ifdef BONUS
   workers_ = 0;
-  #endif
   fd_ = open(path_.c_str(), O_RDONLY);
   if (fd_ < 0)
     throw webserv_exception("could not open configuration file : %", 0, path_);
@@ -75,7 +73,6 @@ void Config::parse() {
       serv.server(++it);
       servers_.push_back(serv);
     }
-    #ifdef BONUS
     else if (*it == "workers") {
       workers_ = ft::stoi(*(++it));
       if (workers_ > 16 || workers_ < 0)
@@ -83,7 +80,6 @@ void Config::parse() {
       if (*++it != ";")
         throw std::runtime_error("missing ';' in 'workers'");
     }
-    #endif
     else
       throw webserv_exception("invalid directive % in main block", 0, *it);
   }

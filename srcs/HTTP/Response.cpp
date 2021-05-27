@@ -262,9 +262,7 @@ int Response::POST() {
 
   body_ = config_.getBody();
 
-  #ifdef BONUS
   pthread_mutex_lock(&g_write);
-  #endif
 
   if (!file_.exists()) {
     file_.create(body_);
@@ -275,9 +273,7 @@ int Response::POST() {
     status_code = 200;
   }
 
-  #ifdef BONUS
   pthread_mutex_unlock(&g_write);
-  #endif
 
   headers_["Content-Length"] = ft::to_string(body_.length());
   return status_code;
@@ -286,9 +282,7 @@ int Response::POST() {
 int Response::PUT() {
   int status_code = 204;
 
-  #ifdef BONUS
   pthread_mutex_lock(&g_write);
-  #endif
 
   if (!file_.exists()) {
     file_.create(config_.getBody());
@@ -298,9 +292,7 @@ int Response::PUT() {
   else
     file_.create(config_.getBody());
 
-  #ifdef BONUS
   pthread_mutex_unlock(&g_write);
-  #endif
 
   return status_code;
 }
